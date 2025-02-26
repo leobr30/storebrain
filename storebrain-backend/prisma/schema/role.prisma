@@ -1,0 +1,23 @@
+
+model Role {
+  id Int @id @default(autoincrement())
+  name String @unique
+  users User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id Int @id @default(autoincrement())
+  action String
+  subject String
+  roles RolePermission[]
+}
+
+model RolePermission {
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId Int
+  permission Permission @relation(fields: [permissionId],references: [id], onDelete:  Cascade)
+  permissionId Int
+
+  @@id([roleId,permissionId])
+}

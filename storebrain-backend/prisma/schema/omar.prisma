@@ -1,0 +1,17 @@
+model Omar {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  objective String
+  tool String
+  action String
+  result String
+  nextAppointment DateTime? @db.Date
+  dueDate DateTime? @db.Date
+  observation String
+  status String @default("DRAFT")
+  createdById Int
+  createdBy User @relation("CreatedOmars", fields: [createdById], references: [id])
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  mondayAppointmentDetail MondayAppointmentDetail?
+}

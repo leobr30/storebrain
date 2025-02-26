@@ -1,0 +1,17 @@
+model ParentCompany {
+  id        Int       @id @default(autoincrement())
+  name      String
+  companies Company[]
+}
+
+model Company {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  type              Int
+  parentCompanyId   Int
+  parentCompany     ParentCompany       @relation(fields: [parentCompanyId], references: [id], onDelete: Cascade)
+  users             UsersOnCompanies[]
+  MondayAppointment MondayAppointment[]
+  number            Int
+  conditions        Condition[]
+}

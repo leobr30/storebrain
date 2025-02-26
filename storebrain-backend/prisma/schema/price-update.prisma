@@ -1,0 +1,32 @@
+model PriceUpdate {
+    id Int @id @default(autoincrement())
+    date DateTime @default(now()) 
+    rows PriceUpdateRow[]
+}
+
+model PriceUpdateRow {
+    id Int @id @default(autoincrement())
+    reference String
+    lastPrice Float
+    newPrice Float
+    priceDifference Float
+    newPurchasePrice Float    
+    newSalePrice Float    
+    stock Int
+    priceUpdateId Int
+    priceUpdate PriceUpdate @relation(references: [id], fields: [priceUpdateId], onDelete: Cascade)
+    articles PriceUpdateRowArticle[]
+    status Status @default(PENDING)
+}
+
+model PriceUpdateRowArticle {
+    id Int @id @default(autoincrement())    
+    shop Int
+    article String
+    stock Int
+    purchasePrice Float
+    lastSalePrice Float
+    newSalePrice Float
+    priceUpdateRowId Int
+    priceUpdateRow PriceUpdateRow @relation(references: [id], fields: [priceUpdateRowId], onDelete: Cascade)    
+}

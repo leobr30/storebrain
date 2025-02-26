@@ -1,0 +1,36 @@
+model MondayAppointment {
+    id Int @id @default(autoincrement())
+    date DateTime @db.Date @default(now())
+    remainingDays Int
+    objective Int
+    objectiveOr Int
+    objectiveMode Int
+    realizedRevenue Int
+    remainingRevenue Int
+    realizedRevenueOr Int
+    remainingRevenueOr Int
+    realizedRevenueMode Int    
+    remainingRevenueMode Int
+    status Status @default(PENDING)
+    companyId Int
+    company Company @relation(references: [id], fields: [companyId])
+    details MondayAppointmentDetail[]
+}
+
+model MondayAppointmentDetail {
+    id Int @id @default(autoincrement())
+    onerpId Int    
+    fullname String
+    zone String
+    objective Int
+    realizedRevenue Int
+    remainingRevenue Int
+    remainingDays Int        
+    appointmentId Int
+    appointment MondayAppointment @relation(references: [id], fields: [appointmentId], onDelete: Cascade)
+    userId Int?
+    user User? @relation(references: [id], fields: [userId])
+    omarId Int? @unique
+    omar Omar? @relation(references: [id], fields: [omarId])
+    signedAt DateTime?
+}

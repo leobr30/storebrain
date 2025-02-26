@@ -1,0 +1,196 @@
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "src/prisma/prisma.service";
+import path, { join } from "path";
+import fs, { createReadStream } from 'fs';
+import { CurrentUserType } from "src/auth/dto/current-user.dto";
+import { Status } from "@prisma/client";
+import { SaveTrainingDto } from "./dto/save-training.dto";
+import { randomUUID } from "crypto";
+import { EmployeesTrainingClosedEvent } from "./events/employees-training-closed.event";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+
+@Injectable()
+export class TrainingsService {
+  constructor(private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
+
+
+  async getTraining(trainingId: number) {
+    return await this.prisma.training.findUnique({
+      where: {
+        id: trainingId        
+      },
+      include: {
+        subjects: {
+          include: {
+            files: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
+        realizedBy: {
+          select: {
+            name: true,
+          },
+        },
+        userJobOnboarding: {
+          select: {
+            appointmentNumber: true,
+          },
+        },
+      },
+    });
+  }
+
+  async trainingAddAttachment({    
+    trainingId,
+    trainingSubjectId,
+    file,
+    fileName,
+  }: {    
+    trainingId: number;
+    trainingSubjectId: number;
+    file: Express.Multer.File;
+    fileName: string;
+  }) {
+    const trainingSubject = await this.prisma.trainingSubject.findUnique({
+      where: {
+        id: trainingSubjectId,
+        trainingId: trainingId,
+      },
+      include: { files: true },
+    });
+    if (!trainingSubject) throw new NotFoundException();
+    const training = await this.prisma.training.findUnique({
+      where: {
+        id: trainingId,
+      },
+    });
+    if (!training) throw new NotFoundException();
+    const dir = `./upload/employees/${training.userId}/training/${trainingId}`;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const tempFileName = `${randomUUID()}${path.extname(file.filename)}`;
+    const fileNameWithExtension = `${fileName}${path.extname(file.filename)}`;
+    fs.renameSync(file.path, join(dir, tempFileName));
+    const trainingSubjectFile = await this.prisma.trainingSubjectFile.create({
+      data: {
+        fileName: fileNameWithExtension,
+        filePath: join(dir, tempFileName),
+        trainingSubjectId: trainingSubject.id,
+      },
+    });
+
+    return trainingSubjectFile;
+  }
+
+  async closeTraining(    
+    trainingId: number,
+    currentUser: CurrentUserType,
+    dto: SaveTrainingDto,
+  ) {
+    const training = await this.prisma.training.update({
+      where: { id: trainingId},
+      data: {
+        comment: dto.comment,
+        tool: dto.tool,
+        exercise: dto.exercise,
+        validateAt: new Date(),
+        realizedById: currentUser.sub,
+        status: Status.COMPLETED,        
+      },
+    });
+
+    await this.prisma.userJobOnboarding.update({
+      where: {
+        id: training.userJobOnboardingId,        
+      },
+      data: {
+        status: Status.COMPLETED,
+      },
+    });
+
+    await Promise.all(
+      dto.subjects.map(async(subject) => {
+       await this.prisma.trainingSubject.update({
+          where: { id: subject.subjectId },
+          data: {
+            state: subject.assessment ,
+          },
+        });
+      }),
+    );
+
+    const userHistory = await this.prisma.userHistory.create({
+      data: {
+        title: 'Formation',
+        text: `a réalisé la formation ${training.name}`,
+        type: 'TRAINING',
+        idUrl: training.id.toString(),
+        user: {
+          connect: {
+            id: training.userId
+          }
+        },
+        createdBy: {
+          connect: {
+            id: currentUser.sub
+          }
+        }
+      }
+    });
+    console.log('EMIT EVENT', training.id, userHistory.id);
+    this.eventEmitter.emit('employees.training.closed', new EmployeesTrainingClosedEvent(training.id, userHistory.id));
+  }
+
+  async saveTraining(    
+    trainingId: number,    
+    dto: SaveTrainingDto,
+  ) {
+    const training = await this.prisma.training.update({
+      where: { id: trainingId },
+      data: {
+        comment: dto.comment,
+        tool: dto.tool,
+        exercise: dto.exercise,
+      },
+    });
+
+    await Promise.all(
+      dto.subjects.map(async(subject) => {
+       await this.prisma.trainingSubject.update({
+          where: { id: subject.subjectId },
+          data: {
+            state: subject.assessment ,
+          },
+        });
+      }),
+    );
+  }
+
+  async deleteAttachment(
+    trainingId: number,
+    attachmentId: number,
+  ) {
+    const attachment = await this.prisma.trainingSubjectFile.delete({
+      where: { id: attachmentId,trainingSubject: {trainingId: trainingId} },
+    });
+    fs.unlinkSync(attachment.filePath);
+  }
+
+  async downloadAttachment(
+    trainingId: number,
+    attachmentId: number,
+  ) {
+    const attachment = await this.prisma.trainingSubjectFile.findUnique({
+      where: { id: attachmentId,trainingSubject: {trainingId: trainingId} },
+    });
+    if(!attachment) throw new NotFoundException();
+    return {filename: attachment.fileName, file: createReadStream(attachment.filePath)};
+  } 
+}

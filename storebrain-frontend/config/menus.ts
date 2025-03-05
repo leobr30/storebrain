@@ -1050,6 +1050,24 @@ export const menusConfig = {
           },      
         ]        
       },
+      {
+        title: "Configuration",
+        icon: DashBoard,        
+        child: [
+          {
+            title:'Documents',
+            href: "/configuration/documents",
+          },
+          {
+            title:'Contrats',
+            href: "/tools/balance",
+          },      
+          {
+            title:'Emploies',
+            href: "/tools/onerp",
+          },      
+        ]        
+      },
       // {
       //   title: "Site Internet",
       //   icon: DashBoard,

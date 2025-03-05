@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button"
 import { createTrainingWithOnboarding } from "../../actions"
 import { TrainingDrawer } from "../training-drawer/training-drawer"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import DocumentForm from "@/features/employee-area/components/employee/document-form";
+import { useState } from "react";
 
 type EmployeeOnboardingsProps = {
     id: number,
@@ -12,6 +15,7 @@ type EmployeeOnboardingsProps = {
 }
 
 export const EmployeeOnboardings = ({ steps, id }: EmployeeOnboardingsProps) => {
+    const [open, setOpen] = useState(false);
 
     const router = useRouter()
     const pathName = usePathname()
@@ -26,7 +30,9 @@ export const EmployeeOnboardings = ({ steps, id }: EmployeeOnboardingsProps) => 
         const training = await createTrainingWithOnboarding(id, jobOnboardingStepId)
         handleViewTraining(training.id)
     }
+
     
+
 
     return (
         <Card>
@@ -42,7 +48,7 @@ export const EmployeeOnboardings = ({ steps, id }: EmployeeOnboardingsProps) => 
                                     Date butoir
                                 </TableHead>
                                 <TableHead>
-                                    Type                                    
+                                    Type
                                 </TableHead>
                                 <TableHead>
                                     Etape
@@ -55,47 +61,63 @@ export const EmployeeOnboardings = ({ steps, id }: EmployeeOnboardingsProps) => 
                         </TableHeader>
                         <TableBody>
                             {steps.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                            .filter((step) => step.jobOnboardingStep.type === 'TRAINING' ? 
-                            (step.appointmentNumber === 1 ||
-                                steps.find((w) => w.jobOnboardingStep.trainingModel?.id === step.jobOnboardingStep.trainingModel?.id && w.status === 'COMPLETED' && w.appointmentNumber < step.appointmentNumber)
-                            ) : 
-                            true)
-                            .map((step, stepIndex) => (
-                                <TableRow key={step.id}>
-                                    <TableCell>{new Date(step.date).toLocaleDateString()}</TableCell>
-                                    <TableCell>{step.jobOnboardingStep.type === 'TRAINING' ? 'Formation' : 'Document'}</TableCell>
-                                    {step.jobOnboardingStep.type === 'TRAINING' ?
-                                        <>
-                                            <TableCell>{`RDV N°${step.appointmentNumber} - ${step.jobOnboardingStep.trainingModel?.name}`}</TableCell>
-                                            <TableCell>
-                                                {!step.training ? <Button
-                                                    onClick={() => handleCreateTraining(step.id)}
-                                                    disabled={!!steps.find((w) => w.appointmentNumber < step.appointmentNumber && w.jobOnboardingStep.id === step.jobOnboardingStep.id && !w.status === 'COMPLETED')}
-                                                    variant={'ghost'}
-                                                >Débuter la formation</Button>
-                                                    : <Button variant={'ghost'} onClick={() => handleViewTraining(step.training.id)}>{step.training.status === 'PENDING' ? 'Continuer' : 'Voir' } la formation</Button>}
-                                            </TableCell>
-                                            <TableCell><StatusBadge status={step.status} text={
-                                                step.status === 'COMPLETED' && step.training ? `${step.training.subjects.filter((w) => w.state === 'ACQUIRED').length} / ${step.training.subjects.length}` : ''
-                                            } /></TableCell>
-                                        </>
-                                        : null}
-                                    {step.jobOnboardingStep.type === 'RESULT_REVIEW' ?
-                                        <>
-                                            <TableCell>RDV - {step.jobOnboardingStep.jobOnboardingResultReview?.name}</TableCell>
-                                            <TableCell><Button variant={'ghost'}>Faire le point</Button></TableCell>
-                                            <TableCell><StatusBadge status={step.status} /></TableCell>
-                                        </> : null}
-                                    {step.jobOnboardingStep.type === 'DOCUMENT' ?
-                                        <>
-                                            <TableCell>{step.jobOnboardingStep.jobOnboardingDocuments[0].name}</TableCell>
-                                            <TableCell><Button variant={'ghost'}>Joindre le document</Button></TableCell>
-                                            <TableCell><StatusBadge status={step.status} /></TableCell>
-                                        </> : null}
+                                .filter((step) => step.jobOnboardingStep.type === 'TRAINING' ?
+                                    (step.appointmentNumber === 1 ||
+                                        steps.find((w) => w.jobOnboardingStep.trainingModel?.id === step.jobOnboardingStep.trainingModel?.id && w.status === 'COMPLETED' && w.appointmentNumber < step.appointmentNumber)
+                                    ) :
+                                    true)
+                                .map((step, stepIndex) => (
+                                    <TableRow key={step.id}>
+                                        <TableCell>{new Date(step.date).toLocaleDateString()}</TableCell>
+                                        <TableCell>{step.jobOnboardingStep.type === 'TRAINING' ? 'Formation' : 'Document'}</TableCell>
+                                        {step.jobOnboardingStep.type === 'TRAINING' ?
+                                            <>
+                                                <TableCell>{`RDV N°${step.appointmentNumber} - ${step.jobOnboardingStep.trainingModel?.name}`}</TableCell>
+                                                <TableCell>
+                                                    {!step.training ? <Button
+                                                        onClick={() => handleCreateTraining(step.id)}
+                                                        disabled={!!steps.find((w) => w.appointmentNumber < step.appointmentNumber && w.jobOnboardingStep.id === step.jobOnboardingStep.id && !w.status === 'COMPLETED')}
+                                                        variant={'ghost'}
+                                                    >Débuter la formation</Button>
+                                                        : <Button variant={'ghost'} onClick={() => handleViewTraining(step.training.id)}>{step.training.status === 'PENDING' ? 'Continuer' : 'Voir'} la formation</Button>}
+                                                </TableCell>
+                                                <TableCell><StatusBadge status={step.status} text={
+                                                    step.status === 'COMPLETED' && step.training ? `${step.training.subjects.filter((w) => w.state === 'ACQUIRED').length} / ${step.training.subjects.length}` : ''
+                                                } /></TableCell>
+                                            </>
+                                            : null}
+                                        {step.jobOnboardingStep.type === 'RESULT_REVIEW' ?
+                                            <>
+                                                <TableCell>RDV - {step.jobOnboardingStep.jobOnboardingResultReview?.name}</TableCell>
+                                                <TableCell><Button variant={'ghost'}>Faire le point</Button></TableCell>
+                                                <TableCell><StatusBadge status={step.status} /></TableCell>
+                                            </> : null}
+                                        {step.jobOnboardingStep.type === "DOCUMENT" ? (
+                                            <>
+                                                <TableCell>{step.jobOnboardingStep.jobOnboardingDocuments[0].name}</TableCell>
+                                                <TableCell>
+                                                    <Dialog open={open} onOpenChange={setOpen}>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant={"ghost"}>Joindre le document</Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="max-w-100 w-full">
+                                                            <DialogHeader>
+                                                                <DialogTitle className="text-2xl font-bold">Remplir le formulaire</DialogTitle>
+                                                            </DialogHeader>
+                                                            <DocumentForm onClose={() => setOpen(false)} />
+                                                        </DialogContent>
+                                                    </Dialog>
 
-                                    
-                                </TableRow>
-                            ))}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <StatusBadge status={step.status} />
+                                                </TableCell>
+                                            </>
+                                        ) : null}
+
+
+                                    </TableRow>
+                                ))}
                         </TableBody>
                     </Table>
                 </div>

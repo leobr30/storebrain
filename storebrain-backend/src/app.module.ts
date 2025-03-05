@@ -21,7 +21,10 @@ import { ToolsModule } from './tools/tools.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { ClosingDayModule } from './closing-day/closing-day.module';
 import { SavService } from './sav/sav.service';
-;
+import { PrismaService } from './prisma/prisma.service';
+import { FormsController } from './forms/forms.controller';
+
+
 @Module({
   imports: [
     OnerpModule,
@@ -53,9 +56,9 @@ import { SavService } from './sav/sav.service';
     ToolsModule,
     ClosingDayModule,    
   ],
-  controllers: [],
-  providers: [SavService],
-  exports: []
+  controllers: [FormsController],
+  providers: [SavService, PrismaService],
+  exports: [PrismaService]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

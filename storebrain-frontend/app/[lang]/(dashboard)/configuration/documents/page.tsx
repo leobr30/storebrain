@@ -14,7 +14,7 @@ export default function DocumentForm() {
   const [sections, setSections] = useState([
     {
       id: 1,
-      title: "1° PRÉSENTER LES LOCAUX SOCIAUX",
+      title: "PRÉSENTER LES LOCAUX SOCIAUX",
       items: [
         "Vestiaires",
         "Toilette",
@@ -26,7 +26,7 @@ export default function DocumentForm() {
     },
     {
       id: 2,
-      title: "2° INDIQUER LES RÈGLES D'ARRIVÉES ET DE DÉPARTS",
+      title: "INDIQUER LES RÈGLES D'ARRIVÉES ET DE DÉPARTS",
       items: [
         "“ Arrivée à l’heure c’est déjà être en retard “ donc ( - 10 minutes avant l’horaire pour poser les affaires personnelles...",
         "Regarder votre tenue, Dress code noir, coiffure, maquillage, bijoux et montre portés dans la norme et respect du contrat de travail.",
@@ -38,7 +38,7 @@ export default function DocumentForm() {
 
     {
       id: 3,
-      title: "3° INDIQUER LES RÈGLES DE PRISE DE FONCTION SUR VOTRE ZONE",
+      title: "INDIQUER LES RÈGLES DE PRISE DE FONCTION SUR VOTRE ZONE",
       items: [
         "Seulement après avoir pris votre fonction, vous allez vous positionner à l'endroit où sont rangés les BRIEFS - DEBRIEFS de votre zone",
         "Vous en prenez connaissance et vous devez signer après avoir lu les chiffres du jour (contribution individuelle, obj zone, obj Mag, action du jour demandée)",
@@ -48,7 +48,7 @@ export default function DocumentForm() {
 
     {
       id: 4,
-      title: "4° SAVOIR SE REPÉRER DANS SON PLAN MERCHANDISING - ENTRETIEN DE SA ZONE",
+      title: "SAVOIR SE REPÉRER DANS SON PLAN MERCHANDISING - ENTRETIEN DE SA ZONE",
       items: [
         "Savoir repérer et connaitre, dans votre établissement Diamantor les vitrines des bijoux et montres de marque AVANTAGE carte 3 ans de garantie Doc N°2",
         "Savoir repérer et connaitre, les vitrines bijoux de chaque zone bénéficiant l'avantage carte 50% Doc N°1",
@@ -62,9 +62,24 @@ export default function DocumentForm() {
 
     {
       id: 5,
-      title: "5° L'OUVERTURE DES VITRINES MODE ( Zone MODE )",
+      title: "L'OUVERTURE DES VITRINES MODE ( Zone MODE )",
       items: [
         "Savoir ouvrir avec la clef, une vitrine mode, en respectant l'ouverture en sécurité. \n \n objectif: le client doit toujours avoir la vitre fermée devant lui. \n \n Pour y arriver vous devez: \n \n - Poser votre plateau de présentation devant la vitre qui doit rester fermée, Toujours devant votre client. \n \n - Vous déplacer en invitant le client à rejoindre le plateau que vous aurez \n repositionner devant la vitre opposée à celle que vous ouvrez.",
+      ],
+    },
+
+    {
+      id: 6,
+      title: "bis L'OUVERTURE DES VITRINES MODE ( Zone OR )",
+      items: [
+        "Savoir ouvrir avec le badge une vitrine de la zone or",
+        "Savoir où se trouvent les capteurs",
+        "Savoir fermer délicatement la vitrine",
+        "Savoir qu'en cas de choc, toutes les vitrines BLACK de Diamantor se bloquent pendant 10 minutes",
+        "Savoir que si vous badgez une vitrine pour contrôler l'ouverture dans la foulée, \n cela peux prolonger de 10 minutes supplémentaires",
+        "Savoir que si une vitrine est déjà ouverte sur une zone de l'or, il faut qu'elle soit \n refermée, pour pouvoir à son tour, ouvrir une nouvelle vitrine.",
+        "Savoir qu'au bout de 3 minutes d'ouverture d'une vitre sur la zone, 1 BUZZER se \n déclenche, bruit strident, afin que tout le monde l'entende et sache qu'une vitrine est \n ouverte.",
+        "Savoir qu'en cas de plusieurs chocs sur les vitrines blindées, les fumigènes peuvent devenir actifs"
       ],
     },
   ]);
@@ -130,6 +145,26 @@ export default function DocumentForm() {
     }
   };
 
+  const moveSection = (index: number, direction: "up" | "down") => {
+    setSections((prev) => {
+      const newSections = [...prev];
+  
+      if (
+        (direction === "up" && index === 0) || 
+        (direction === "down" && index === newSections.length - 1)
+      ) {
+        return prev;
+      }
+      const newIndex = direction === "up" ? index - 1 : index + 1;
+  
+      [newSections[index], newSections[newIndex]] = [newSections[newIndex], newSections[index]];
+  
+      return newSections;
+    });
+  };
+  
+
+
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg space-y-8">
@@ -138,7 +173,14 @@ export default function DocumentForm() {
       {sections.map((section, sectionIndex) => (
         <div key={section.id} className="space-y-4">
           <div className="flex items-center gap-3">
-            <Input value={section.title} onChange={(e) => updateSectionTitle(sectionIndex, e.target.value)} className="font-semibold text-lg flex-grow" />
+            <Input
+              value={`${sectionIndex + 1}° ${section.title}`}
+              onChange={(e) => updateSectionTitle(sectionIndex, e.target.value.replace(/^\d+°\s/, ""))}
+              className="font-semibold text-lg flex-grow"
+            />
+
+            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "up")} disabled={sectionIndex === 0}>🔼</Button>
+            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "down")} disabled={sectionIndex === sections.length - 1}>🔽</Button>
             <Button variant="destructive" size="icon" onClick={() => removeSection(sectionIndex)}>
               🗑️
             </Button>
@@ -147,7 +189,6 @@ export default function DocumentForm() {
           <div className="space-y-2">
             {section.items.map((item, itemIndex) => (
               <div key={itemIndex} className="flex items-center gap-3">
-                <Checkbox id={item} checked={selectedItems.includes(item)} onCheckedChange={() => handleCheckboxChange(item)} />
                 <Label htmlFor={item} className="flex-grow whitespace-pre-line">
                   {item}
                 </Label>

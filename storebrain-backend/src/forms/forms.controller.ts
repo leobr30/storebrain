@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
 interface CreateFormDTO {
@@ -15,7 +15,30 @@ interface CreateFormDTO {
 
 @Controller('forms')
 export class FormsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
+
+  @Get()
+  async getLatestForm() {
+    try {
+      console.log("📢 Tentative de récupération du formulaire...");
+
+      const form = await this.prisma.form.findFirst({
+        orderBy: { createdAt: 'desc' },
+        include: { sections: { include: { items: true } } },
+      });
+
+      if (!form) {
+        console.warn("⚠️ Aucun formulaire trouvé.");
+        throw new NotFoundException('Aucun formulaire trouvé.');
+      }
+
+      console.log("✅ Formulaire récupéré :", form);
+      return form;
+    } catch (error) {
+      console.error("❌ ERREUR SERVER :", error);
+      throw new InternalServerErrorException("Erreur lors de la récupération du formulaire.");
+    }
+  }
 
   @Post()
   async createForm(@Body() data: CreateFormDTO) {

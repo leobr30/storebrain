@@ -27,11 +27,15 @@ model User {
   realizedTrainings Training[] @relation("RealizedTrainings")
   absences UserAbsence[]
   createdAbsences UserAbsence[] @relation("CreatedAbsences")
-  omars Omar[]
-  createdOmars Omar[] @relation("CreatedOmars")
+  omars Omar[] @relation("UserOmars")
+  createdOmars Omar[] @relation("UserCreatedOmars")
   mondayAppointmentDetails MondayAppointmentDetail[]
   closingDayComments ClosingDayComment[]
+
+  employeeResponses EmployeeResponse[]
 }
+
+
 
 model UserInformation {
   id Int @id @default(autoincrement())

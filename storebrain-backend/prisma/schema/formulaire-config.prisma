@@ -4,7 +4,8 @@ model Form {
   comment   String? 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  sections  Section[]  // ✅ Un formulaire contient plusieurs sections
+  sections  Section[]  
+  responses EmployeeResponse[]
 }
 
 model Section {
@@ -13,13 +14,28 @@ model Section {
   title     String
   createdAt DateTime @default(now())
   form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
-  items     Item[]   // ✅ Une section contient plusieurs items (cases à cocher, etc.)
+  items     Item[]   
 }
 
 model Item {
   id        String   @id @default(uuid())
   sectionId String
   label     String
-  selected  Boolean @default(false) // ✅ Si la case est cochée
+  selected  Boolean @default(false) 
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }
+
+model EmployeeResponse {
+  id        String   @id @default(uuid())
+  userId    Int
+  formId    String
+  responses Json
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+
+

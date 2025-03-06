@@ -1,6 +1,13 @@
 import { Controller, Post, Body, Get, Param, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
+interface SaveEmployeeResponseDTO {
+  userId: string;
+  formId: string;
+  responses: any;
+  comment?: string;
+}
+
 interface CreateFormDTO {
   title: string;
   comment?: string;
@@ -77,3 +84,47 @@ export class FormsController {
     }
   }
 }
+
+@Controller('employee-responses')
+export class EmployeeResponsesController {
+  constructor(private readonly prisma: PrismaService) { }
+
+  @Post()
+  async saveEmployeeResponse(@Body() data: SaveEmployeeResponseDTO) {
+    try {
+      console.log("📢 Données reçues :", data);
+
+
+      if (!data.userId || isNaN(Number(data.userId))) {
+        throw new BadRequestException("userId est invalide.");
+      }
+
+
+      const userExists = await this.prisma.user.findUnique({
+        where: { id: Number(data.userId) },
+      });
+
+      if (!userExists) {
+        throw new BadRequestException("L'utilisateur spécifié n'existe pas.");
+      }
+
+      const response = await this.prisma.employeeResponse.create({
+        data: {
+          userId: Number(data.userId),
+          formId: data.formId,
+          responses: data.responses,
+          comment: data.comment || "",
+        },
+      });
+
+      console.log("✅ Réponses enregistrées avec succès :", response);
+      return response;
+    } catch (error) {
+      console.error("❌ ERREUR SERVER :", error);
+      throw new InternalServerErrorException("Erreur lors de l'enregistrement des réponses.");
+    }
+  }
+
+
+}
+

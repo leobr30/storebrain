@@ -23,6 +23,7 @@ import { ClosingDayModule } from './closing-day/closing-day.module';
 import { SavService } from './sav/sav.service';
 import { PrismaService } from './prisma/prisma.service';
 import { FormsController } from './forms/forms.controller';
+import { EmployeeResponsesController } from './forms/forms.controller';
 
 
 @Module({
@@ -56,7 +57,7 @@ import { FormsController } from './forms/forms.controller';
     ToolsModule,
     ClosingDayModule,    
   ],
-  controllers: [FormsController],
+  controllers: [FormsController, EmployeeResponsesController],
   providers: [SavService, PrismaService],
   exports: [PrismaService]
 })

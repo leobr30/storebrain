@@ -13,3 +13,11 @@ export const getDoc = async () => {
         throw error;
     }
 };
+
+export const saveEmployeeResponse = async (data) => {
+    const response = await fetchWithAuth(`employee-responses`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+    return response;
+};

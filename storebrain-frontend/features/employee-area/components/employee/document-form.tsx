@@ -1,19 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from "next-auth/react";
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { getDoc } from './document-form-action';
+import { saveEmployeeResponse } from './document-form-action';
 
 export default function DocumentForm({ onClose }: { onClose: () => void }) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+
   const [sections, setSections] = useState<any[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
+  const [formId, setFormId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchForm = async () => {
@@ -21,10 +27,11 @@ export default function DocumentForm({ onClose }: { onClose: () => void }) {
         const response = await getDoc();
         console.log('✅ Formulaire récupéré :', response);
 
-        if (!response || !response.sections) {
+        if (!response || !response.sections || !response.id) {
           throw new Error('Données du formulaire invalides');
         }
 
+        setFormId(response.id);
         const formattedSections = response.sections.map((section, index) => ({
           id: index + 1,
           title: `${index + 1}° ${section.title}`,
@@ -57,10 +64,45 @@ export default function DocumentForm({ onClose }: { onClose: () => void }) {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleSubmit = () => {
-    console.log('Formulaire soumis :', { selectedItems, comment });
-    alert('Formulaire soumis avec succès !');
-    onClose();
+  const handleSubmit = async () => {
+    if (!userId) {
+      alert("❌ Vous devez être connecté pour soumettre ce formulaire.");
+      console.error("❌ Erreur : userId est null");
+      return;
+    }
+
+    if (!formId) {
+      alert("❌ Impossible de récupérer l'ID du formulaire.");
+      console.error("❌ Erreur : formId est null");
+      return;
+    }
+
+    try {
+      const payload = {
+        userId,
+        formId,
+        responses: sections
+          .filter(section => section.items)
+          .map(section => ({
+            title: section.title,
+            items: section.items?.map(item => ({
+              label: item,
+              selected: selectedItems.includes(item),
+            })),
+          })),
+        comment,
+      };
+
+      console.log("📢 Données envoyées :", payload);
+
+      await saveEmployeeResponse(payload);
+
+      alert("✅ Formulaire soumis avec succès !");
+      onClose();
+    } catch (error) {
+      console.error("❌ Erreur lors de la soumission :", error);
+      alert("Échec de l'enregistrement");
+    }
   };
 
   if (loading) {
@@ -69,12 +111,10 @@ export default function DocumentForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg flex flex-col h-[80vh]">
-      
       <h1 className="text-2xl font-bold text-center text-gray-900 mb-4">
         Accueil Nouveau Vendeur
       </h1>
 
-      
       <div className="flex-grow overflow-auto p-4 bg-gray-100 rounded-md shadow-sm">
         <h2 className="font-semibold text-xl text-gray-800 mb-3">{sections[currentStep].title}</h2>
 
@@ -112,7 +152,6 @@ export default function DocumentForm({ onClose }: { onClose: () => void }) {
 
       <Separator className="my-4" />
 
-      
       <div className="flex justify-between sticky bottom-0 bg-white p-4 border-t border-gray-200 shadow-md">
         <Button
           variant="outline"

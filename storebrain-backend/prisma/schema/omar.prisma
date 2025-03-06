@@ -9,9 +9,12 @@ model Omar {
   dueDate DateTime? @db.Date
   observation String
   status String @default("DRAFT")
+  
   createdById Int
-  createdBy User @relation("CreatedOmars", fields: [createdById], references: [id])
+  createdBy User @relation("UserCreatedOmars", fields: [createdById], references: [id])
+  
   userId Int
-  user User @relation(fields: [userId], references: [id])
+  user User @relation("UserOmars", fields: [userId], references: [id])
+
   mondayAppointmentDetail MondayAppointmentDetail?
 }

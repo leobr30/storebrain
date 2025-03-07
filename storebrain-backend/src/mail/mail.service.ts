@@ -2,10 +2,11 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { MailStoreShipment } from './mail.interfaces';
 import { Prisma, Training } from '@prisma/client';
+import { userInfo } from 'os';
 
 @Injectable()
 export class MailService {
-  constructor(private mailerService: MailerService) {}
+  constructor(private mailerService: MailerService) { }
 
   async sendEmployeeCreatedMail(
     files: { fileName: string; mimeType: string; filePath: string }[],
@@ -47,4 +48,30 @@ export class MailService {
       ],
     });
   }
+
+  async sendEmployeeFormMail(
+email: string, file: { fileName: string; mimeType: string; filePath: string; }, formTitle: string, userId: string, lastName: string, firstName: string  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `📄 Formulaire rempli : ${formTitle}`,
+      template: './employee-form',
+      context: {
+        firstName,
+        lastName,
+        userId,
+        formTitle,
+      },
+      attachments: [
+        {
+          filename: file.fileName,
+          path: file.filePath,
+          contentType: file.mimeType,
+        },
+      ],
+    });
+  
+    console.log(`📧 E-mail envoyé avec succès à ${email} avec le PDF en pièce jointe.`);
+  }
+  
+
 }

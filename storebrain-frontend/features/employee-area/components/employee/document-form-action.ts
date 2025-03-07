@@ -21,3 +21,21 @@ export const saveEmployeeResponse = async (data) => {
     });
     return response;
 };
+
+export const handleGeneratePdfAndSendEmail = async (responseId: string, email: string) => {
+    try {
+        console.log(`📩 Envoi de la requête pour générer le PDF avec responseId: ${responseId}`);
+
+        const response = await fetchWithAuth(`forms/${responseId}/generate-pdf-email`, {
+            method: "POST",
+            body: JSON.stringify({ email }),
+        });
+
+        console.log("✅ Réponse du backend :", response);
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur dans handleGeneratePdfAndSendEmail:", error);
+        throw error;
+    }
+};
+

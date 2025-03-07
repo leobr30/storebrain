@@ -42,6 +42,7 @@ export class AuthService {
       tokens,
       permissions,
     };
+
   }
 
   async validateUser(dto: LoginDto) {

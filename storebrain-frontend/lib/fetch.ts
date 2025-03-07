@@ -6,6 +6,8 @@ import { auth } from "./auth";
 export const fetchWithAuth = async (url: string, options: RequestInit = {}, withFormData?: boolean) => {
     const session = await auth()
 
+    console.log("🔍 Token utilisé :", session?.tokens?.accessToken);
+
     let  headers:{Authorization: string, "Content-Type"?:string} = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session?.tokens?.accessToken}`,

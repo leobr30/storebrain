@@ -24,13 +24,15 @@ import { SavService } from './sav/sav.service';
 import { PrismaService } from './prisma/prisma.service';
 import { FormsController } from './forms/forms.controller';
 import { EmployeeResponsesController } from './forms/forms.controller';
+import { FormsModule } from './forms/forms.module';
 
 
 @Module({
   imports: [
+    FormsModule,
     OnerpModule,
     AnalyseModule,
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,

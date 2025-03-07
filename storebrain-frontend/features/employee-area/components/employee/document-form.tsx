@@ -7,12 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { getDoc } from './document-form-action';
-import { saveEmployeeResponse } from './document-form-action';
+import { getDoc, saveEmployeeResponse, handleGeneratePdfAndSendEmail } from './document-form-action';
 
 export default function DocumentForm({ onClose }: { onClose: () => void }) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const emailDestinataire = "gabriel.beduneau@diamantor.fr";
 
   const [sections, setSections] = useState<any[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -94,10 +94,16 @@ export default function DocumentForm({ onClose }: { onClose: () => void }) {
       };
 
       console.log("📢 Données envoyées :", payload);
-
-      await saveEmployeeResponse(payload);
+      const response = await saveEmployeeResponse(payload);
+      const responseId = response?.id;
 
       alert("✅ Formulaire soumis avec succès !");
+
+      if (responseId) {
+        const pdfResponse = await handleGeneratePdfAndSendEmail(responseId, emailDestinataire);
+        alert(pdfResponse.message);
+      }
+
       onClose();
     } catch (error) {
       console.error("❌ Erreur lors de la soumission :", error);

@@ -1,113 +1,115 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Timeline, TimelineConnector, TimelineContent, TimelineDot, TimelineItem, TimelineSeparator } from "@/components/ui/timeline"
-import Image from "next/image";
-import pdfi from "@/public/images/files/pdf.png";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Timeline, TimelineConnector, TimelineContent, TimelineDot, TimelineItem, TimelineSeparator } from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import pdfIcon from "@/public/images/files/pdf.png";
+import { getEmployeeHistory, downloadFormHistoryPdf } from "@/features/employee-area/components/employee/employee-history-action";
+
 type EmployeeHistoryProps = {
-    histories: EmployeeHistory[]
-}
+    userId: number;
+};
 
-const FileCard = (document: EmployeeDocument) => {
-    return (
-        <Button variant="soft" className="space-x-2.5">
-            <div>
-                <Image
-                    alt=""
-                    className="h-5 w-5"
-                    src={
-                        (document?.mimeType === "application/pdf" && pdfi) || ''
-                    }
-                />
-            </div>
-            <div>
-                {document.fileName}
-            </div>
+export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
+    const [history, setHistory] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    console.log("📢 userId reçu dans EmployeeHistory :", userId);
 
-
-        </Button>
-
-        // <div className="flex  bg-default-100  space-x-2  p-2 rounded-sm hover:cursor-pointer">
-        //     <div>
-        //         <Image
-        //             alt=""
-        //             className="h-5 w-5"
-        //             src={
-        //                 (document?.mimeType === "application/pdf" && pdfi) || ''
-        //             }
-        //         />
-        //     </div>
-        //     <div>
-        //         {document.fileName}
-        //     </div>
-        // </div>
-
-
-
-
-    )
-}
-
-export const EmployeeHistory = ({ histories }: EmployeeHistoryProps) => {
-    const router = useRouter()
-    const pathName = usePathname()
-    const searchParams = useSearchParams()
-    const handleView = (type:string,id:number) => {
-        const newSearchParams = new URLSearchParams(searchParams)
-        if(type === 'TRAINING') {
-            newSearchParams.set('trainingId', id.toString())
+    // 📌 Charger l'historique des formulaires à l'affichage
+    useEffect(() => {
+        if (!userId || isNaN(Number(userId))) {
+            console.error("❌ Erreur : userId est invalide ou manquant :", userId);
+            return;
         }
-        if(type === 'ABSENCE') {
-            newSearchParams.set('absenceId', id.toString())
+
+        const fetchHistory = async () => {
+            setLoading(true);
+            try {
+                const data = await getEmployeeHistory(userId);
+                console.log("✅ Données de l'historique reçues :", data);
+                setHistory(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("❌ Erreur lors du chargement de l'historique :", error);
+                setHistory([]);
+            }
+            setLoading(false);
+        };
+
+        fetchHistory();
+    }, [userId]);
+
+    // 📌 Télécharger un PDF depuis l'historique
+    const handleDownloadPdf = async (formId: string) => {
+        try {
+            await downloadFormHistoryPdf(formId);
+        } catch (error) {
+            console.error("❌ Erreur lors du téléchargement du PDF :", error);
         }
-        window.history.replaceState(null, '', `${pathName}?${newSearchParams.toString()}`)
-
-    }
-
+    };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Historique</CardTitle>
+                <CardTitle>📜 Historique des Formulaires</CardTitle>
             </CardHeader>
             <CardContent>
-                <Timeline >
-                    {histories.sort((a, b) =>  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((history,index) => (
-                        <TimelineItem>
-                            <TimelineSeparator>
-                                <TimelineDot color="primary" variant="outline" />
-                                {index !== histories.length -1 ? <TimelineConnector /> :  null} 
+                {loading ? (
+                    <p>🔄 Chargement...</p>
+                ) : history.length === 0 ? (
+                    <p>🚫 Aucun historique trouvé.</p>
+                ) : (
+                    <Timeline>
+                        {history.map((record, index) => (
+                            <TimelineItem key={record.id}>
+                                <TimelineSeparator>
+                                    <TimelineDot color="primary" variant="outline" />
+                                    {index !== history.length - 1 ? <TimelineConnector /> : null}
+                                </TimelineSeparator>
+                                <TimelineContent>
+                                    <div className="tm-content">
+                                        <h2 className="font-semibold text-lg text-default-600">{record.form?.title ?? "Formulaire inconnu"}</h2>
+                                        <p className="text-default-400">{new Date(record.createdAt).toLocaleDateString()}</p>
 
-                            </TimelineSeparator>
-                            <TimelineContent>
-                                <div className="tm-content">
-                                    <div className="md:flex gap-5">
-                                        <div className="grow">
-                                            <h2 className="font-semibold text-lg  text-default-600 ">
-                                                {history.title}
-                                            </h2>
-                                        </div>
-                                        <div className="text-default-400  md:min-w-[90px] md:max-w-[120px] md:text-right">
-                                            {new Date(history.createdAt).toLocaleDateString()}
-                                        </div>
+                                        {/* 🔥 Afficher correctement les réponses */}
+                                        {Array.isArray(record.responses) ? (
+                                            record.responses.map((response, idx) => (
+                                                <div key={idx} className="mt-2">
+                                                    <h3 className="font-semibold text-default-500">{response.title}</h3>
+                                                    <ul className="list-disc pl-5">
+                                                        {Array.isArray(response.items) && response.items.length > 0 ? (
+                                                            response.items.map((item, i) => (
+                                                                <li key={i} className="text-default-600">
+                                                                    ✅ {item.label} : {item.selected ? "Oui" : "Non"}
+                                                                </li>
+                                                            ))
+                                                        ) : (
+                                                            <p>⚠️ Aucune réponse disponible.</p>
+                                                        )}
+                                                    </ul>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p>⚠️ Problème avec les réponses, format inattendu.</p>
+                                        )}
+                                        <Button
+                                            variant="soft"
+                                            onClick={() => {
+                                               
+                                                    downloadFormHistoryPdf(record.formId);
+                                                
+                                            }}
+                                        >
+                                            <Image alt="PDF" className="h-5 w-5" src={pdfIcon} /> Télécharger PDF
+                                        </Button>
                                     </div>
-                                    <hr className="my-3" />
-                                    <span className="font-medium  text-default-600 ">
-                                       {history.type === 'ACTION' ? `${history.createdBy.name} ${history.text}`: <Button variant="link" onClick={() => handleView(history.type, history.idUrl)}>{history.createdBy.name} {history.text}</Button>}
-                                    </span>
-                                    <div className="mt-2.5 flex flex-row space-x-2.5 ">
-                                        {history.documents.map(document => <FileCard {...document} />)}
-                                    </div>
-                                </div>
-                            </TimelineContent>
-                        </TimelineItem>
-                    ))}
-                </Timeline>
-
+                                </TimelineContent>
+                            </TimelineItem>
+                        ))}
+                    </Timeline>
+                )}
             </CardContent>
         </Card>
-    )
-}
+    );
+};

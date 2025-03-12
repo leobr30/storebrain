@@ -6,6 +6,7 @@ model Form {
   updatedAt DateTime @updatedAt
   sections  Section[]  
   responses EmployeeResponse[]
+  histories FormHistory[]
 }
 
 model Section {
@@ -36,6 +37,19 @@ model EmployeeResponse {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 }
+
+model FormHistory {
+  id        String   @id @default(uuid())
+  userId    Int
+  formId    String
+  responses Json
+  comment   String?  // ✅ Ajout du champ comment
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
 
 
 

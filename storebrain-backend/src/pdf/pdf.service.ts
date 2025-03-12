@@ -13,7 +13,7 @@ import PdfPrinter from 'pdfmake';
 export class PdfService {
 
   constructor(private readonly prismaService: PrismaService) { }
-  
+
 
   private readonly fonts = {
     Inter: {
@@ -31,62 +31,75 @@ export class PdfService {
     return new Promise((resolve, reject) => {
       try {
         console.log("📄 [PDF Service] Début de la génération du PDF...");
-  
+
         const doc = new PDFDocument({ margin: 50 });
         const writeStream = fs.createWriteStream(filePath);
         doc.pipe(writeStream);
-        //const title = typeof responseData.title === 'object' ? responseData.title || "titre Inconnu" : responseData.title;
- 
+
         doc.font('Helvetica-Bold').fontSize(20).text("Formulaire Rempli", { align: 'center' });
-        //doc.font('Helvetica-Bold').fontSize(15).text(`Titre : ${title}`, { align: 'left'});
         doc.moveDown();
-        
-        const userName = typeof responseData.user === 'object' ? responseData.user.name || responseData.user.fullName || "Inconnu" : responseData.user;
+
+        const userName = typeof responseData.user === 'object'
+          ? responseData.user.name || responseData.user.fullName || "Inconnu"
+          : responseData.user;
+
         doc.font('Helvetica').fontSize(12).text(`Employé : ${userName}`, { align: 'left' });
         doc.text(`Date : ${new Date().toLocaleDateString()}`, { align: 'left' });
         doc.moveDown();
-  
-        
+
         doc.lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown();
-  
-        
-        if (responseData.responses) {
-          responseData.responses.forEach((section: any, index: number) => {
-            
-            doc.font('Helvetica-Bold').fontSize(14).text(`${section.title}`, { underline: true });
-            doc.moveDown(0.5);
-  
-            section.items.forEach((item: any) => {
-              const checkbox = item.selected ? "Oui  - " : "  - ";
-              doc.font('Helvetica').fontSize(12).text(`${checkbox} ${item.label}` , { continued: false });
-            });
-  
-            doc.moveDown();
-            doc.lineWidth(0.5).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-            doc.moveDown();
-          });
+
+        // 🛠 Correction : Convertir `responses` en tableau si c'est un objet
+        let responsesArray = [];
+        if (responseData.responses && typeof responseData.responses === 'object' && !Array.isArray(responseData.responses)) {
+          responsesArray = Object.keys(responseData.responses).map(key => ({
+            title: key,
+            items: [{ label: responseData.responses[key], selected: true }] // 🔥 Assumer qu'il est sélectionné
+          }));
+        } else if (Array.isArray(responseData.responses)) {
+          responsesArray = responseData.responses;
+        } else {
+          console.error("❌ Erreur: Le format des réponses est invalide.");
+          reject(new HttpException("Format des réponses non reconnu.", HttpStatus.INTERNAL_SERVER_ERROR));
+          return;
         }
-  
-        
+
+        console.log("✅ Responses après conversion :", responsesArray);
+
+        responsesArray.forEach((section: any) => {
+          doc.font('Helvetica-Bold').fontSize(14).text(`${section.title}`, { underline: true });
+          doc.moveDown(0.5);
+
+          section.items.forEach((item: any) => {
+            const checkbox = item.selected ? "Oui" : "Non";
+            doc.font('Helvetica').fontSize(12).text(`${checkbox} ${item.label}`, { continued: false });
+          });
+
+          doc.moveDown();
+          doc.lineWidth(0.5).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+          doc.moveDown();
+        });
+
         doc.end();
-  
+
         writeStream.on('finish', () => {
           console.log("✅ [PDF Service] PDF généré avec succès !");
           resolve(filePath);
         });
-  
+
         writeStream.on('error', (err) => {
           console.error("❌ [PDF Service] Erreur lors de l'écriture du fichier :", err);
           reject(new HttpException('Erreur de génération du PDF', HttpStatus.INTERNAL_SERVER_ERROR));
         });
-  
+
       } catch (error) {
         console.error("❌ [PDF Service] Erreur dans generateEmployeeCreatedPdf:", error);
         reject(new HttpException('Erreur de génération du PDF', HttpStatus.INTERNAL_SERVER_ERROR));
       }
     });
   }
+
 
   async createEmployeeCreatedPdf(dto: CreateEmployeePdfDto, filePath: string) {
     const printer = new PdfPrinter(this.fonts);

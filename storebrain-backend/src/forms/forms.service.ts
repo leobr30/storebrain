@@ -39,5 +39,70 @@ export class FormsService {
     }
   }
 
+  async saveFormToHistory(userId: number, formId: string, responses: any, comment?: string) {
+    try {
+      return await this.prisma.formHistory.create({
+        data: {
+          userId,
+          formId,
+          responses,
+          comment,
+        },
+      });
+    } catch (error) {
+      console.error("❌ Erreur dans saveFormToHistory:", error);
+      throw new HttpException('Error saving form history', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+  async getHistoryByUser(userId: number) {
+    try {
+      console.log(`📜 Récupération de l'historique pour userId : ${userId}`);
+
+      const history = await this.prisma.formHistory.findMany({
+        where: { userId },
+        include: { form: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!history || history.length === 0) {
+        console.warn(`⚠️ Aucun historique trouvé pour userId: ${userId}`);
+        return []; // ✅ Retourne un tableau vide au lieu d'une erreur
+      }
+
+      return history;
+    } catch (error) {
+      console.error("❌ Erreur dans getHistoryByUser :", error);
+      throw new HttpException('Erreur lors de la récupération de l\'historique', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getFormWithResponses(formId: string) {
+    try {
+      console.log(`📜 Récupération des données pour le formulaire ${formId}`);
   
+      // 🔍 Rechercher le formulaire avec ses réponses
+      const formWithResponses = await this.prisma.formHistory.findFirst({
+        where: { formId },
+        include: { form: true },
+      });
+  
+      if (!formWithResponses) {
+        console.warn(`⚠️ Aucun formulaire trouvé pour l'ID ${formId}`);
+        return null;
+      }
+  
+      console.log("✅ Données du formulaire récupérées :", formWithResponses);
+      return formWithResponses;
+    } catch (error) {
+      console.error("❌ Erreur dans getFormWithResponses :", error);
+      throw new HttpException("Erreur lors de la récupération du formulaire", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+
+
+
+
 }

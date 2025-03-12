@@ -33,6 +33,7 @@ model User {
   closingDayComments ClosingDayComment[]
 
   employeeResponses EmployeeResponse[]
+  formHistories FormHistory[]
 }
 
 

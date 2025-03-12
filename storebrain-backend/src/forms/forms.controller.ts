@@ -10,8 +10,9 @@ import {
   NotFoundException,
   HttpException,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 import { FormsService } from './forms.service';
 import { PdfService } from '../pdf/pdf.service';
 import { MailService } from '../mail/mail.service';
@@ -44,6 +45,63 @@ export class FormsController {
     private readonly mailService: MailService,
     private readonly prisma: PrismaService,
   ) { }
+
+
+  @Get(':formId/download-pdf')
+  async downloadPdf(@Param('formId') formId: string, @Res() res: Response) {
+    try {
+      console.log(`📥 Téléchargement du PDF pour formId: ${formId}`);
+
+      // 🔍 Récupérer les données du formulaire
+      const formData = await this.formsService.getFormWithResponses(formId);
+      if (!formData) {
+        throw new NotFoundException("Formulaire non trouvé.");
+      }
+
+      // 📄 Générer le PDF
+      const pdfBuffer = await this.pdfService.generateEmployeeCreatedPdf(formData, `form_${formId}.pdf`);
+      if (!pdfBuffer || pdfBuffer.length === 0) {
+        throw new InternalServerErrorException("Erreur lors de la génération du PDF.");
+      }
+
+      // ✅ Envoie du fichier PDF
+      res.set({
+        'Content-Disposition': `attachment; filename="form_${formId}.pdf"`,
+        'Content-Type': 'application/pdf',
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("❌ Erreur dans downloadPdf:", error);
+      throw new HttpException(error.message || 'Erreur interne', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+
+  @Get('history/:userId')
+  async getHistoryByUser(@Param('userId') userId: string) {
+    const numericUserId = Number(userId);
+
+    if (isNaN(numericUserId)) {
+      console.error("❌ Erreur: userId invalide dans la requête :", userId);
+      throw new BadRequestException('userId doit être un nombre valide.');
+    }
+
+    const history = await this.formsService.getHistoryByUser(numericUserId);
+    return history;
+  }
+
+  @Post('history')
+  async saveFormToHistory(
+    @Body() { userId, formId, responses, comment }: { userId: number; formId: string; responses: any; comment?: string },
+  ) {
+    try {
+      return this.formsService.saveFormToHistory(userId, formId, responses, comment);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @Get(':responseId')
   async getResponseById(@Param('responseId') responseId: string) {
@@ -79,7 +137,7 @@ export class FormsController {
     }
   }
 
- 
+
   @Post(':responseId/generate-pdf-email')
   async generatePdfAndSendEmail(@Param('responseId') responseId: string) {
     try {

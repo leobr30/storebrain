@@ -12,14 +12,14 @@ type EmployeeTabsProps = {
   employee: Employee
 }
 
-export const EmployeeTabs = ({employee}:EmployeeTabsProps) => {
+export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
   const [tab, setTab] = useState('history')
   const searchParams = useSearchParams()
   const searchTab = searchParams.get('tab')
   useEffect(() => {
-      if(searchTab) {
-        setTab(searchTab)
-      }
+    if (searchTab) {
+      setTab(searchTab)
+    }
   }, [searchParams])
   return (
     <Tabs value={tab} onValueChange={setTab} defaultValue="history">
@@ -27,14 +27,14 @@ export const EmployeeTabs = ({employee}:EmployeeTabsProps) => {
         <TabsTrigger value="history" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
            before:left-1/2 before:-bottom-[11px] before:h-[2px]
              before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Historique</TabsTrigger>
-        
+
         <TabsTrigger disabled={employee.status === 'PENDING' || employee.status === 'PENDING_ONBOARDING'} value="onboarding" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
            before:left-1/2 before:-bottom-[11px] before:h-[2px]
-             before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Integration <Badge color="destructive" variant="soft">{employee.jobOnboardings.length > 0 ? Math.round(employee.jobOnboardings.filter(jobOnboarding => jobOnboarding.status === 'COMPLETED').length * 100 / employee.jobOnboardings.length ) : 0}%</Badge></TabsTrigger>
+             before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Integration <Badge color="destructive" variant="soft">{employee.jobOnboardings.length > 0 ? Math.round(employee.jobOnboardings.filter(jobOnboarding => jobOnboarding.status === 'COMPLETED').length * 100 / employee.jobOnboardings.length) : 0}%</Badge></TabsTrigger>
         <TabsTrigger value="training" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
            before:left-1/2 before:-bottom-[11px] before:h-[2px]
              before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Formations</TabsTrigger>
-             <TabsTrigger value="absence" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
+        <TabsTrigger value="absence" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
            before:left-1/2 before:-bottom-[11px] before:h-[2px]
              before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Absences / Vacances</TabsTrigger>
         <TabsTrigger value="document" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
@@ -43,10 +43,14 @@ export const EmployeeTabs = ({employee}:EmployeeTabsProps) => {
       </TabsList>
 
       <TabsContent value="history" className="mt-2.5">
-        <EmployeeHistory histories={employee.histories}/>
+        {employee?.id ? (
+          <EmployeeHistory userId={employee.id} />
+        ) : (
+          <p>⚠️ Impossible de charger l'historique (Utilisateur inconnu)</p>
+        )}
       </TabsContent>
       <TabsContent value="onboarding" className="mt-2.5">
-        <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id}/>
+        <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id} />
       </TabsContent>
       <TabsContent value="absence" className="mt-2.5">
         <EmployeeAbsence employeeId={employee.id} absences={employee.absences} />

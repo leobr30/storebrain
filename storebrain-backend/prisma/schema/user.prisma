@@ -27,6 +27,7 @@ model User {
   realizedTrainings Training[] @relation("RealizedTrainings")
   absences UserAbsence[]
   createdAbsences UserAbsence[] @relation("CreatedAbsences")
+  vacations UserAbsence[] @relation("UserVacations")
   omars Omar[] @relation("UserOmars")
   createdOmars Omar[] @relation("UserCreatedOmars")
   mondayAppointmentDetails MondayAppointmentDetail[]
@@ -121,10 +122,15 @@ model UserAbsence {
   userId Int
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)  
   createdById Int
-  createdBy User @relation("CreatedAbsences",fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy User @relation("CreatedAbsences", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   status Status @default(IN_PROGRESS)
+
+  vacationUserId Int?
+  vacationUser User? @relation(name: "UserVacations", fields: [vacationUserId], references: [id])
 }
+
+
 
 enum UserAbsenceType {
   UNJUSTIFIED_ABSENCE
@@ -134,6 +140,7 @@ enum UserAbsenceType {
   DEATH
   TRANSPORT_ACCIDENT
   ACCIDENT_AT_WORK
+  VACATION
 }
 
 enum HistoryType {

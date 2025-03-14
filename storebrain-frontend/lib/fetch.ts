@@ -25,38 +25,31 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
             headers: headers,
         });
 
-        console.log("🔍 Réponse brute reçue :", res);
+        console.log("🔍 Réponse reçue :", res.status, res.statusText);
 
-        // ✅ Vérifie si c'est un téléchargement de fichier (PDF, etc.)
-        if (url.includes("download-pdf")) {
-            return res; // 🔥 Retourne la réponse brute pour éviter le parsing JSON
-        }
-
-        // ✅ Vérification de la réponse HTTP
+        
         if (!res.ok) {
             console.error(`❌ Erreur API (HTTP ${res.status}): ${res.statusText}`);
             throw new Error(`HTTP error! Status: ${res.status} - ${res.statusText}`);
         }
 
-        // ✅ Vérification et parsing JSON sécurisé
+        
+        if (res.status === 204) {
+            return null;
+        }
+
+        
         const text = await res.text();
         if (text.length > 0) {
             try {
-                const jsonData = JSON.parse(text);
-                console.log("✅ Données API analysées avec succès :", JSON.stringify(jsonData, null, 2));
-
-                return Array.isArray(jsonData)
-                    ? jsonData.map(item => ({
-                        ...item,
-                        responses: typeof item.responses === "string" ? JSON.parse(item.responses) : item.responses
-                    }))
-                    : jsonData;
+                return JSON.parse(text);
             } catch (error) {
                 console.error("❌ Erreur de parsing JSON :", error);
-                return [];
+                throw new Error("Réponse API non valide (impossible de parser en JSON).");
             }
         }
-        return [];
+        
+        return null;
     } catch (error) {
         console.error("❌ Erreur dans fetchWithAuth :", error);
         throw error;

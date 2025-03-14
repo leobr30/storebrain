@@ -17,7 +17,7 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
     const [loading, setLoading] = useState(false);
     console.log("📢 userId reçu dans EmployeeHistory :", userId);
 
-    // 📌 Charger l'historique des formulaires à l'affichage
+    
     useEffect(() => {
         if (!userId || isNaN(Number(userId))) {
             console.error("❌ Erreur : userId est invalide ou manquant :", userId);
@@ -52,7 +52,7 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>📜 Historique des Formulaires</CardTitle>
+                <CardTitle>Historique des Formulaires</CardTitle>
             </CardHeader>
             <CardContent>
                 {loading ? (
@@ -93,16 +93,7 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
                                         ) : (
                                             <p>⚠️ Problème avec les réponses, format inattendu.</p>
                                         )}
-                                        <Button
-                                            variant="soft"
-                                            onClick={() => {
-                                               
-                                                    downloadFormHistoryPdf(record.formId);
-                                                
-                                            }}
-                                        >
-                                            <Image alt="PDF" className="h-5 w-5" src={pdfIcon} /> Télécharger PDF
-                                        </Button>
+
                                     </div>
                                 </TimelineContent>
                             </TimelineItem>

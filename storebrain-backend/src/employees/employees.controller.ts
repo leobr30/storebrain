@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -35,10 +36,13 @@ import { UpdateAbsenceDto } from './dto/create-absence.dto';
 import { CreateAppointmentDto } from './dto/create-monday-appointment.dto';
 import { OmarDto } from './dto/save-omar.dto';
 import { ValidateOmarDto } from './dto/validate-omar.dto';
+import { User } from '@prisma/client'; // ✅ Ajoute cet import
+
 
 @Controller('employees')
 export class EmployeesController {
-  constructor(private employeesService: EmployeesService) {}
+  constructor(private employeesService: EmployeesService) { }
+
 
   @Get()
   @UseGuards(PoliciesGuard)
@@ -96,8 +100,8 @@ export class EmployeesController {
     @Param('id') userId: number,
     @Body() dto: LoginDto,
   ) {
-    const checkedCredentials =await this.employeesService.checkCredentials(userId, dto);
-    if(checkedCredentials){
+    const checkedCredentials = await this.employeesService.checkCredentials(userId, dto);
+    if (checkedCredentials) {
       return HttpStatus.OK;
     }
     return HttpStatus.UNAUTHORIZED;
@@ -131,7 +135,7 @@ export class EmployeesController {
     );
   }
 
-  
+
 
   // @UseInterceptors(FileInterceptor('file', {
   //   storage: diskStorage({
@@ -141,7 +145,7 @@ export class EmployeesController {
   //     },
   //   }),
   // }))
-  
+
   // @Post(':id/absences')
   // async createAbsence(
   //   @Param('id') userId: number,
@@ -151,13 +155,13 @@ export class EmployeesController {
   // ) {
   //   return await this.employeesService.createAbsence(userId,currentUser, dto, file);
   // }
-  
+
   @Post(':id/absences')
   async createAbsence(
     @Param('id') userId: number,
-    @CurrentUser() currentUser: CurrentUserType,    
+    @CurrentUser() currentUser: CurrentUserType,
   ) {
-    return await this.employeesService.createAbsence(userId,currentUser);
+    return await this.employeesService.createAbsence(userId, currentUser);
   }
 
   @UseInterceptors(FileInterceptor('file', {
@@ -168,8 +172,8 @@ export class EmployeesController {
       },
     }),
   }))
-  @Put('absences/:absenceId')  
-  async updateAbsence(  
+  @Put('absences/:absenceId')
+  async updateAbsence(
     @Param('absenceId') absenceId: number,
     @Body() dto: UpdateAbsenceDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -178,8 +182,8 @@ export class EmployeesController {
   }
 
   @Post('appointments')
-  @UseGuards(PoliciesGuard)  
-  async createAppointment(    
+  @UseGuards(PoliciesGuard)
+  async createAppointment(
     @Body() dto: CreateAppointmentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ) {
@@ -189,7 +193,7 @@ export class EmployeesController {
 
   @Get('appointments/:id')
   @UseGuards(PoliciesGuard)
-  
+
   async getAppointment(@Param('id') id: number) {
     return await this.employeesService.getAppointment(id);
   }
@@ -202,13 +206,13 @@ export class EmployeesController {
 
   @Post(':id/omar')
   @UseGuards(PoliciesGuard)
-  
+
   async createOmar(
     @Param('id') userId: number,
     @CurrentUser() currentUser: CurrentUserType,
-    @Query('appointmentDetailId') appointmentDetailId?: number,    
+    @Query('appointmentDetailId') appointmentDetailId?: number,
   ) {
-    const omar = await this.employeesService.createOmar({      
+    const omar = await this.employeesService.createOmar({
       createdById: currentUser.sub,
       userId,
       appointmentDetailId
@@ -217,7 +221,7 @@ export class EmployeesController {
   }
 
   @Put('omar/:id/save')
-  @UseGuards(PoliciesGuard)  
+  @UseGuards(PoliciesGuard)
   async saveOmar(
     @Param('id') id: number,
     @Body() dto: OmarDto,
@@ -226,13 +230,13 @@ export class EmployeesController {
   }
 
   @Get('omar/:id')
-  @UseGuards(PoliciesGuard)  
+  @UseGuards(PoliciesGuard)
   async getOmar(@Param('id') id: number) {
     return await this.employeesService.getOmar(id);
   }
 
   @Put('omar/:id/validate')
-  @UseGuards(PoliciesGuard)  
+  @UseGuards(PoliciesGuard)
   async validateOmar(@Param('id') id: number, @Body() dto: ValidateOmarDto, @CurrentUser() currentUser: CurrentUserType) {
     return await this.employeesService.validateOmar(id, dto, currentUser);
   }
@@ -246,10 +250,44 @@ export class EmployeesController {
     return await this.employeesService.signMondayAppointmentDetail(id, currentUser);
   }
 
-  @Get('absences/:absenceId')  
-  async getAbsence(    
+  @Get('absences/:absenceId')
+  async getAbsence(
     @Param('absenceId') absenceId: number
   ) {
     return await this.employeesService.getAbsence(absenceId);
   }
+
+  @Put(':id')
+  async updateEmployee(
+    @Param('id') id: string,
+    @Body() updateData: Partial<User>,
+  ) {
+    const numericId = Number(id);
+    if (isNaN(numericId)) throw new BadRequestException("ID invalide");
+
+    return await this.employeesService.updateEmployee(numericId, updateData);
+  }
+
+  @Post(':id/vacations')
+  async createVacation(@Param('id') id: number, @Body() vacationData: { startAt: string, endAt: string }) {
+    return await this.employeesService.createVacation(id, vacationData);
+  }
+
+  @Get(':id/vacations')
+  async getEmployeeVacations(@Param('id') employeeId: number) {
+    return await this.employeesService.getEmployeeVacations(employeeId);
+  }
+
+  @Put(':id/vacations/:vacationId')
+  async updateVacation(
+    @Param('id') employeeId: number,
+    @Param('vacationId') vacationId: number,
+    @Body() vacationData: { startAt: Date; endAt: Date },
+    @CurrentUser() currentUser: CurrentUserType
+  ) {
+    return this.employeesService.updateVacation(employeeId, vacationId, vacationData, currentUser);
+  }
+
+
+
 }

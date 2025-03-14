@@ -39,7 +39,7 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
         meta: {
             updateData: updateData
         },
-        
+
         onColumnFiltersChange: setColumnFilters,
         onSortingChange: setSorting,
     })
@@ -98,7 +98,7 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {data && data.length > 0 && table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}

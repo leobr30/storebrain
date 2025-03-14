@@ -26,11 +26,12 @@ import { SaveTrainingDto } from './dto/save-training.dto';
 import { LoginDto } from 'src/auth/dto/auth.dto';
 import { UpdateAbsenceDto } from './dto/create-absence.dto';
 import { CreateAppointmentDto } from './dto/create-monday-appointment.dto';
-import { OnedocService } from 'src/onedoc/onedoc.service'; 
+import { OnedocService } from 'src/onedoc/onedoc.service';
 import { OnerpService } from 'src/onerp/onerp.service';
 import { OmarDto } from './dto/save-omar.dto';
 import { ValidateOmarDto } from './dto/validate-omar.dto';
 import { AbsenceUpdatedEvent } from './events/absence-updated.event';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class EmployeesService {
@@ -38,11 +39,11 @@ export class EmployeesService {
     private prisma: PrismaService,
     private jobsService: JobsService,
     private companiesService: CompaniesService,
-    private eventEmitter: EventEmitter2,    
+    private eventEmitter: EventEmitter2,
     private integrationsService: IntegrationsService,
     private onedocService: OnedocService,
     private onerpService: OnerpService,
-  ) {}
+  ) { }
 
   async getEmployees(companyId?: number) {
     return this.prisma.user.findMany({
@@ -71,10 +72,10 @@ export class EmployeesService {
       where: {
         companies: companyId
           ? {
-              some: {
-                companyId: companyId,
-              },
-            }
+            some: {
+              companyId: companyId,
+            },
+          }
           : undefined,
       },
     });
@@ -231,6 +232,23 @@ export class EmployeesService {
           },
         },
         absences: {
+          where: { type: { not: UserAbsenceType.VACATION } },
+          select: {
+            id: true,
+            startAt: true,
+            endAt: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            createdBy: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        vacations: {
+          where: { type: UserAbsenceType.VACATION },
           select: {
             id: true,
             startAt: true,
@@ -248,6 +266,7 @@ export class EmployeesService {
       },
     });
   }
+
 
   async activateEmployee(
     id: number,
@@ -340,7 +359,7 @@ export class EmployeesService {
       userId: number;
     }[] = [];
     integration!.jobOnboardingSteps.map((step) => {
-      if(step.type === 'TRAINING' && step.trainingModel) {
+      if (step.type === 'TRAINING' && step.trainingModel) {
         for (let i = 1; i <= step.trainingModel!.numberOAppointmentsRequired; i++) {
           data.push({
             date: addDays(new Date(), step.day + i * 2),
@@ -350,9 +369,9 @@ export class EmployeesService {
             userId: user.id,
           });
         }
-      } else if (step.type === 'RESULT_REVIEW' ) {
+      } else if (step.type === 'RESULT_REVIEW') {
         data.push({
-          date: add(new Date(),{days: step.day,months: step.month}),
+          date: add(new Date(), { days: step.day, months: step.month }),
           appointmentNumber: 0,
           jobOnboardingStepId: step.id,
           status: Status.PENDING,
@@ -360,14 +379,14 @@ export class EmployeesService {
         });
       } else if (step.type === 'DOCUMENT') {
         data.push({
-          date: add(new Date(),{days: step.day,months: step.month}),
+          date: add(new Date(), { days: step.day, months: step.month }),
           appointmentNumber: 0,
           jobOnboardingStepId: step.id,
           status: Status.PENDING,
           userId: user.id,
         });
       }
-      
+
     });
     await this.prisma.userJobOnboarding.createMany({
       data: data,
@@ -445,7 +464,7 @@ export class EmployeesService {
     return training;
   }
 
-  
+
 
   async checkCredentials(userId: number, dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -464,25 +483,26 @@ export class EmployeesService {
         id: userId,
       },
     });
-      if (!user) throw new UserNotFoundException();
+    if (!user) throw new UserNotFoundException();
     const absence = await this.prisma.userAbsence.create({
       data: {
-        startAt: new Date(), 
+        startAt: new Date(),
         type: UserAbsenceType.UNJUSTIFIED_ABSENCE,
         userId: userId,
         createdById: currentUser.sub,
-        createdAt: new Date(),        
+        createdAt: new Date(),
         endAt: null,
         status: Status.DRAFT,
       },
-    });    
+    });
     return absence;
-  }     
+  }
+
 
   async updateAbsence(absenceId: number, dto: UpdateAbsenceDto, currentUser: CurrentUserType) {
     const absence = await this.prisma.userAbsence.findUnique({
       where: {
-        id: absenceId,        
+        id: absenceId,
       },
     });
 
@@ -536,19 +556,19 @@ export class EmployeesService {
   }
 
   async createAppointment(dto: CreateAppointmentDto, currentUser: CurrentUserType) {
-    
+
 
 
     const company = await this.companiesService.getCompanyById(dto.companyId);
     if (!company) throw new CompanyNotFoundException();
 
-    const objective = await this.onedocService.getObjective(format(startOfMonth(dto.date), 'yyyy-MM-dd') , company.number)
-    if(objective.length === 0) throw new NotFoundException("Objective not found");
+    const objective = await this.onedocService.getObjective(format(startOfMonth(dto.date), 'yyyy-MM-dd'), company.number)
+    if (objective.length === 0) throw new NotFoundException("Objective not found");
     console.log(objective[0].objective)
     let realizedRevenue = 0
     const realizedRevenueResult = await this.onerpService.readRealizedRevenue(format(startOfMonth(dto.date), 'yyyy-MM-dd'), format(dto.date, 'yyyy-MM-dd'), company.number);
-    if(realizedRevenueResult.length > 0) realizedRevenue = parseFloat(realizedRevenueResult[0].revenue.toString()) 
-    
+    if (realizedRevenueResult.length > 0) realizedRevenue = parseFloat(realizedRevenueResult[0].revenue.toString())
+
 
     const remainingDays = this.calculateRemainingDays(new Date());
 
@@ -567,13 +587,13 @@ export class EmployeesService {
     realizedRevenueOr += (realizedRevenueFourniture + realizedRevenueService) / 2
     realizedRevenueMode += (realizedRevenueFourniture + realizedRevenueService) / 2
     const primeDetails = await this.onedocService.getPrimeDetails(objective[0].id)
-    const appointmentDetails = await Promise.all(primeDetails.map(async (pd,index) => {
+    const appointmentDetails = await Promise.all(primeDetails.map(async (pd, index) => {
       const user = await this.getUserByOnerpId(pd.onerpId)
       let realizedRevenue = 0
-      if(revenueDetail.find(rd => rd.onerpId === pd.onerpId)) {
+      if (revenueDetail.find(rd => rd.onerpId === pd.onerpId)) {
         realizedRevenue = revenueDetail.find(rd => rd.onerpId === pd.onerpId)!.revenue
       }
-      
+
       return {
         index,
         onerpId: pd.onerpId,
@@ -586,7 +606,7 @@ export class EmployeesService {
     }))
     const appointment = await this.prisma.mondayAppointment.create({
       data: {
-        date: dto.date,          
+        date: dto.date,
         companyId: dto.companyId,
         objective: objective[0].objective,
         objectiveOr: objective[0].objectiveOr,
@@ -600,15 +620,15 @@ export class EmployeesService {
         remainingDays,
         details: {
           createMany: {
-            data: appointmentDetails.sort((a,b) => a.index - b.index).map(ad => {
+            data: appointmentDetails.sort((a, b) => a.index - b.index).map(ad => {
               return {
                 onerpId: ad.onerpId,
                 fullname: ad.fullname,
                 zone: ad.zone,
                 objective: ad.objective,
-                realizedRevenue:ad.realizedRevenue,
+                realizedRevenue: ad.realizedRevenue,
                 remainingRevenue: ad.objective - ad.realizedRevenue,
-                remainingDays: remainingDays,              
+                remainingDays: remainingDays,
                 userId: ad.userId
               }
             })
@@ -617,7 +637,7 @@ export class EmployeesService {
       },
     });
 
-    
+
     await this.prisma.userHistory.create({
       data: {
         title: 'Rendez-vous du lundi',
@@ -639,7 +659,7 @@ export class EmployeesService {
         details: {
           include: {
             omar: {
-              select:{
+              select: {
                 id: true,
                 status: true,
               }
@@ -679,7 +699,7 @@ export class EmployeesService {
     return remainingDays;
   }
 
-  async createOmar(data: {    
+  async createOmar(data: {
     createdById: number;
     userId: number;
     appointmentDetailId?: number;
@@ -691,14 +711,14 @@ export class EmployeesService {
         action: '',
         result: '',
         observation: '',
-        status: 'DRAFT',            
-        dueDate: addDays(startOfDay(new Date()) ,5),
+        status: 'DRAFT',
+        dueDate: addDays(startOfDay(new Date()), 5),
         createdBy: { connect: { id: data.createdById } },
-        user: { connect: { id: data.userId } },        
+        user: { connect: { id: data.userId } },
       },
     });
 
-    if(data.appointmentDetailId) {
+    if (data.appointmentDetailId) {
       await this.prisma.mondayAppointmentDetail.update({
         where: { id: data.appointmentDetailId },
         data: {
@@ -739,7 +759,7 @@ export class EmployeesService {
   }
 
   async validateOmar(id: number, dto: ValidateOmarDto, currentUser: CurrentUserType) {
-    const omar =  await this.prisma.omar.update({
+    const omar = await this.prisma.omar.update({
       where: { id },
       data: {
         status: 'IN_PROGRESS',
@@ -747,8 +767,8 @@ export class EmployeesService {
         observation: dto.observation,
         objective: dto.objective,
         tool: dto.tool,
-        action: dto.action,        
-        dueDate: dto.dueDate,   
+        action: dto.action,
+        dueDate: dto.dueDate,
         nextAppointment: dto.nextAppointment,
       },
     });
@@ -796,20 +816,20 @@ export class EmployeesService {
 
   async getAbsence(absenceId: number) {
     const absence = await this.prisma.userAbsence.findUnique({
-        where: {
-            id: absenceId,            
-        },
-        include: {
-            user: {
-                select: {
-                    name: true
-                }
-            }
+      where: {
+        id: absenceId,
+      },
+      include: {
+        user: {
+          select: {
+            name: true
+          }
         }
+      }
     });
 
     if (!absence) {
-        throw new NotFoundException('Absence not found');
+      throw new NotFoundException('Absence not found');
     }
 
     return absence;
@@ -836,4 +856,104 @@ export class EmployeesService {
       },
     });
   }
+
+  async updateEmployee(id: number, updateData: Partial<User>) {
+    console.log("🔍 Données reçues avant transformation :", updateData);
+
+    const dataToUpdate: any = {
+      firstName: updateData.firstName,
+      lastName: updateData.lastName,
+      entryDate: updateData.entryDate ? new Date(updateData.entryDate) : undefined,
+      badgeNumber: updateData.badgeNumber,
+      zone: updateData.zone,
+    };
+
+    // 🔍 Trouver l'ID du job en base
+    if ((updateData as any).job && typeof (updateData as any).job === "string") {
+      const job = await this.prisma.job.findFirst({ where: { name: (updateData as any).job } });
+      if (job) {
+        dataToUpdate.jobId = job.id;
+      } else {
+        console.warn(`⚠️ Job "${(updateData as any).job}" non trouvé.`);
+      }
+    }
+
+    // 🔍 Trouver l'ID du contrat en base
+    if ((updateData as any).contract && typeof (updateData as any).contract === "string") {
+      const contract = await this.prisma.jobContract.findFirst({ where: { type: (updateData as any).contract } });
+      if (contract) {
+        dataToUpdate.contractId = contract.id;
+      } else {
+        console.warn(`⚠️ Contrat "${(updateData as any).contract}" non trouvé.`);
+      }
+    }
+
+    console.log("🛠️ Données transformées envoyées à Prisma :", dataToUpdate);
+
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+    } catch (error) {
+      console.error("❌ Erreur lors de la mise à jour de l'employé :", error);
+      throw new Error("Échec de la mise à jour de l'utilisateur.");
+    }
+  }
+
+
+
+  async createVacation(userId: number, vacationData: { startAt: string; endAt: string }) {
+    return this.prisma.userAbsence.create({
+      data: {
+        userId,
+        startAt: new Date(vacationData.startAt),
+        endAt: new Date(vacationData.endAt),
+        type: UserAbsenceType.VACATION,
+        status: Status.IN_PROGRESS,
+        createdById: userId,
+        createdAt: new Date(),
+        vacationUserId: userId,
+      },
+    });
+  }
+
+  async updateVacation(
+    employeeId: number,
+    vacationId: number,
+    vacationData: { startAt: Date; endAt: Date },
+    currentUser: CurrentUserType
+) {
+
+    const employee = await this.prisma.user.findUnique({
+      where: { id: employeeId },
+    });
+
+    if (!employee) throw new NotFoundException(`Employé avec l'ID ${employeeId} introuvable`);
+
+    const vacation = await this.prisma.userAbsence.findUnique({
+      where: { id: vacationId, userId: employeeId, type: UserAbsenceType.VACATION },
+    });
+
+    if (!vacation) throw new NotFoundException(`Vacances avec l'ID ${vacationId} introuvables`);
+
+    return await this.prisma.userAbsence.update({
+      where: { id: vacationId },
+      data: {
+        startAt: new Date(vacationData.startAt),
+        endAt: new Date(vacationData.endAt),
+      },
+    });
+}
+
+
+
+
+  async getEmployeeVacations(employeeId: number) {
+    return this.prisma.userAbsence.findMany({
+      where: { userId: employeeId, type: UserAbsenceType.VACATION },
+      include: { createdBy: { select: { name: true } } },
+    });
+  }
+
 }

@@ -38,15 +38,21 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     const handleRefreshSteps = async () => {
         try {
             const updatedSteps = await refreshSteps(id);
-            setLocalSteps(updatedSteps);
+            console.log("🚀 Données reçues de refreshSteps :", updatedSteps); // ✅ Ajout de log
+            if (updatedSteps && Array.isArray(updatedSteps)) {
+                setLocalSteps(updatedSteps);
+            } else {
+                console.error("Données reçues invalides :", updatedSteps);
+            }
         } catch (error) {
-            console.error("Error fetching updated steps:", error);
+            console.error("❌ Error fetching updated steps:", error);
         }
     };
 
+
     useEffect(() => {
         handleRefreshSteps();
-    }, [steps]);
+    }, []);
 
     const handleTrainingUpdated = () => {
         handleRefreshSteps();
@@ -82,17 +88,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                         <TableBody>
                             {localSteps
                                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                .filter((step) =>
-                                    step.jobOnboardingStep.type === "TRAINING"
-                                        ? step.appointmentNumber === 1 ||
-                                        localSteps.find(
-                                            (w) =>
-                                                w.jobOnboardingStep.trainingModel?.id === step.jobOnboardingStep.trainingModel?.id &&
-                                                w.status === "COMPLETED" &&
-                                                w.appointmentNumber < step.appointmentNumber
-                                        )
-                                        : true
-                                )
+                                .filter((step) => step?.jobOnboardingStep)
                                 .map((step, stepIndex) => (
                                     <TableRow key={step.id}>
                                         <TableCell>{new Date(step.date).toLocaleDateString()}</TableCell>
@@ -156,6 +152,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                     <DocumentForm
                                                         setOpen={setOpen}
                                                         open={open}
+                                                        status={step.status}
                                                         onSubmitSuccess={(updatedStep) => {
                                                             if (updatedStep) {
                                                                 updateStep(updatedStep);
@@ -164,6 +161,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                         }}
                                                         employeeId={id}
                                                         stepId={step.id}
+                                                        responseId={step.responseId}
+
                                                     />
                                                 </TableCell>
                                                 <TableCell>

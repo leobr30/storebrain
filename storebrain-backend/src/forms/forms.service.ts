@@ -2,6 +2,9 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from '../pdf/pdf.service';
 import { MailService } from '../mail/mail.service';
+import { EmployeesService } from 'src/employees/employees.service'; // ✅ Import du service EmployeesService
+import { ValidateOmarDto } from 'src/employees/dto/validate-omar.dto'; // ✅ Import du type ValidateOmarDto
+import { CurrentUserType } from 'src/auth/dto/current-user.dto';
 
 @Injectable()
 export class FormsService {
@@ -9,6 +12,7 @@ export class FormsService {
     private readonly prisma: PrismaService,
     private readonly pdfService: PdfService,
     private readonly mailService: MailService,
+    private readonly employeesService: EmployeesService,
   ) { }
 
   async getResponseById(responseId: string) {
@@ -16,7 +20,15 @@ export class FormsService {
       const response = await this.prisma.employeeResponse.findUnique({
         where: { id: responseId },
         include: {
-          form: true,
+          form: {
+            include: {
+              sections: {
+                include: {
+                  items: true
+                }
+              }
+            }
+          },
           user: true,
         },
       });
@@ -81,18 +93,18 @@ export class FormsService {
   async getFormWithResponses(formId: string) {
     try {
       console.log(`📜 Récupération des données pour le formulaire ${formId}`);
-  
+
       // 🔍 Rechercher le formulaire avec ses réponses
       const formWithResponses = await this.prisma.formHistory.findFirst({
         where: { formId },
         include: { form: true },
       });
-  
+
       if (!formWithResponses) {
         console.warn(`⚠️ Aucun formulaire trouvé pour l'ID ${formId}`);
         return null;
       }
-  
+
       console.log("✅ Données du formulaire récupérées :", formWithResponses);
       return formWithResponses;
     } catch (error) {
@@ -100,7 +112,11 @@ export class FormsService {
       throw new HttpException("Erreur lors de la récupération du formulaire", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-  
+
+  async validateOmar(id: number, dto: ValidateOmarDto, currentUser: CurrentUserType) { // ✅ Utilisation du type ValidateOmarDto et du type CurrentUserType
+    return await this.employeesService.validateOmar(id, dto, currentUser); // ✅ Utilisation de la propriété employeesService
+  }
+
 
 
 

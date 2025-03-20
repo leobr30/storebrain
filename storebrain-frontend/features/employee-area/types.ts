@@ -3,8 +3,8 @@ export type Employee = {
     name: string;
     zone: string;
     status: Status
-    job:{name:string}
-    contract:{type:string, workingHoursPerWeek: string}  
+    job: { name: string }
+    contract: { type: string, workingHoursPerWeek: string }
     entryDate: Date
     badge: string
     histories: EmployeeHistory[]
@@ -13,12 +13,12 @@ export type Employee = {
 }
 
 type EmployeeHistory = {
-    id:number;
+    id: number;
     title: string;
     text: string;
     createdAt: Date,
-    createdBy:{name:string,id:number}
-    documents:EmployeeDocument[]
+    createdBy: { name: string, id: number }
+    documents: EmployeeDocument[]
 }
 
 type EmployeeDocument = {
@@ -28,32 +28,50 @@ type EmployeeDocument = {
     mimeType: "application/pdf"
 }
 
-type EmployeeJobOnboarding = {
-    id:number;
-    date: Date,
-    status: Status,
-    appointmentNumber: number,
-    jobOnboardingStep: JobOnboardingStep,
-    training: Training | null
+export interface EmployeeJobOnboarding {
+    id: number;
+    date: Date;
+    status: Status;
+    appointmentNumber: number;
+    jobOnboardingStep: {
+        id: number;
+        type: string;
+        trainingModel?: {
+            id: number;
+            name: string;
+            numberOAppointmentsRequired: number;
+            tool: string;
+            subjects: {
+                id: number;
+                name: string;
+            }[];
+        };
+        jobOnboardingResultReview?: {
+            id: number;
+            name: string;
+        };
+        jobOnboardingDocuments: {
+            id: number;
+            name: string;
+        }[];
+    };
+    training?: {
+        id: number;
+        status: Status;
+        subjects: {
+            id: number;
+            state: string;
+        }[];
+    };
+    responseId?: string;
 }
 
 
-type JobOnboardingStep = {
-    id:number;
-    name:string;
-    trainingModel?: {
-        id: number;
-        name: string;
-        numberOAppointmentsRequired: number;
-    };
-    jobOnboardingResultReview?: {
-        id: number;
-        name: string;
-    };
-    type: 'TRAINING' | 'RESULT_REVIEW';
-}
 
-export interface Training  {
+    
+
+
+export interface Training {
     id: number
     name: string;
     subjects: TrainingSubject[],
@@ -71,7 +89,7 @@ export type TrainingSubject = {
     trainingId: number;
     name: string;
     state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS",
-    files:TrainingSubjectFile[]
+    files: TrainingSubjectFile[]
 }
 
 export interface TrainingSubjectFile {

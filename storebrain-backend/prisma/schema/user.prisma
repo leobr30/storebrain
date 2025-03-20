@@ -104,6 +104,7 @@ model UserJobOnboarding {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   status Status    
   training Training?
+  responseId String?
 }
 
 model UserAbsence {

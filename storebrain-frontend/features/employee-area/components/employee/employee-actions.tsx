@@ -4,7 +4,8 @@ import { EmployeeActivateDialog } from "./employee-activate-dialog";
 import { startEmployeeJobOnboarding, refreshSteps } from "../../actions";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
-
+import { Status } from "@prisma/client";
+import { EmployeeJobOnboarding } from "../types";
 type EmployeeActionsProps = {
     id: number;
     status: Status
@@ -30,6 +31,7 @@ export const EmployeeActions = ({ id, status }: EmployeeActionsProps) => {
             <AlertDescription>L'intégration pour cet emploi est disponible.</AlertDescription>
             <Button onClick={async () => {
                 await startEmployeeJobOnboarding(id)
+                await handleRefreshSteps()
                 router.replace(`${pathname}?tab=onboarding`)
             }}
             >

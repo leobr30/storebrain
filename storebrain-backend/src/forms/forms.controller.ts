@@ -11,12 +11,16 @@ import {
   HttpException,
   HttpStatus,
   Res,
+  Put, // ✅ Import du décorateur Put
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FormsService } from './forms.service';
 import { PdfService } from '../pdf/pdf.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ValidateOmarDto } from 'src/employees/dto/validate-omar.dto'; // ✅ Import du type ValidateOmarDto
+import { CurrentUser } from 'src/decorators/user.decorator'; // ✅ Import du décorateur CurrentUser
+import { CurrentUserType } from 'src/auth/dto/current-user.dto';
 
 interface SaveEmployeeResponseDTO {
   userId: string;
@@ -239,6 +243,11 @@ export class FormsController {
       throw new InternalServerErrorException("Erreur lors de l'enregistrement du formulaire");
     }
   }
+  @Put('omar/:id/validate') // ✅ Utilisation du décorateur Put
+  async validateOmar(@Param('id') id: number, @Body() dto: ValidateOmarDto, @CurrentUser() currentUser: CurrentUserType) {
+    return await this.formsService.validateOmar(id, dto, currentUser);
+  }
+
 }
 
 @Controller('employee-responses')
@@ -272,7 +281,7 @@ export class EmployeeResponsesController {
       });
 
       console.log('✅ Réponses enregistrées avec succès :', response);
-      return response;
+      return { id: response.id };
     } catch (error) {
       console.error('❌ ERREUR SERVER :', error);
       throw new InternalServerErrorException("Erreur lors de l'enregistrement des réponses.");

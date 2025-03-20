@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import path, { join } from "path";
 import fs, { createReadStream } from 'fs';
@@ -193,4 +193,24 @@ export class TrainingsService {
     if(!attachment) throw new NotFoundException();
     return {filename: attachment.fileName, file: createReadStream(attachment.filePath)};
   } 
+
+  async markDocumentCompleted(employeeId: number, stepId: number) {
+    try {
+        const step = await this.prisma.userJobOnboarding.findUnique({
+            where: { id: stepId, userId: employeeId },
+        });
+
+        if (!step) throw new NotFoundException("Étape non trouvée.");
+
+        await this.prisma.userJobOnboarding.update({
+            where: { id: stepId },
+            data: { status: "COMPLETED" },
+        });
+        return { message: "Document marked as completed" };
+    } catch (error) {
+        console.error("❌ Erreur dans markDocumentCompleted:", error);
+        throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
 }

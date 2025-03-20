@@ -15,6 +15,18 @@ export const getDoc = async () => {
     }
 };
 
+export const getFormWithResponse = async (responseId: string) => {
+    try {
+        const response = await fetchWithAuth(`forms/${responseId}`, {
+            method: 'GET',
+        });
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur dans getFormWithResponse :", error);
+        throw error;
+    }
+};
+
 export const saveEmployeeResponse = async (data) => {
     try {
         console.log("📨 Envoi des réponses du formulaire...");
@@ -46,7 +58,7 @@ export const saveEmployeeResponse = async (data) => {
 
         // ✅ Étape 3 : Mettre à jour le statut du document en "COMPLETED"
         if (data.employeeId && data.stepId) {
-            const updatedStep = await markDocumentAsCompleted(data.employeeId, data.stepId);
+            const updatedStep = await markDocumentAsCompleted(data.employeeId, data.stepId, response.id);
             return { ...response, updatedStep };
         }
         revalidatePath('/en/employee-area/home')
@@ -59,14 +71,15 @@ export const saveEmployeeResponse = async (data) => {
 
 };
 
-export const markDocumentAsCompleted = async (employeeId: number, stepId: number) => {
+export const markDocumentAsCompleted = async (employeeId: number, stepId: number, responseId: string) => {
     try {
-        console.log(`🔄 Mise à jour du statut du document (Employee ID: ${employeeId}, Step ID: ${stepId})...`);
-
+        console.log(`🔄 Mise à jour du statut du document pour Employee ID: ${employeeId}, Step ID: ${stepId}`);
         const response = await fetchWithAuth(`employees/${employeeId}/onboarding/${stepId}/complete`, {
             method: "PATCH",
+            body: JSON.stringify({ responseId })
         });
 
+        if (!response) throw new Error("Réponse vide de l'API");
         console.log("✅ Statut mis à jour :", response);
         return response;
     } catch (error) {
@@ -74,6 +87,8 @@ export const markDocumentAsCompleted = async (employeeId: number, stepId: number
         throw error;
     }
 };
+
+
 
 export const handleGeneratePdfAndSendEmail = async (responseId: string, email: string) => {
     try {

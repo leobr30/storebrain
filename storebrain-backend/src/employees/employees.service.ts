@@ -947,7 +947,7 @@ export class EmployeesService {
   }
 
 
-  async markDocumentCompleted(employeeId: number, stepId: number) {
+  async markDocumentCompleted(employeeId: number, stepId: number, responseId: string) {
     try {
       const step = await this.prisma.userJobOnboarding.findUnique({
         where: { id: stepId, userId: employeeId },
@@ -957,9 +957,9 @@ export class EmployeesService {
 
       await this.prisma.userJobOnboarding.update({
         where: { id: stepId },
-        data: { status: "COMPLETED" },
+        data: { status: "COMPLETED", responseId: responseId },
       });
-      return { message: "Document marked as completed" }; // ✅ Explicitly return a JSON object
+      return { message: "Document marked as completed", responseId: responseId }; // ✅ Explicitly return a JSON object
     } catch (error) {
       console.error("❌ Erreur dans markDocumentCompleted:", error);
       throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -972,6 +972,45 @@ export class EmployeesService {
       where: { userId: employeeId, type: UserAbsenceType.VACATION },
       include: { createdBy: { select: { name: true } } },
     });
+  }
+
+  async getEmployeeOnboarding(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        jobOnboardings: {
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            appointmentNumber: true,
+            jobOnboardingStep: {
+              include: {
+                trainingModel: true,
+                jobOnboardingResultReview: true,
+                jobOnboardingDocuments: true,
+              }
+            },
+            training: {
+              select: {
+                id: true,
+                status: true,
+                subjects: {
+                  select: {
+                    id: true,
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException();
+    return user.jobOnboardings;
   }
 
 }

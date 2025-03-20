@@ -146,7 +146,7 @@ export const saveOmar = async (omarId: number, data: { objective: string, tool: 
 }
 
 export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date }) => {
-    const response = await fetchWithAuth(`forms/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) }) // ✅ Corrected URL
+    const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) }) // ✅ Corrected URL
     revalidatePath('/en/employee-area/home')
     return response;
 }

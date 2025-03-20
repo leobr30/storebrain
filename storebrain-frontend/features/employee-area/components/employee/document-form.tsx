@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { getDoc, saveEmployeeResponse, handleGeneratePdfAndSendEmail } from './document-form-action';
+import { getDoc, saveEmployeeResponse, handleGeneratePdfAndSendEmail, markDocumentAsCompleted, getFormWithResponse } from './document-form-action';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+
 
 const formSchema = z.object({
   comment: z.string().optional(),
@@ -31,9 +32,12 @@ interface DocumentFormProps {
   onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void; // ✅ Updated type
   employeeId: number;
   stepId: number;
+  status: string;
+  responseId?: string;
 }
 
-export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeId, stepId }: DocumentFormProps) {
+export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeId, stepId, status, responseId }: DocumentFormProps) { // ✅ Ajout du status
+  const [isCompleted, setIsCompleted] = useState(status === "COMPLETED");
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const emailDestinataire = "gabriel.beduneau@diamantor.fr";
@@ -53,19 +57,44 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   });
 
   useEffect(() => {
+    setIsCompleted(status === "COMPLETED");
+  }, [status]);
+
+  useEffect(() => {
     const fetchForm = async () => {
       try {
-        const response = await getDoc();
-        if (!response || !response.sections || !response.id) throw new Error('Données du formulaire invalides');
-        setFormId(response.id);
-        const initialSectionsData = [...response.sections.map((section, index) => ({
-          id: index + 1,
-          title: `${index + 1}° ${section.title}`,
-          items: section.items.map((item: any) => ({ label: item.label, selected: false })),
-        })), { id: 'comment', title: 'Commentaire - Autres', textarea: true }];
-        setInitialSections(initialSectionsData);
-        setSections(initialSectionsData);
-        form.reset({ comment: response.comment || '' });
+        setLoading(true);
+        let formData;
+        if (responseId) {
+          // ✅ Utilisation de getFormWithResponse si responseId est présent
+          formData = await getFormWithResponse(responseId);
+          if (!formData || !formData.form || !formData.responses) throw new Error('Données du formulaire invalides');
+          setFormId(formData.formId);
+          const initialSectionsData = [...formData.form.sections.map((section, index) => ({
+            id: index + 1,
+            title: `${index + 1}° ${section.title}`,
+            items: section.items.map((item: any) => ({
+              label: item.label,
+              selected: formData.responses.find((r: any) => r.title === `${index + 1}° ${section.title}`)?.items.find((i: any) => i.label === item.label)?.selected || false, // ✅ Initialisation avec les réponses
+            })),
+          })), { id: 'comment', title: 'Commentaire - Autres', textarea: true }];
+          setInitialSections(initialSectionsData);
+          setSections(initialSectionsData);
+          form.reset({ comment: formData.comment || '' });
+        } else {
+          // ✅ Utilisation de getDoc si responseId n'est pas présent
+          formData = await getDoc();
+          if (!formData || !formData.sections || !formData.id) throw new Error('Données du formulaire invalides');
+          setFormId(formData.id);
+          const initialSectionsData = [...formData.sections.map((section, index) => ({
+            id: index + 1,
+            title: `${index + 1}° ${section.title}`,
+            items: section.items.map((item: any) => ({ label: item.label, selected: false })),
+          })), { id: 'comment', title: 'Commentaire - Autres', textarea: true }];
+          setInitialSections(initialSectionsData);
+          setSections(initialSectionsData);
+          form.reset({ comment: formData.comment || '' });
+        }
       } catch (error) {
         console.error('❌ Erreur lors de la récupération du formulaire:', error);
       } finally {
@@ -73,15 +102,16 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
       }
     };
     fetchForm();
-  }, []);
+  }, [responseId]);
 
   useEffect(() => {
-    if (open) {
+    if (open && initialSections.length > 0) {
       setSections(initialSections);
       form.reset({ comment: '' });
-      setCurrentStep(0); // Reset currentStep to 0 when the form opens
+      setCurrentStep(0);
     }
   }, [open, initialSections]);
+
 
   const handleCheckboxChange = (itemLabel: string, sectionIndex: number) => {
     setSections(prevSections => {
@@ -103,29 +133,48 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   };
 
   const handleSubmit = async () => {
-    if (!userId || !formId) return alert("❌ Erreur de session ou formulaire.");
+    if (!userId || !formId) {
+      alert("❌ Erreur de session ou formulaire.");
+      console.error("❌ userId ou formId est null :", { userId, formId });
+      return;
+    }
+
     try {
       const payload = {
         userId,
         formId,
         employeeId,
         stepId,
-        responses: sections.filter(s => s.items).map(s => ({
+        responses: sections.filter((s) => s.items).map((s) => ({
           title: s.title,
-          items: s.items?.map(item => ({ label: item.label, selected: item.selected }))
+          items: s.items?.map((item) => ({ label: item.label, selected: item.selected })),
         })),
-        comment: form.getValues('comment'),
+        comment: form.getValues("comment"),
       };
 
+      console.log("📨 Données envoyées à saveEmployeeResponse :", payload);
+
       const response = await saveEmployeeResponse(payload);
-      if (response?.id) await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
+
+      if (response?.updatedStep) { // ✅ On vérifie si updatedStep existe
+        console.log("📜 Tentative de mise à jour du statut du document...");
+        // ✅ On ne l'appelle plus ici, car c'est fait dans saveEmployeeResponse
+        setTimeout(() => {
+          onSubmitSuccess(response.updatedStep); // ✅ On envoie la bonne valeur
+        }, 500);
+        await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
+      }
+
       alert("✅ Formulaire soumis avec succès !");
       setOpen(false);
-      onSubmitSuccess(response.updatedStep); // ✅ Pass the updated step
+      setTimeout(() => {
+        onSubmitSuccess(response.updatedStep);
+      }, 500);
+
     } catch (error) {
       console.error("❌ Erreur lors de la soumission :", error);
       alert("Échec de l'enregistrement");
-      onSubmitSuccess(null); // ✅ Pass null if error
+      onSubmitSuccess(null);
     }
   };
 
@@ -133,14 +182,18 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={"ghost"}>Joindre le document</Button>
+        <Button variant={"ghost"} onClick={() => setOpen(true)}>
+          {isCompleted ? "Consulter le Document" : "Démarrer le Document"} {/* ✅ Change dynamiquement */}
+        </Button>
       </SheetTrigger>
       <SheetContent closeIcon={<X className="h-5 w-5 relative" />} className="flex flex-col h-[90vh] p-0" side="bottom">
         <SheetHeader>
-          <SheetTitle className="p-3 border-b border-gray-200">Accueil Nouveau Vendeur</SheetTitle>
+          <SheetTitle className="p-3 border-b border-gray-200">
+            {isCompleted ? "Document Complété" : "Accueil Nouveau Vendeur"}
+          </SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow p-4">
-          {loading ? (
+          {loading || sections.length === 0 || !sections[currentStep] ? (
             <Skeleton className="h-5 w-40 mx-auto my-6" />
           ) : (
             <Form {...form}>
@@ -157,6 +210,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                             placeholder="Ajoutez un commentaire..."
                             className="w-full border border-gray-300 rounded-md"
                             {...field}
+                            disabled={isCompleted} // ✅ Désactive si document complété
                           />
                         </FormControl>
                         <FormMessage />
@@ -180,6 +234,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                                     form.setValue(`items.${index}.selected`, !item.selected);
                                   }}
                                   id={item.label}
+                                  disabled={isCompleted} // ✅ Désactive si document complété
                                 />
                               </FormControl>
                               <FormMessage />
@@ -197,7 +252,6 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
         </ScrollArea>
         <Separator className="my-4" />
         <SheetFooter className="p-4 flex justify-between items-center bg-white border-t border-gray-200">
-          {/* Progress Indicator */}
           <div className="text-sm text-gray-500">
             {currentStep + 1} / {sections.length}
           </div>
@@ -211,12 +265,9 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                 }
               }}>Suivant</Button>
             ) : (
-              <Button type="submit" onClick={() => {
-                if (sections[currentStep].items) {
-                  form.setValue('items', sections[currentStep].items)
-                }
-                form.handleSubmit(handleSubmit)()
-              }} className="bg-green-600 hover:bg-green-700 text-white">Valider</Button>
+              <Button onClick={handleSubmit} disabled={isCompleted} className="bg-green-600 hover:bg-green-700 text-white">
+                {isCompleted ? "Consulter" : "Valider"}
+              </Button>
             )}
           </div>
         </SheetFooter>

@@ -279,8 +279,16 @@ export class EmployeesController {
   }
 
   @Patch(':employeeId/onboarding/:stepId/complete')
-  async markDocumentAsCompleted(@Param('employeeId') employeeId: number, @Param('stepId') stepId: number) {
-    const result = await this.employeesService.markDocumentCompleted(employeeId, stepId);
-    return { message: "Document marked as completed", data: result };
+  async markDocumentAsCompleted(
+    @Param('employeeId') employeeId: number,
+    @Param('stepId') stepId: number,
+    @Body('responseId') responseId: string,
+  ) {
+    return this.employeesService.markDocumentCompleted(employeeId, stepId, responseId);
+  }
+
+  @Get(':id/onboarding')
+  async getEmployeeOnboarding(@Param('id') id: number) {
+    return await this.employeesService.getEmployeeOnboarding(id);
   }
 }

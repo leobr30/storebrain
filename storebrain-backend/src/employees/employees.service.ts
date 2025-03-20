@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { JobsService } from 'src/jobs/jobs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import fs from 'fs';
@@ -923,7 +923,7 @@ export class EmployeesService {
     vacationId: number,
     vacationData: { startAt: Date; endAt: Date },
     currentUser: CurrentUserType
-) {
+  ) {
 
     const employee = await this.prisma.user.findUnique({
       where: { id: employeeId },
@@ -944,9 +944,27 @@ export class EmployeesService {
         endAt: new Date(vacationData.endAt),
       },
     });
-}
+  }
 
 
+  async markDocumentCompleted(employeeId: number, stepId: number) {
+    try {
+      const step = await this.prisma.userJobOnboarding.findUnique({
+        where: { id: stepId, userId: employeeId },
+      });
+
+      if (!step) throw new NotFoundException("Étape non trouvée.");
+
+      await this.prisma.userJobOnboarding.update({
+        where: { id: stepId },
+        data: { status: "COMPLETED" },
+      });
+      return { message: "Document marked as completed" }; // ✅ Explicitly return a JSON object
+    } catch (error) {
+      console.error("❌ Erreur dans markDocumentCompleted:", error);
+      throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
 
   async getEmployeeVacations(employeeId: number) {

@@ -5,12 +5,14 @@ import {
   Get,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  UnauthorizedException
 } from '@nestjs/common';
 import { CheckPolicies } from 'src/casl/policy.decorator';
 import { PoliciesGuard } from 'src/casl/policy.guard';
@@ -48,14 +50,14 @@ export class EmployeesController {
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new ReadEmployeesPolicyHandler())
   async getEmployees(@Query('company') company?: number) {
-    return await this.employeesService.getEmployees(company);
+    return await this.employeesService.getEmployees(company); // ✅ Return the result
   }
 
   @Get('employee/:id')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new ReadEmployeesPolicyHandler())
   async getEmployee(@Param('id') id: number) {
-    return await this.employeesService.getEmployee(id);
+    return await this.employeesService.getEmployee(id); // ✅ Return the result
   }
 
   @Post()
@@ -76,11 +78,11 @@ export class EmployeesController {
     @Body() dto: CreateEmployeeDto,
     @CurrentUser() user: CurrentUserType,
   ) {
-    await this.employeesService.createEmployee(dto, file, {
+    const result = await this.employeesService.createEmployee(dto, file, {
       sub: user.sub,
       name: user.name,
     });
-    return HttpStatus.OK;
+    return { message: "Employee created successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Post(':id/activate')
@@ -92,7 +94,7 @@ export class EmployeesController {
     @CurrentUser() user: CurrentUserType,
   ) {
     await this.employeesService.activateEmployee(id, employee, user);
-    return HttpStatus.OK;
+    return { message: "Employee activated successfully" }; // ✅ Return a JSON response
   }
 
   @Post(':id/check-credentials')
@@ -102,9 +104,9 @@ export class EmployeesController {
   ) {
     const checkedCredentials = await this.employeesService.checkCredentials(userId, dto);
     if (checkedCredentials) {
-      return HttpStatus.OK;
+      return { message: "Credentials are valid" }; // ✅ Return a JSON response
     }
-    return HttpStatus.UNAUTHORIZED;
+    throw new UnauthorizedException("Invalid credentials"); // ✅ Throw an error
   }
 
   @Post(':id/start-integration')
@@ -115,7 +117,7 @@ export class EmployeesController {
     @CurrentUser() currentUser: CurrentUserType,
   ) {
     await this.employeesService.startIntegration(id, currentUser);
-    return HttpStatus.OK;
+    return { message: "Integration started successfully" }; // ✅ Return a JSON response
   }
 
   @Post(':id/start-training/:employeeJobIntegrationId')
@@ -130,38 +132,19 @@ export class EmployeesController {
     dto.userId = userId;
     dto.employeeJobOnboardId = employeejobOnboardingId;
     dto.currentUserId = currentUser.sub;
-    return await this.employeesService.createTrainingWithEmployeeOnboardingId(
+    const result = await this.employeesService.createTrainingWithEmployeeOnboardingId(
       dto,
     );
+    return { message: "Training created successfully", data: result }; // ✅ Return a JSON response
   }
-
-
-
-  // @UseInterceptors(FileInterceptor('file', {
-  //   storage: diskStorage({
-  //     destination: 'upload/tmp',
-  //     filename: (req, file, cb) => {
-  //       cb(null, Date.now() + '-' + file.originalname);
-  //     },
-  //   }),
-  // }))
-
-  // @Post(':id/absences')
-  // async createAbsence(
-  //   @Param('id') userId: number,
-  //   @Body() dto: CreateOrUpdateAbsenceDto,
-  //   @CurrentUser() currentUser: CurrentUserType,
-  //   @UploadedFile() file?: Express.Multer.File,
-  // ) {
-  //   return await this.employeesService.createAbsence(userId,currentUser, dto, file);
-  // }
 
   @Post(':id/absences')
   async createAbsence(
     @Param('id') userId: number,
     @CurrentUser() currentUser: CurrentUserType,
   ) {
-    return await this.employeesService.createAbsence(userId, currentUser);
+    const result = await this.employeesService.createAbsence(userId, currentUser);
+    return { message: "Absence created successfully", data: result }; // ✅ Return a JSON response
   }
 
   @UseInterceptors(FileInterceptor('file', {
@@ -178,7 +161,8 @@ export class EmployeesController {
     @Body() dto: UpdateAbsenceDto,
     @CurrentUser() currentUser: CurrentUserType,
   ) {
-    return await this.employeesService.updateAbsence(absenceId, dto, currentUser);
+    const result = await this.employeesService.updateAbsence(absenceId, dto, currentUser);
+    return { message: "Absence updated successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Post('appointments')
@@ -188,20 +172,20 @@ export class EmployeesController {
     @CurrentUser() currentUser: CurrentUserType,
   ) {
     const appointment = await this.employeesService.createAppointment(dto, currentUser);
-    return appointment;
+    return { message: "Appointment created successfully", data: appointment }; // ✅ Return a JSON response
   }
 
   @Get('appointments/:id')
   @UseGuards(PoliciesGuard)
 
   async getAppointment(@Param('id') id: number) {
-    return await this.employeesService.getAppointment(id);
+    return await this.employeesService.getAppointment(id); // ✅ Return the result
   }
 
   @Get('appointments')
   @UseGuards(PoliciesGuard)
   async getAppointments() {
-    return await this.employeesService.getAppointments();
+    return await this.employeesService.getAppointments(); // ✅ Return the result
   }
 
   @Post(':id/omar')
@@ -212,12 +196,12 @@ export class EmployeesController {
     @CurrentUser() currentUser: CurrentUserType,
     @Query('appointmentDetailId') appointmentDetailId?: number,
   ) {
-    const omar = await this.employeesService.createOmar({
+    const result = await this.employeesService.createOmar({
       createdById: currentUser.sub,
       userId,
       appointmentDetailId
     });
-    return omar;
+    return { message: "Omar created successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Put('omar/:id/save')
@@ -226,19 +210,21 @@ export class EmployeesController {
     @Param('id') id: number,
     @Body() dto: OmarDto,
   ) {
-    return await this.employeesService.saveOmar(id, dto);
+    const result = await this.employeesService.saveOmar(id, dto);
+    return { message: "Omar saved successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Get('omar/:id')
   @UseGuards(PoliciesGuard)
   async getOmar(@Param('id') id: number) {
-    return await this.employeesService.getOmar(id);
+    return await this.employeesService.getOmar(id); // ✅ Return the result
   }
 
   @Put('omar/:id/validate')
   @UseGuards(PoliciesGuard)
   async validateOmar(@Param('id') id: number, @Body() dto: ValidateOmarDto, @CurrentUser() currentUser: CurrentUserType) {
-    return await this.employeesService.validateOmar(id, dto, currentUser);
+    const result = await this.employeesService.validateOmar(id, dto, currentUser);
+    return { message: "Omar validated successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Put('appointments/details/:id/sign')
@@ -247,14 +233,15 @@ export class EmployeesController {
     @Param('id') id: number,
     @CurrentUser() currentUser: CurrentUserType,
   ) {
-    return await this.employeesService.signMondayAppointmentDetail(id, currentUser);
+    const result = await this.employeesService.signMondayAppointmentDetail(id, currentUser);
+    return { message: "Appointment detail signed successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Get('absences/:absenceId')
   async getAbsence(
     @Param('absenceId') absenceId: number
   ) {
-    return await this.employeesService.getAbsence(absenceId);
+    return await this.employeesService.getAbsence(absenceId); // ✅ Return the result
   }
 
   @Put(':id')
@@ -265,17 +252,19 @@ export class EmployeesController {
     const numericId = Number(id);
     if (isNaN(numericId)) throw new BadRequestException("ID invalide");
 
-    return await this.employeesService.updateEmployee(numericId, updateData);
+    const result = await this.employeesService.updateEmployee(numericId, updateData);
+    return { message: "Employee updated successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Post(':id/vacations')
   async createVacation(@Param('id') id: number, @Body() vacationData: { startAt: string, endAt: string }) {
-    return await this.employeesService.createVacation(id, vacationData);
+    const result = await this.employeesService.createVacation(id, vacationData);
+    return { message: "Vacation created successfully", data: result }; // ✅ Return a JSON response
   }
 
   @Get(':id/vacations')
   async getEmployeeVacations(@Param('id') employeeId: number) {
-    return await this.employeesService.getEmployeeVacations(employeeId);
+    return await this.employeesService.getEmployeeVacations(employeeId); // ✅ Return the result
   }
 
   @Put(':id/vacations/:vacationId')
@@ -285,9 +274,13 @@ export class EmployeesController {
     @Body() vacationData: { startAt: Date; endAt: Date },
     @CurrentUser() currentUser: CurrentUserType
   ) {
-    return this.employeesService.updateVacation(employeeId, vacationId, vacationData, currentUser);
+    const result = await this.employeesService.updateVacation(employeeId, vacationId, vacationData, currentUser);
+    return { message: "Vacation updated successfully", data: result }; // ✅ Return a JSON response
   }
 
-
-
+  @Patch(':employeeId/onboarding/:stepId/complete')
+  async markDocumentAsCompleted(@Param('employeeId') employeeId: number, @Param('stepId') stepId: number) {
+    const result = await this.employeesService.markDocumentCompleted(employeeId, stepId);
+    return { message: "Document marked as completed", data: result };
+  }
 }

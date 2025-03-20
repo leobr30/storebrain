@@ -3,187 +3,224 @@
 import { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getDoc, saveEmployeeResponse, handleGeneratePdfAndSendEmail } from './document-form-action';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
-export default function DocumentForm({ onClose }: { onClose: () => void }) {
+const formSchema = z.object({
+  comment: z.string().optional(),
+  items: z.array(z.object({
+    label: z.string(),
+    selected: z.boolean()
+  })).optional()
+});
+
+interface DocumentFormProps {
+  setOpen: (open: boolean) => void;
+  open: boolean;
+  onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void; // ✅ Updated type
+  employeeId: number;
+  stepId: number;
+}
+
+export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeId, stepId }: DocumentFormProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const emailDestinataire = "gabriel.beduneau@diamantor.fr";
 
   const [sections, setSections] = useState<any[]>([]);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [formId, setFormId] = useState<string | null>(null);
+  const [initialSections, setInitialSections] = useState<any[]>([]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      comment: '',
+      items: []
+    },
+  });
 
   useEffect(() => {
     const fetchForm = async () => {
       try {
         const response = await getDoc();
-        console.log('✅ Formulaire récupéré :', response);
-
-        if (!response || !response.sections || !response.id) {
-          throw new Error('Données du formulaire invalides');
-        }
-
+        if (!response || !response.sections || !response.id) throw new Error('Données du formulaire invalides');
         setFormId(response.id);
-        const formattedSections = response.sections.map((section, index) => ({
+        const initialSectionsData = [...response.sections.map((section, index) => ({
           id: index + 1,
           title: `${index + 1}° ${section.title}`,
-          items: section.items.map((item: any) => item.label),
-        }));
-
-        setSections([...formattedSections, { id: 'comment', title: 'Commentaire - Autres', textarea: true }]);
-        setComment(response.comment || '');
+          items: section.items.map((item: any) => ({ label: item.label, selected: false })),
+        })), { id: 'comment', title: 'Commentaire - Autres', textarea: true }];
+        setInitialSections(initialSectionsData);
+        setSections(initialSectionsData);
+        form.reset({ comment: response.comment || '' });
       } catch (error) {
         console.error('❌ Erreur lors de la récupération du formulaire:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchForm();
   }, []);
 
-  const handleCheckboxChange = (item: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
-  };
+  useEffect(() => {
+    if (open) {
+      setSections(initialSections);
+      form.reset({ comment: '' });
+      setCurrentStep(0); // Reset currentStep to 0 when the form opens
+    }
+  }, [open, initialSections]);
 
-  const handleNext = () => {
-    setCurrentStep((prev) => Math.min(prev + 1, sections.length - 1));
-  };
-
-  const handlePrev = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  const handleCheckboxChange = (itemLabel: string, sectionIndex: number) => {
+    setSections(prevSections => {
+      return prevSections.map((section, index) => {
+        if (index === sectionIndex && section.items) {
+          return {
+            ...section,
+            items: section.items.map(item => {
+              if (item.label === itemLabel) {
+                return { ...item, selected: !item.selected };
+              }
+              return item;
+            })
+          };
+        }
+        return section;
+      });
+    });
   };
 
   const handleSubmit = async () => {
-    if (!userId) {
-      alert("❌ Vous devez être connecté pour soumettre ce formulaire.");
-      console.error("❌ Erreur : userId est null");
-      return;
-    }
-
-    if (!formId) {
-      alert("❌ Impossible de récupérer l'ID du formulaire.");
-      console.error("❌ Erreur : formId est null");
-      return;
-    }
-
+    if (!userId || !formId) return alert("❌ Erreur de session ou formulaire.");
     try {
       const payload = {
         userId,
         formId,
-        responses: sections
-          .filter(section => section.items)
-          .map(section => ({
-            title: section.title,
-            items: section.items?.map(item => ({
-              label: item,
-              selected: selectedItems.includes(item),
-            })),
-          })),
-        comment,
+        employeeId,
+        stepId,
+        responses: sections.filter(s => s.items).map(s => ({
+          title: s.title,
+          items: s.items?.map(item => ({ label: item.label, selected: item.selected }))
+        })),
+        comment: form.getValues('comment'),
       };
 
-      console.log("📢 Données envoyées :", payload);
       const response = await saveEmployeeResponse(payload);
-      const responseId = response?.id;
-
+      if (response?.id) await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
       alert("✅ Formulaire soumis avec succès !");
-
-      if (responseId) {
-        const pdfResponse = await handleGeneratePdfAndSendEmail(responseId, emailDestinataire);
-        alert(pdfResponse.message);
-      }
-
-      onClose();
+      setOpen(false);
+      onSubmitSuccess(response.updatedStep); // ✅ Pass the updated step
     } catch (error) {
       console.error("❌ Erreur lors de la soumission :", error);
       alert("Échec de l'enregistrement");
+      onSubmitSuccess(null); // ✅ Pass null if error
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-6 text-lg font-semibold">Chargement...</div>;
-  }
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg flex flex-col h-[80vh]">
-      <h1 className="text-2xl font-bold text-center text-gray-900 mb-4">
-        Accueil Nouveau Vendeur
-      </h1>
-
-      <div className="flex-grow overflow-auto p-4 bg-gray-100 rounded-md shadow-sm">
-        <h2 className="font-semibold text-xl text-gray-800 mb-3">{sections[currentStep].title}</h2>
-
-        {sections[currentStep].textarea ? (
-          <div className="mt-4">
-            <Textarea
-              id="commentaire"
-              placeholder="Ajoutez un commentaire..."
-              className="mt-2 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 w-full"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant={"ghost"}>Joindre le document</Button>
+      </SheetTrigger>
+      <SheetContent closeIcon={<X className="h-5 w-5 relative" />} className="flex flex-col h-[90vh] p-0" side="bottom">
+        <SheetHeader>
+          <SheetTitle className="p-3 border-b border-gray-200">Accueil Nouveau Vendeur</SheetTitle>
+        </SheetHeader>
+        <ScrollArea className="flex-grow p-4">
+          {loading ? (
+            <Skeleton className="h-5 w-40 mx-auto my-6" />
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+                <h2 className="font-semibold text-xl text-gray-800 mb-3">{sections[currentStep].title}</h2>
+                {sections[currentStep].textarea ? (
+                  <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Ajoutez un commentaire..."
+                            className="w-full border border-gray-300 rounded-md"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {sections[currentStep].items?.map((item, index) => (
+                      <div key={item.label} className="flex items-center gap-3 bg-white p-3 rounded-md shadow-sm border border-gray-300">
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.selected`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={item.selected}
+                                  onCheckedChange={() => {
+                                    handleCheckboxChange(item.label, currentStep);
+                                    form.setValue(`items.${index}.selected`, !item.selected);
+                                  }}
+                                  id={item.label}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Label htmlFor={item.label} className="flex-grow text-gray-700">{item.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </form>
+            </Form>
+          )}
+        </ScrollArea>
+        <Separator className="my-4" />
+        <SheetFooter className="p-4 flex justify-between items-center bg-white border-t border-gray-200">
+          {/* Progress Indicator */}
+          <div className="text-sm text-gray-500">
+            {currentStep + 1} / {sections.length}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {sections[currentStep].items?.map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-3 bg-white p-3 rounded-md shadow-sm border border-gray-300 hover:bg-gray-50 transition"
-              >
-                <Checkbox
-                  id={item}
-                  checked={selectedItems.includes(item)}
-                  onCheckedChange={() => handleCheckboxChange(item)}
-                  className="w-5 h-5"
-                />
-                <Label htmlFor={item} className="flex-grow text-gray-700 break-words">
-                  {item}
-                </Label>
-              </div>
-            ))}
+          <div className="flex gap-3">
+            <Button onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))} disabled={currentStep === 0} variant="outline">Précédent</Button>
+            {currentStep < sections.length - 1 ? (
+              <Button onClick={() => {
+                setCurrentStep((prev) => Math.min(prev + 1, sections.length - 1));
+                if (sections[currentStep].items) {
+                  form.setValue('items', sections[currentStep].items)
+                }
+              }}>Suivant</Button>
+            ) : (
+              <Button type="submit" onClick={() => {
+                if (sections[currentStep].items) {
+                  form.setValue('items', sections[currentStep].items)
+                }
+                form.handleSubmit(handleSubmit)()
+              }} className="bg-green-600 hover:bg-green-700 text-white">Valider</Button>
+            )}
           </div>
-        )}
-      </div>
-
-      <Separator className="my-4" />
-
-      <div className="flex justify-between sticky bottom-0 bg-white p-4 border-t border-gray-200 shadow-md">
-        <Button
-          variant="outline"
-          onClick={handlePrev}
-          disabled={currentStep === 0}
-          className="px-6 py-2 text-lg border-gray-400"
-        >
-          Précédent
-        </Button>
-
-        {currentStep < sections.length - 1 ? (
-          <Button
-            onClick={handleNext}
-            className="px-6 py-2 text-lg bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Suivant
-          </Button>
-        ) : (
-          <Button
-            onClick={handleSubmit}
-            className="px-6 py-2 text-lg bg-green-600 hover:bg-green-700 text-white"
-          >
-            Valider
-          </Button>
-        )}
-      </div>
-    </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { fetchWithAuth } from "@/lib/fetch";
+import { revalidatePath } from "next/cache";
 
 export const getDoc = async () => {
     try {
@@ -43,9 +44,33 @@ export const saveEmployeeResponse = async (data) => {
 
         console.log("✅ Formulaire sauvegardé dans l'historique :", historyResponse);
 
+        // ✅ Étape 3 : Mettre à jour le statut du document en "COMPLETED"
+        if (data.employeeId && data.stepId) {
+            const updatedStep = await markDocumentAsCompleted(data.employeeId, data.stepId);
+            return { ...response, updatedStep };
+        }
+        revalidatePath('/en/employee-area/home')
+
         return response;
     } catch (error) {
         console.error("❌ Erreur lors de la soumission du formulaire :", error);
+        throw error;
+    }
+
+};
+
+export const markDocumentAsCompleted = async (employeeId: number, stepId: number) => {
+    try {
+        console.log(`🔄 Mise à jour du statut du document (Employee ID: ${employeeId}, Step ID: ${stepId})...`);
+
+        const response = await fetchWithAuth(`employees/${employeeId}/onboarding/${stepId}/complete`, {
+            method: "PATCH",
+        });
+
+        console.log("✅ Statut mis à jour :", response);
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur lors de la mise à jour du statut du document :", error);
         throw error;
     }
 };
@@ -66,4 +91,3 @@ export const handleGeneratePdfAndSendEmail = async (responseId: string, email: s
         throw error;
     }
 };
-

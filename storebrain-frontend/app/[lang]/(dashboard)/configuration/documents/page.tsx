@@ -8,6 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { saveDoc } from "./action";
+import { PencilLine } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { Eraser } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
+import { ArrowUp} from 'lucide-react';
 
 
 export default function DocumentForm() {
@@ -179,10 +184,10 @@ export default function DocumentForm() {
               className="font-semibold text-lg flex-grow"
             />
 
-            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "up")} disabled={sectionIndex === 0}>🔼</Button>
-            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "down")} disabled={sectionIndex === sections.length - 1}>🔽</Button>
+            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "up")} disabled={sectionIndex === 0}><ArrowUp /></Button>
+            <Button variant="outline" size="icon" onClick={() => moveSection(sectionIndex, "down")} disabled={sectionIndex === sections.length - 1}><ArrowDown /></Button>
             <Button variant="destructive" size="icon" onClick={() => removeSection(sectionIndex)}>
-              🗑️
+              <Trash2 />
             </Button>
           </div>
 
@@ -193,10 +198,10 @@ export default function DocumentForm() {
                   {item}
                 </Label>
                 <Button variant="ghost" size="icon" onClick={() => editItem(sectionIndex, itemIndex)}>
-                  ✏️
+                  <PencilLine />
                 </Button>
-                <Button variant="destructive" size="icon" onClick={() => removeItem(sectionIndex, itemIndex)}>
-                  🗑️
+                <Button variant="ghost" size="icon" onClick={() => removeItem(sectionIndex, itemIndex)}>
+                  <Eraser />
                 </Button>
               </div>
             ))}
@@ -212,12 +217,6 @@ export default function DocumentForm() {
         + Ajouter une section
       </Button>
 
-      <div>
-        <Label htmlFor="commentaire" className="font-semibold">
-          Commentaire - Autres
-        </Label>
-        <Textarea id="commentaire" placeholder="Ajoutez un commentaire..." className="mt-2" value={comment} onChange={(e) => setComment(e.target.value)} />
-      </div>
 
       <div className="flex justify-end gap-3">
         <Button variant="outline">Annuler</Button>

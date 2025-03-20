@@ -84,6 +84,7 @@
     "dagre": "^0.8.5",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
+    "dom-helpers": "^5.2.1",
     "embla-carousel-auto-height": "^8.5.2",
     "embla-carousel-autoplay": "^8.5.2",
     "embla-carousel-react": "^8.5.2",

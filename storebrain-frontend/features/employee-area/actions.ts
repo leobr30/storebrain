@@ -40,6 +40,11 @@ export const createTrainingWithOnboarding = async (employeeId: number, employeeO
     return response;
 }
 
+// ✅ New function to refresh the onboarding steps
+export const refreshSteps = async (employeeId: number) => {
+    return await fetchWithAuth(`employees/${employeeId}/onboarding`);
+};
+
 //TRAINING
 
 export const getTraining = async (trainingId: number) => {
@@ -141,10 +146,7 @@ export const saveOmar = async (omarId: number, data: { objective: string, tool: 
 }
 
 export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date }) => {
-    const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) })
+    const response = await fetchWithAuth(`forms/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) }) // ✅ Corrected URL
     revalidatePath('/en/employee-area/home')
     return response;
 }
-
-
-

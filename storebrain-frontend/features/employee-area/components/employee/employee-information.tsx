@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlarmClock, Briefcase, CalendarDays, Clock7, Hourglass, IdCard, Layers, Send } from "lucide-react";
+import { AlarmClock, Briefcase, CalendarDays, Clock7, Hourglass, IdCard, Layers, PencilLine, Send } from "lucide-react";
 import { StatusBadge } from "../status-badge";
 import { useState } from "react";
 import { updateEmployeeInformation } from "@/features/employee-area/components/employee/employee-information-action";
@@ -28,19 +28,19 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
         endDate: employee.endDate ? new Date(employee.endDate).toISOString().split("T")[0] : "",
     });
 
-    
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    
+
     const handleSave = async () => {
         const result = await updateEmployeeInformation(employee.id, formData);
 
         if (result.success) {
             alert("Mise à jour réussie !");
 
-            
+
             setEmployeeData((prev) => ({
                 ...prev,
                 firstName: formData.firstName,
@@ -62,11 +62,12 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
 
     return (
         <Card>
-            <CardHeader className="flex justify-between items-center">
-                <CardTitle>Information:</CardTitle>
-                <Button onClick={() => (isEditing ? handleSave() : setIsEditing(true))}>
-                    {isEditing ? "Sauvegarder" : "✏️"}
+            <CardHeader className="flex-row justify-between items-center">
+                <CardTitle>Information: </CardTitle>
+                <Button variant="ghost" onClick={() => (isEditing ? handleSave() : setIsEditing(true))}>
+                    {isEditing ? "Sauvegarder" : <PencilLine />}
                 </Button>
+
             </CardHeader>
             <CardContent>
                 <ul className="space-y-5">
@@ -92,7 +93,7 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
                         )}
                     </li>
 
-                    
+
                     <li className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <Hourglass className="text-primary-500" />
@@ -145,7 +146,7 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
                         )}
                     </li>
 
-                    
+
                     <li className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <IdCard className="text-primary-500" />
@@ -158,7 +159,7 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
                         )}
                     </li>
 
-                    
+
                     <li className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <AlarmClock className="text-primary-500" />

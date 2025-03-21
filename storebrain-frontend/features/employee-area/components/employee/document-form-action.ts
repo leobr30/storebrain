@@ -21,10 +21,12 @@ export const getFormWithResponse = async (responseId: string) => {
             method: 'GET',
         });
         return response;
+
     } catch (error) {
         console.error("❌ Erreur dans getFormWithResponse :", error);
         throw error;
     }
+
 };
 
 export const saveEmployeeResponse = async (data) => {
@@ -61,7 +63,8 @@ export const saveEmployeeResponse = async (data) => {
             const updatedStep = await markDocumentAsCompleted(data.employeeId, data.stepId, response.id);
             return { ...response, updatedStep };
         }
-        revalidatePath('/en/employee-area/home')
+        //revalidatePath('/en/employee-area/home')
+        
 
         return response;
     } catch (error) {

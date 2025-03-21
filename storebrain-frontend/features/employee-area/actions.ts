@@ -45,6 +45,12 @@ export const refreshSteps = async (employeeId: number) => {
     return await fetchWithAuth(`employees/${employeeId}/onboarding`);
 };
 
+export const refreshResponses = async (employeeId: number) => {
+    return await fetchWithAuth(`employees/${employeeId}/responses`);
+};
+
+
+
 //TRAINING
 
 export const getTraining = async (trainingId: number) => {

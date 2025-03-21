@@ -45,11 +45,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
       </TabsList>
 
       <TabsContent value="history" className="mt-2.5">
-        {employee?.id ? (
-          <EmployeeHistory userId={employee.id} />
-        ) : (
-          <p>⚠️ Impossible de charger l'historique (Utilisateur inconnu)</p>
-        )}
+        <EmployeeHistory histories={employee.histories}/>
       </TabsContent>
       <TabsContent value="onboarding" className="mt-2.5">
         <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id} />

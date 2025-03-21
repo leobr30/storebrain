@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "../status-badge";
 import { Button } from "@/components/ui/button";
-import { createTrainingWithOnboarding, refreshSteps } from "../../actions";
+import { createTrainingWithOnboarding, refreshResponses, refreshSteps } from "../../actions";
 import { TrainingDrawer } from "../training-drawer/training-drawer";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -34,13 +34,16 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         handleViewTraining(training.id);
     };
 
-    
-    const handleRefreshSteps = async () => {
+
+    const handleRefreshSteps = async (stepId: number) => {
         try {
             const updatedSteps = await refreshSteps(id);
-            console.log("🚀 Données reçues de refreshSteps :", updatedSteps); 
+            console.log("🚀 Données reçues de refreshSteps :", updatedSteps);
             if (updatedSteps && Array.isArray(updatedSteps)) {
-                setLocalSteps(updatedSteps);
+                const updatedStep = updatedSteps.find(step => step.id === stepId);
+                if (updatedStep) {
+                    updateStep(updatedStep);
+                }
             } else {
                 console.error("Données reçues invalides :", updatedSteps);
             }
@@ -55,7 +58,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         handleRefreshSteps();
     };
 
-    
+
     const updateStep = (updatedStep: EmployeeJobOnboarding) => {
         setLocalSteps((prevSteps) =>
             prevSteps.map((step) => (step.id === updatedStep.id ? updatedStep : step))
@@ -147,14 +150,14 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                 <TableCell>{step.jobOnboardingStep.jobOnboardingDocuments[0].name}</TableCell>
                                                 <TableCell>
                                                     <DocumentForm
-                                                    stepId={step.id}
+                                                        stepId={step.id}
                                                         setOpen={setOpen}
                                                         open={open}
                                                         status={step.status}
-                                                        onSubmitSuccess={(updatedStep) => {
+                                                        onSubmitSuccess={async (updatedStep) => {
                                                             if (updatedStep) {
+                                                                await handleRefreshSteps(step.id);
                                                                 updateStep(updatedStep);
-                                                                handleRefreshSteps();
                                                             }
                                                         }}
                                                         employeeId={id}

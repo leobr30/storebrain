@@ -34,11 +34,11 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         handleViewTraining(training.id);
     };
 
-    // ✅ Use the refreshSteps function from actions.ts
+    
     const handleRefreshSteps = async () => {
         try {
             const updatedSteps = await refreshSteps(id);
-            console.log("🚀 Données reçues de refreshSteps :", updatedSteps); // ✅ Ajout de log
+            console.log("🚀 Données reçues de refreshSteps :", updatedSteps); 
             if (updatedSteps && Array.isArray(updatedSteps)) {
                 setLocalSteps(updatedSteps);
             } else {
@@ -50,15 +50,12 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     };
 
 
-    useEffect(() => {
-        handleRefreshSteps();
-    }, []);
 
     const handleTrainingUpdated = () => {
         handleRefreshSteps();
     };
 
-    // ✅ New function to update a specific step
+    
     const updateStep = (updatedStep: EmployeeJobOnboarding) => {
         setLocalSteps((prevSteps) =>
             prevSteps.map((step) => (step.id === updatedStep.id ? updatedStep : step))
@@ -150,6 +147,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                 <TableCell>{step.jobOnboardingStep.jobOnboardingDocuments[0].name}</TableCell>
                                                 <TableCell>
                                                     <DocumentForm
+                                                    stepId={step.id}
                                                         setOpen={setOpen}
                                                         open={open}
                                                         status={step.status}
@@ -160,7 +158,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                             }
                                                         }}
                                                         employeeId={id}
-                                                        stepId={step.id}
                                                         responseId={step.responseId}
 
                                                     />

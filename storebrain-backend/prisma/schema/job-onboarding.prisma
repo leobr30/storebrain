@@ -15,6 +15,7 @@ model JobOnboardingStep {
   userJobOnboardings          UserJobOnboarding[]
   trainingModel               TrainingModel?             @relation(fields: [trainingModelId], references: [id])
   trainingModelId             Int?
+  
   jobOnboardingResultReview   JobOnboardingResultReview? @relation(fields: [jobOnboardingResultReviewId], references: [id])
   jobOnboardingResultReviewId Int?
   jobOnboardingDocuments      JobOnboardingDocument[]

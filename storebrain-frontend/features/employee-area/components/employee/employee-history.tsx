@@ -17,7 +17,6 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
     const [loading, setLoading] = useState(false);
     console.log("📢 userId reçu dans EmployeeHistory :", userId);
 
-    
     useEffect(() => {
         if (!userId || isNaN(Number(userId))) {
             console.error("❌ Erreur : userId est invalide ou manquant :", userId);
@@ -52,7 +51,7 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Historique des Formulaires</CardTitle>
+                <CardTitle>Historique</CardTitle>
             </CardHeader>
             <CardContent>
                 {loading ? (
@@ -81,7 +80,7 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
                                                         {Array.isArray(response.items) && response.items.length > 0 ? (
                                                             response.items.map((item, i) => (
                                                                 <li key={i} className="text-default-600">
-                                                                    ✅ {item.label} : {item.selected ? "Oui" : "Non"}
+                                                                    {item.selected ? "✅" : "❌"} {item.label}
                                                                 </li>
                                                             ))
                                                         ) : (
@@ -94,6 +93,25 @@ export const EmployeeHistory = ({ userId }: EmployeeHistoryProps) => {
                                             <p>⚠️ Problème avec les réponses, format inattendu.</p>
                                         )}
 
+                                        {/* Affichage du commentaire */}
+                                        {record.comment && (
+                                            <div className="mt-2">
+                                                <h3 className="font-semibold text-default-500">Commentaire:</h3>
+                                                <p className="text-default-600">{record.comment}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Bouton pour télécharger le PDF */}
+                                        <div className="mt-4">
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => handleDownloadPdf(record.id)}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Image src={pdfIcon} alt="PDF Icon" width={20} height={20} />
+                                                Télécharger le PDF
+                                            </Button>
+                                        </div>
                                     </div>
                                 </TimelineContent>
                             </TimelineItem>

@@ -143,9 +143,9 @@ export const EmployeeAbsence = ({ employeeId, absences, vacations }: EmployeeAbs
             cell: ({ row }) => (
                 <EmployeeVacationDetail
                     employeeId={employeeId}
-                    vacation={row.original} // ✅ On passe bien la vacation existante
-                    trigger={<Button>Mettre à jour</Button>}
-                    onVacationUpdated={handleUpdateVacation} // ✅ Mise à jour de l'état
+                    vacation={row.original}
+                    trigger={<Button variant='ghost' >Mettre à jour</Button>}
+                    onVacationUpdated={handleUpdateVacation}
                 />
             ),
         },

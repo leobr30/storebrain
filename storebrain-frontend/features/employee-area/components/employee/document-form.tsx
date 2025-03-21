@@ -155,16 +155,8 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
       console.log("📨 Données envoyées à saveEmployeeResponse :", payload);
 
       const response = await saveEmployeeResponse(payload);
-
-      if (response?.updatedStep) { // ✅ On vérifie si updatedStep existe
-        console.log("📜 Tentative de mise à jour du statut du document...");
-        // ✅ On ne l'appelle plus ici, car c'est fait dans saveEmployeeResponse
-        setTimeout(() => {
-          onSubmitSuccess(response.updatedStep); // ✅ On envoie la bonne valeur
-        }, 500);
-        await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
-      }
-
+      await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
+    
       alert("✅ Formulaire soumis avec succès !");
       setOpen(false);
       setTimeout(() => {

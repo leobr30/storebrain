@@ -105,6 +105,7 @@ model UserJobOnboarding {
   status Status    
   training Training?
   responseId String?
+  form Form?
 }
 
 model UserAbsence {

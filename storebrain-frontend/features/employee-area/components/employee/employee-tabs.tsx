@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { EmployeeAbsence } from "./employee-absense"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { EmployeeFormation } from "./employee-formation"
 
 type EmployeeTabsProps = {
   employee: Employee
@@ -20,6 +21,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
     if (searchTab) {
       setTab(searchTab)
     }
+    console.log(employee)
   }, [searchParams])
   return (
     <Tabs value={tab} onValueChange={setTab} defaultValue="history">
@@ -54,6 +56,9 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
       </TabsContent>
       <TabsContent value="absence" className="mt-2.5">
         <EmployeeAbsence employeeId={employee.id} absences={employee.absences} vacations={employee.vacations} />
+      </TabsContent>
+      <TabsContent value="training" className="mt-2.5">
+        <EmployeeFormation/>
       </TabsContent>
 
     </Tabs>

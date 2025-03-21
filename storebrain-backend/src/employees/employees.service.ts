@@ -210,6 +210,7 @@ export class EmployeesService {
             date: true,
             status: true,
             appointmentNumber: true,
+            responseId: true,
             jobOnboardingStep: {
               include: {
                 trainingModel: true,

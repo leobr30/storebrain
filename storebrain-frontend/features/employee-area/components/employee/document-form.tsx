@@ -175,7 +175,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant={"ghost"} onClick={() => setOpen(true)}>
-          {isCompleted ? "Consulter le Document" : "Démarrer le Document"} {/* ✅ Change dynamiquement */}
+          {isCompleted ? "Consulter le Document" : "Démarrer le Document"}
         </Button>
       </SheetTrigger>
       <SheetContent closeIcon={<X className="h-5 w-5 relative" />} className="flex flex-col h-[90vh] p-0" side="bottom">
@@ -202,7 +202,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                             placeholder="Ajoutez un commentaire..."
                             className="w-full border border-gray-300 rounded-md"
                             {...field}
-                            disabled={isCompleted} // ✅ Désactive si document complété
+                            disabled={isCompleted} // Désactive si document complété
                           />
                         </FormControl>
                         <FormMessage />
@@ -226,7 +226,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                                     form.setValue(`items.${index}.selected`, !item.selected);
                                   }}
                                   id={item.label}
-                                  disabled={isCompleted} // ✅ Désactive si document complété
+                                  disabled={isCompleted} // Désactive si document complété
                                 />
                               </FormControl>
                               <FormMessage />

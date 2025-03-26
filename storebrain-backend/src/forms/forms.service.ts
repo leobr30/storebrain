@@ -2,8 +2,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from '../pdf/pdf.service';
 import { MailService } from '../mail/mail.service';
-import { EmployeesService } from 'src/employees/employees.service'; // ✅ Import du service EmployeesService
-import { ValidateOmarDto } from 'src/employees/dto/validate-omar.dto'; // ✅ Import du type ValidateOmarDto
+import { EmployeesService } from 'src/employees/employees.service'; 
+import { ValidateOmarDto } from 'src/employees/dto/validate-omar.dto'; 
 import { CurrentUserType } from 'src/auth/dto/current-user.dto';
 
 @Injectable()

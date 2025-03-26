@@ -13,13 +13,13 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 export class TrainingsService {
   constructor(private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
 
   async getTraining(trainingId: number) {
     return await this.prisma.training.findUnique({
       where: {
-        id: trainingId        
+        id: trainingId
       },
       include: {
         subjects: {
@@ -46,12 +46,12 @@ export class TrainingsService {
     });
   }
 
-  async trainingAddAttachment({    
+  async trainingAddAttachment({
     trainingId,
     trainingSubjectId,
     file,
     fileName,
-  }: {    
+  }: {
     trainingId: number;
     trainingSubjectId: number;
     file: Express.Multer.File;
@@ -89,26 +89,26 @@ export class TrainingsService {
     return trainingSubjectFile;
   }
 
-  async closeTraining(    
+  async closeTraining(
     trainingId: number,
     currentUser: CurrentUserType,
     dto: SaveTrainingDto,
   ) {
     const training = await this.prisma.training.update({
-      where: { id: trainingId},
+      where: { id: trainingId },
       data: {
         comment: dto.comment,
         tool: dto.tool,
         exercise: dto.exercise,
         validateAt: new Date(),
         realizedById: currentUser.sub,
-        status: Status.COMPLETED,        
+        status: Status.COMPLETED,
       },
     });
 
     await this.prisma.userJobOnboarding.update({
       where: {
-        id: training.userJobOnboardingId,        
+        id: training.userJobOnboardingId,
       },
       data: {
         status: Status.COMPLETED,
@@ -116,11 +116,11 @@ export class TrainingsService {
     });
 
     await Promise.all(
-      dto.subjects.map(async(subject) => {
-       await this.prisma.trainingSubject.update({
+      dto.subjects.map(async (subject) => {
+        await this.prisma.trainingSubject.update({
           where: { id: subject.subjectId },
           data: {
-            state: subject.assessment ,
+            state: subject.assessment,
           },
         });
       }),
@@ -148,8 +148,8 @@ export class TrainingsService {
     this.eventEmitter.emit('employees.training.closed', new EmployeesTrainingClosedEvent(training.id, userHistory.id));
   }
 
-  async saveTraining(    
-    trainingId: number,    
+  async saveTraining(
+    trainingId: number,
     dto: SaveTrainingDto,
   ) {
     const training = await this.prisma.training.update({
@@ -162,11 +162,11 @@ export class TrainingsService {
     });
 
     await Promise.all(
-      dto.subjects.map(async(subject) => {
-       await this.prisma.trainingSubject.update({
+      dto.subjects.map(async (subject) => {
+        await this.prisma.trainingSubject.update({
           where: { id: subject.subjectId },
           data: {
-            state: subject.assessment ,
+            state: subject.assessment,
           },
         });
       }),
@@ -178,7 +178,7 @@ export class TrainingsService {
     attachmentId: number,
   ) {
     const attachment = await this.prisma.trainingSubjectFile.delete({
-      where: { id: attachmentId,trainingSubject: {trainingId: trainingId} },
+      where: { id: attachmentId, trainingSubject: { trainingId: trainingId } },
     });
     fs.unlinkSync(attachment.filePath);
   }
@@ -188,29 +188,54 @@ export class TrainingsService {
     attachmentId: number,
   ) {
     const attachment = await this.prisma.trainingSubjectFile.findUnique({
-      where: { id: attachmentId,trainingSubject: {trainingId: trainingId} },
+      where: { id: attachmentId, trainingSubject: { trainingId: trainingId } },
     });
-    if(!attachment) throw new NotFoundException();
-    return {filename: attachment.fileName, file: createReadStream(attachment.filePath)};
-  } 
+    if (!attachment) throw new NotFoundException();
+    return { filename: attachment.fileName, file: createReadStream(attachment.filePath) };
+  }
 
-  async markDocumentCompleted(employeeId: number, stepId: number) {
+  async markDocumentCompleted(employeeId: number, stepId: number, responseId: string, currentUserId: number) {
     try {
-        const step = await this.prisma.userJobOnboarding.findUnique({
-            where: { id: stepId, userId: employeeId },
-        });
+      const step = await this.prisma.userJobOnboarding.findUnique({
+        where: { id: stepId },
+        include: {
+          jobOnboardingStep: {
+            include: {
+              jobOnboardingDocuments: true
+            }
+          },
+          user: true
+        }
+      });
 
-        if (!step) throw new NotFoundException("Étape non trouvée.");
+      if (!step || step.userId !== employeeId) {
+        throw new NotFoundException("Étape introuvable pour cet employé.");
+      }
 
-        await this.prisma.userJobOnboarding.update({
-            where: { id: stepId },
-            data: { status: "COMPLETED" },
-        });
-        return { message: "Document marked as completed" };
+      const updated = await this.prisma.userJobOnboarding.update({
+        where: { id: stepId },
+        data: {
+          status: "COMPLETED",
+          responseId
+        }
+      });
+
+      await this.prisma.userHistory.create({
+        data: {
+          title: "Document",
+          text: `a rempli le document \"${step.jobOnboardingStep.jobOnboardingDocuments[0]?.name || 'non nommé'}\"`,
+          type: "ACTION",
+          userId: employeeId,
+          createdById: currentUserId
+        }
+      });
+
+      return updated;
     } catch (error) {
-        console.error("❌ Erreur dans markDocumentCompleted:", error);
-        throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error("❌ Erreur dans markDocumentCompleted:", error);
+      throw new HttpException('Erreur lors de la validation du document.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-}
+  }
+
 
 }

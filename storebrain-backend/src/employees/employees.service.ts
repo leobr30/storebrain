@@ -638,6 +638,8 @@ export class EmployeesService {
       },
     });
 
+    
+
 
     await this.prisma.userHistory.create({
       data: {
@@ -952,20 +954,50 @@ export class EmployeesService {
     try {
       const step = await this.prisma.userJobOnboarding.findUnique({
         where: { id: stepId, userId: employeeId },
+        include: {
+          jobOnboardingStep: {
+            include: {
+              jobOnboardingDocuments: true,
+            },
+          },
+        },
       });
 
       if (!step) throw new NotFoundException("Étape non trouvée.");
 
+      // Mettre à jour le statut du document
       await this.prisma.userJobOnboarding.update({
         where: { id: stepId },
         data: { status: "COMPLETED", responseId: responseId },
       });
-      return { message: "Document marked as completed", responseId: responseId }; // ✅ Explicitly return a JSON object
+
+      // Ajouter une entrée dans l'historique
+      if (step.jobOnboardingStep?.jobOnboardingDocuments?.length > 0) {
+        console.log("✅ Ajout à l'historique :", {
+          title: 'Document',
+          text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
+          type: 'ACTION',
+          userId: employeeId,
+          createdById: employeeId,
+        });
+        await this.prisma.userHistory.create({
+          data: {
+            title: 'Document',
+            text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
+            type: 'ACTION',
+            userId: employeeId,
+            createdById: employeeId,
+          },
+        });
+      }
+
+      return { message: "Document marked as completed", responseId: responseId };
     } catch (error) {
       console.error("❌ Erreur dans markDocumentCompleted:", error);
       throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 
 
   async getEmployeeVacations(employeeId: number) {

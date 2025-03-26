@@ -264,7 +264,7 @@ export class EmployeesController {
 
   @Get(':id/vacations')
   async getEmployeeVacations(@Param('id') employeeId: number) {
-    return await this.employeesService.getEmployeeVacations(employeeId); // ✅ Return the result
+    return await this.employeesService.getEmployeeVacations(employeeId); // Return the result
   }
 
   @Put(':id/vacations/:vacationId')
@@ -275,7 +275,7 @@ export class EmployeesController {
     @CurrentUser() currentUser: CurrentUserType
   ) {
     const result = await this.employeesService.updateVacation(employeeId, vacationId, vacationData, currentUser);
-    return { message: "Vacation updated successfully", data: result }; // ✅ Return a JSON response
+    return { message: "Vacation updated successfully", data: result }; // Return a JSON response
   }
 
   @Patch(':employeeId/onboarding/:stepId/complete')

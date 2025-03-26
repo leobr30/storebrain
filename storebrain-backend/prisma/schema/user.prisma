@@ -95,18 +95,21 @@ model UsersOnCompanies {
 
 
 model UserJobOnboarding {
-  id Int @id @default(autoincrement())
-  appointmentNumber Int
-  date DateTime @db.Date
+  id                  Int      @id @default(autoincrement())
+  appointmentNumber   Int
+  date                DateTime @db.Date
   jobOnboardingStepId Int
-  jobOnboardingStep JobOnboardingStep @relation(fields: [jobOnboardingStepId], references: [id], onDelete: Cascade )
-  userId Int 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status Status    
-  training Training?
-  responseId String?
-  form Form?
+  jobOnboardingStep   JobOnboardingStep @relation(fields: [jobOnboardingStepId], references: [id], onDelete: Cascade)
+  userId              Int
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              Status
+  training            Training?
+  responseId          String?
+
+  formId              String? // ✅ nouvelle clé étrangère
+  form                Form?   @relation(fields: [formId], references: [id]) // ✅ lien relationnel
 }
+
 
 model UserAbsence {
   id Int @id @default(autoincrement())

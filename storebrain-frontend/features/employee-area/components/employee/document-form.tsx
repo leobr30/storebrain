@@ -82,7 +82,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
           setSections(initialSectionsData);
           form.reset({ comment: formData.comment || '' });
         } else {
-          // ✅ Utilisation de getDoc si responseId n'est pas présent
+          // Utilisation de getDoc si responseId n'est pas présent
           formData = await getDoc();
           if (!formData || !formData.sections || !formData.id) throw new Error('Données du formulaire invalides');
           setFormId(formData.id);
@@ -145,6 +145,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
         formId,
         employeeId,
         stepId,
+        currentUserId: userId,
         responses: sections.filter((s) => s.items).map((s) => ({
           title: s.title,
           items: s.items?.map((item) => ({ label: item.label, selected: item.selected })),

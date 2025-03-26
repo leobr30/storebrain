@@ -638,7 +638,7 @@ export class EmployeesService {
       },
     });
 
-    
+
 
 
     await this.prisma.userHistory.create({
@@ -950,7 +950,7 @@ export class EmployeesService {
   }
 
 
-  async markDocumentCompleted(employeeId: number, stepId: number, responseId: string) {
+  async markDocumentCompleted(employeeId: number, stepId: number, responseId: string, currentUserId: number) {
     try {
       const step = await this.prisma.userJobOnboarding.findUnique({
         where: { id: stepId, userId: employeeId },
@@ -965,38 +965,30 @@ export class EmployeesService {
 
       if (!step) throw new NotFoundException("Étape non trouvée.");
 
-      // Mettre à jour le statut du document
       await this.prisma.userJobOnboarding.update({
         where: { id: stepId },
-        data: { status: "COMPLETED", responseId: responseId },
+        data: { status: "COMPLETED", responseId },
       });
 
-      // Ajouter une entrée dans l'historique
       if (step.jobOnboardingStep?.jobOnboardingDocuments?.length > 0) {
-        console.log("✅ Ajout à l'historique :", {
-          title: 'Document',
-          text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
-          type: 'ACTION',
-          userId: employeeId,
-          createdById: employeeId,
-        });
         await this.prisma.userHistory.create({
           data: {
             title: 'Document',
             text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
             type: 'ACTION',
             userId: employeeId,
-            createdById: employeeId,
+            createdById: currentUserId, // ✅ Utilisé ici
           },
         });
       }
 
-      return { message: "Document marked as completed", responseId: responseId };
+      return { message: "Document marked as completed", responseId };
     } catch (error) {
       console.error("❌ Erreur dans markDocumentCompleted:", error);
       throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 
 
 

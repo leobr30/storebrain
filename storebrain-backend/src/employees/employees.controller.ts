@@ -283,12 +283,14 @@ export class EmployeesController {
     @Param('employeeId') employeeId: number,
     @Param('stepId') stepId: number,
     @Body('responseId') responseId: string,
+    @CurrentUser() currentUser: CurrentUserType, // ✅ Récupère l'utilisateur connecté
   ) {
-    return this.employeesService.markDocumentCompleted(employeeId, stepId, responseId);
+    return this.employeesService.markDocumentCompleted(
+      employeeId,
+      stepId,
+      responseId,
+      currentUser.sub, // ✅ Transmet l'ID du user connecté
+    );
   }
 
-  @Get(':id/onboarding')
-  async getEmployeeOnboarding(@Param('id') id: number) {
-    return await this.employeesService.getEmployeeOnboarding(id);
-  }
 }

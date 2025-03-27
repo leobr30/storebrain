@@ -40,7 +40,6 @@ export const createTrainingWithOnboarding = async (employeeId: number, employeeO
     return response;
 }
 
-// ✅ New function to refresh the onboarding steps
 export const refreshSteps = async (employeeId: number) => {
     return await fetchWithAuth(`employees/${employeeId}/onboarding`);
 };

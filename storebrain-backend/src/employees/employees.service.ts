@@ -906,19 +906,31 @@ export class EmployeesService {
 
 
 
-  async createVacation(userId: number, vacationData: { startAt: string; endAt: string }) {
-    return this.prisma.userAbsence.create({
+  async createVacation(userId: number, vacationData: { startAt: string; endAt: string }, currentUser: CurrentUserType) {
+    const vacation = await this.prisma.userAbsence.create({
       data: {
         userId,
         startAt: new Date(vacationData.startAt),
         endAt: new Date(vacationData.endAt),
         type: UserAbsenceType.VACATION,
         status: Status.IN_PROGRESS,
-        createdById: userId,
+        createdById: currentUser.sub,
         createdAt: new Date(),
         vacationUserId: userId,
       },
     });
+  
+    await this.prisma.userHistory.create({
+      data: {
+        title: 'Vacances',
+        text: `a déclaré des vacances du ${new Date(vacationData.startAt).toLocaleDateString()} au ${new Date(vacationData.endAt).toLocaleDateString()}`,
+        type: 'ACTION',
+        userId: userId,
+        createdById: currentUser.sub,
+      },
+    });
+  
+    return vacation;
   }
 
   async updateVacation(
@@ -977,7 +989,7 @@ export class EmployeesService {
             text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
             type: 'ACTION',
             userId: employeeId,
-            createdById: currentUserId, // ✅ Utilisé ici
+            createdById: currentUserId,
           },
         });
       }

@@ -43,14 +43,20 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                 const updatedStep = updatedSteps.find(step => step.id === stepId);
                 if (updatedStep) {
                     updateStep(updatedStep);
+
+                } else {
+                    console.log("❌ Aucun updatedStep trouvé pour stepId:", stepId);
                 }
             } else {
-                console.error("Données reçues invalides :", updatedSteps);
+                console.error("❌ Données reçues invalides :", updatedSteps);
+
             }
         } catch (error) {
             console.error("❌ Error fetching updated steps:", error);
         }
+        console.log("🚀 Fin de handleRefreshSteps");
     };
+
 
 
 

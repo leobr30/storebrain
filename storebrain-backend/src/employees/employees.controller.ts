@@ -257,8 +257,13 @@ export class EmployeesController {
   }
 
   @Post(':id/vacations')
-  async createVacation(@Param('id') id: number, @Body() vacationData: { startAt: string, endAt: string }) {
-    const result = await this.employeesService.createVacation(id, vacationData);
+  async createVacation(
+    @Param('id') id: number,
+    @Body() vacationData: { startAt: string, endAt: string },
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+
+    const result = await this.employeesService.createVacation(id, vacationData, currentUser);
     return { message: "Vacation created successfully", data: result }; // ✅ Return a JSON response
   }
 
@@ -283,14 +288,18 @@ export class EmployeesController {
     @Param('employeeId') employeeId: number,
     @Param('stepId') stepId: number,
     @Body('responseId') responseId: string,
-    @CurrentUser() currentUser: CurrentUserType, // ✅ Récupère l'utilisateur connecté
+    @CurrentUser() currentUser: CurrentUserType,
   ) {
     return this.employeesService.markDocumentCompleted(
       employeeId,
       stepId,
       responseId,
-      currentUser.sub, // ✅ Transmet l'ID du user connecté
+      currentUser.sub,
     );
   }
 
+  @Get(':id/onboarding')
+  async getEmployeeOnboarding(@Param('id') id: number) {
+    return this.employeesService.getEmployeeOnboarding(id);
+  }
 }

@@ -12,12 +12,12 @@ import { TrainingAddAttachmentDto } from "./dto/training-add-attachement";
 
 @Controller('trainings')
 export class TrainingsController {
-  constructor(private readonly trainingsService: TrainingsService) {}
+  constructor(private readonly trainingsService: TrainingsService) { }
 
   @Get('/:trainingId')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new StartTrainingPolicyHandler())
-  async getTraining(    
+  async getTraining(
     @Param('trainingId') trainingId: number,
   ) {
     return await this.trainingsService.getTraining(trainingId);
@@ -25,18 +25,18 @@ export class TrainingsController {
 
 
   @Put(':trainingId/save')
-  async saveTraining(    
+  async saveTraining(
     @Param('trainingId') trainingId: number,
-    @Body() dto: SaveTrainingDto,    
+    @Body() dto: SaveTrainingDto,
   ) {
     await this.trainingsService.saveTraining(
-      trainingId,      
+      trainingId,
       dto,
     );
     return HttpStatus.OK;
   }
 
-  
+
   @Post(':trainingId/:trainingSubjectId/add-attachment')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new StartTrainingPolicyHandler())
@@ -66,7 +66,7 @@ export class TrainingsController {
     return trainingSubjectFileId;
   }
 
-  
+
 
 
   @Put(':trainingId/validate')
@@ -98,13 +98,18 @@ export class TrainingsController {
     @Param('attachmentId') attachmentId: number,
   ) {
 
-    const file =await this.trainingsService.downloadAttachment(trainingId, attachmentId);
-    return new StreamableFile(file.file,{
+    const file = await this.trainingsService.downloadAttachment(trainingId, attachmentId);
+    return new StreamableFile(file.file, {
       type: 'application/octet-stream',
       disposition: `attachment; filename="${file.filename}"`,
     });
   }
 
-  
+  @Get('user/:id')
+  async getTrainingsByUser(@Param('id') userId: number) {
+    return this.trainingsService.getTrainingsByUser(userId);
+  }
+
+
 
 }

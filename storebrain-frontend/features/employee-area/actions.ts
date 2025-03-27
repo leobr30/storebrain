@@ -76,12 +76,18 @@ export const deleteTrainingAttachment = async (trainingId: number, attachmentId:
 }
 
 export const downloadTrainingAttachment = async (trainingId: number, attachmentId: number) => {
-    const response =await fetchFile(`trainings/${trainingId}/download-attachment/${attachmentId}`)
+    const response = await fetchFile(`trainings/${trainingId}/download-attachment/${attachmentId}`)
     const header = response.headers.get('Content-Disposition');
     const parts = header!.split(';');
     const filename = parts[1].split('=')[1].replaceAll("\"", "");
-    const blob = await response.blob()    
+    const blob = await response.blob()
 }
+
+export async function getTrainingsForCurrentUser(userId: number) {
+    const response = await fetchWithAuth(`trainings/user/${userId}`);
+    return response;
+}
+
 
 
 //ABSENCE

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { EmployeeAbsence } from "./employee-absense"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { EmployeeFormation } from "./employee-formation"
+import EmployeeFormation from "./employee-formation"
+import { Employee } from "../../types"
 
 type EmployeeTabsProps = {
   employee: Employee
@@ -45,7 +46,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
       </TabsList>
 
       <TabsContent value="history" className="mt-2.5">
-        <EmployeeHistory histories={employee.histories}/>
+        <EmployeeHistory histories={employee.histories} />
       </TabsContent>
       <TabsContent value="onboarding" className="mt-2.5">
         <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id} />
@@ -54,7 +55,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <EmployeeAbsence employeeId={employee.id} absences={employee.absences} vacations={employee.vacations} />
       </TabsContent>
       <TabsContent value="training" className="mt-2.5">
-        <EmployeeFormation/>
+        <EmployeeFormation employeeId={employee.id} trainings={employee.trainings} />
       </TabsContent>
 
     </Tabs>

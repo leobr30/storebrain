@@ -10,6 +10,8 @@ export type Employee = {
     histories: EmployeeHistory[]
     jobOnboardings: EmployeeJobOnboarding[]
     absenses: Absence[]
+    vacations: Absence[]
+    trainings: Training[]
 }
 
 type EmployeeHistory = {
@@ -68,20 +70,25 @@ export interface EmployeeJobOnboarding {
 
 
 
-    
-
 
 export interface Training {
-    id: number
+    id: number;
+    date: Date;
     name: string;
-    subjects: TrainingSubject[],
-    tool: string,
+    subjects: TrainingSubject[];
+    tool: string;
     exercise: string;
     comment: string;
-    status: Status
+    status: Status;
+    realizedBy: {
+        name: string;
+    } | null;
     user: {
-        name: string
-    }
+        name: string;
+    };
+    userJobOnboarding: { 
+        appointmentNumber: number;
+    };
 }
 
 export type TrainingSubject = {
@@ -115,6 +122,7 @@ export enum AbsenceType {
 export type Absence = {
     id: number;
     startAt: Date;
+    endAt: Date | null;
     type: AbsenceType;
     user: {
         name: string;
@@ -123,6 +131,7 @@ export type Absence = {
     createdBy: {
         name: string;
     }
+    status: Status
 }
 
 export type MondayAppointment = {

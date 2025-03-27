@@ -15,6 +15,23 @@ export class TrainingsService {
     private eventEmitter: EventEmitter2,
   ) { }
 
+  async getTrainingsByUser(userId: number) {
+    console.log("🚀 getTrainingsByUser appelé avec userId :", userId); // Ajout du log
+    const trainings = await this.prisma.training.findMany({
+      where: { userId }, // Correction : on filtre sur userId
+      include: {
+        subjects: true,
+        realizedBy: {
+          select: {
+            name: true, // Ajout : on sélectionne le nom de l'utilisateur
+          },
+        },
+      },
+    });
+    console.log("🚀 Formations récupérées :", trainings); // Ajout du log
+    return trainings;
+  }
+
 
   async getTraining(trainingId: number) {
     return await this.prisma.training.findUnique({
@@ -158,6 +175,7 @@ export class TrainingsService {
         comment: dto.comment,
         tool: dto.tool,
         exercise: dto.exercise,
+        name: dto.name,
       },
     });
 

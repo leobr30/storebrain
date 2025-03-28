@@ -18,6 +18,8 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
   const [tab, setTab] = useState('history')
   const searchParams = useSearchParams()
   const searchTab = searchParams.get('tab')
+
+  console.log(employee)
   useEffect(() => {
     if (searchTab) {
       setTab(searchTab)

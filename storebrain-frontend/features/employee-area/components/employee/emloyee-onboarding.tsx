@@ -182,7 +182,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                     </Table>
                 </div>
             </CardContent>
-            <TrainingDrawer userId={id} onTrainingUpdated={handleTrainingUpdated} />
         </Card>
     );
 };

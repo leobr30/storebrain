@@ -264,6 +264,21 @@ export class EmployeesService {
             },
           },
         },
+        trainings:{
+          select:{
+            id:true,
+            date:true,
+            status:true,
+            userId:true,
+            realizedById:true,
+            name:true,
+            realizedBy:{
+              select:{
+                name:true,
+              }
+            }
+          }
+        }
       },
     });
   }

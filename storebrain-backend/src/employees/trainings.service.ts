@@ -16,19 +16,19 @@ export class TrainingsService {
   ) { }
 
   async getTrainingsByUser(userId: number) {
-    console.log("🚀 getTrainingsByUser appelé avec userId :", userId); // Ajout du log
+    console.log("🚀 getTrainingsByUser appelé avec userId :", userId);
     const trainings = await this.prisma.training.findMany({
-      where: { userId }, // Correction : on filtre sur userId
+      where: { userId },
       include: {
         subjects: true,
         realizedBy: {
           select: {
-            name: true, // Ajout : on sélectionne le nom de l'utilisateur
+            name: true,
           },
         },
       },
     });
-    console.log("🚀 Formations récupérées :", trainings); // Ajout du log
+    console.log("🚀 Formations récupérées :", trainings);
     return trainings;
   }
 
@@ -175,7 +175,6 @@ export class TrainingsService {
         comment: dto.comment,
         tool: dto.tool,
         exercise: dto.exercise,
-        name: dto.name,
       },
     });
 

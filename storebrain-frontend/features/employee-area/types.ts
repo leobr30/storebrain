@@ -30,6 +30,17 @@ type EmployeeDocument = {
     mimeType: "application/pdf"
 }
 
+export type TrainingModel = {
+    id: number;
+    name: string;
+    subjects: TrainingSubject[];
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+
+
+
 export interface EmployeeJobOnboarding {
     id: number;
     date: Date;
@@ -71,6 +82,7 @@ export interface EmployeeJobOnboarding {
 
 
 
+
 export interface Training {
     id: number;
     date: Date;
@@ -86,18 +98,19 @@ export interface Training {
     user: {
         name: string;
     };
-    userJobOnboarding: { 
+    userJobOnboarding: {
         appointmentNumber: number;
     };
 }
 
 export type TrainingSubject = {
     id: number;
-    trainingId: number;
     name: string;
     state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS",
-    files: TrainingSubjectFile[]
-}
+    trainingId: number;
+    files: TrainingSubjectFile[];
+};
+
 
 export interface TrainingSubjectFile {
     id: number;

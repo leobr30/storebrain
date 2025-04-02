@@ -31,6 +31,7 @@ const AddAttachmentSchema: ZodType<AddAttachmentData> = z.object({
 
 
 type AddAttachmentProps = {
+    trainingId: number;
     status: TrainingStatus,
     userId: number;
     addAttachment: (file: TrainingSubjectFile) => void,
@@ -38,16 +39,19 @@ type AddAttachmentProps = {
     onClose: () => void,
     onDownload: (attachmentId: number) => void,
     onDelete: (attachmentId: number) => void
+    onUpdateFileName: (fileId: number, newName: string) => void;
 }
 
 export const AttachmentsDialog = ({
+    trainingId,
     status,
     userId,
     addAttachment,
     selectedSubject,
     onClose,
     onDownload,
-    onDelete
+    onDelete,
+    onUpdateFileName
 }: AddAttachmentProps) => {
 
     const [open, setOpen] = useState<boolean>(false)
@@ -64,13 +68,13 @@ export const AttachmentsDialog = ({
     const onSubmit = async (data: AddAttachmentData) => {
         startTransition(async () => {
             const formData = new FormData()
-            formData.set('fileName',data.fileName)
+            formData.set('fileName', data.fileName)
             formData.append('file', data.file)
-            const file = await createTrainingAttachment(userId,selectedSubject!.trainingId,selectedSubject!.id,formData)
+            const file = await createTrainingAttachment(selectedSubject!.trainingId, selectedSubject!.id, formData)
             addAttachment(file)
-             form.reset()
-        })   
-        
+            form.reset()
+        })
+
     }
 
     useEffect(() => {
@@ -91,91 +95,101 @@ export const AttachmentsDialog = ({
                     <DialogTitle>Pièces jointes</DialogTitle>
                 </DialogHeader>
                 {status === 'PENDING' ? (
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <div className="grid grid-cols-3 gap-4 py-4">
-                            <div className="grid grid-cols-1 items-center gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="file"
-                                    render={({ field: { ref, name, onBlur, onChange } }) => (
-                                        <FormItem>
-                                            <FormLabel>Fichier</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="file"
-                                                    ref={ref}
-                                                    name={name}
-                                                    onBlur={onBlur}
-                                                    onChange={(e) => onChange(e.target.files?.[0])}
-                                                    className={cn("", {
-                                                        "border-destructive focus:border-destructive":
-                                                            form.formState.errors.file,
-                                                    })} />
-                                            </FormControl>                
-                                        </FormItem>
-                                    )}
-                                />
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <div className="grid grid-cols-3 gap-4 py-4">
+                                <div className="grid grid-cols-1 items-center gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="file"
+                                        render={({ field: { ref, name, onBlur, onChange } }) => (
+                                            <FormItem>
+                                                <FormLabel>Fichier</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="file"
+                                                        ref={ref}
+                                                        name={name}
+                                                        onBlur={onBlur}
+                                                        onChange={(e) => onChange(e.target.files?.[0])}
+                                                        className={cn("", {
+                                                            "border-destructive focus:border-destructive":
+                                                                form.formState.errors.file,
+                                                        })} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 items-center gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="fileName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Nom du fichier</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        className={cn("", {
+                                                            "border-destructive focus:border-destructive":
+                                                                form.formState.errors.fileName,
+                                                        })}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 items-end gap-4">
+                                    <Button disabled={loading} type="submit">{loading ? <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Ajout...</> : "Ajouter"}</Button>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-1 items-center gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="fileName"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nom du fichier</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    className={cn("", {
-                                                        "border-destructive focus:border-destructive":
-                                                            form.formState.errors.fileName,
-                                                    })}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 items-end gap-4">
-                                <Button disabled={loading} type="submit">{loading ? <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Ajout...</>  : "Ajouter"}</Button>
-                            </div>
-                        </div>
-                    </form>
-                </Form>
+                        </form>
+                    </Form>
                 ) : null}
                 <Separator />
                 <div className="flex flex-col gap-5">
                     {selectedSubject?.files.length && selectedSubject.files.length > 0 ? <Table className="text-center">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nom</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                 { selectedSubject.files.map(file => (
-                                    <TableRow key={file.id}>
-                                        <TableCell>{file.fileName}</TableCell>
-                                        <TableCell>{new Date(file.createdAt).toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-center gap-2">
-                                                <Button variant={'soft'} color="default" size="icon" onClick={() => onDownload(file.id)}>
-                                                    <Download />
-                                                </Button>
-                                                {status === 'PENDING' ? (
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nom</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {selectedSubject.files.map(file => (
+                                <TableRow key={file.id}>
+                                    <TableCell>
+                                        {status === 'PENDING' ? (
+                                            <Input
+                                                className="font-semibold text-lg"
+                                                defaultValue={file.fileName}
+                                                onBlur={(e) => onUpdateFileName(file.id, e.target.value)}
+                                            />
+                                        ) : (
+                                            file.fileName
+                                        )}
+                                    </TableCell>
+                                    <TableCell>{new Date(file.createdAt).toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-center gap-2">
+                                            <Button variant={'soft'} color="default" size="icon" onClick={() => onDownload(file.id)}>
+                                                <Download />
+                                            </Button>
+                                            {status === 'PENDING' ? (
                                                 <AlertDialogAttachment id={file.id} onDelete={() => {
                                                     onDelete(file.id)
                                                     selectedSubject!.files = selectedSubject!.files.filter(f => f.id !== file.id)
-                                                } } />
-                                                ) : null}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table> : <p className="text-center">Aucune pièce jointe</p>}
+                                                }} />
+                                            ) : null}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table> : <p className="text-center">Aucune pièce jointe</p>}
                 </div>
             </DialogContent>
         </Dialog>

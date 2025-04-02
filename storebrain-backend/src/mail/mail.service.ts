@@ -50,7 +50,7 @@ export class MailService {
   }
 
   async sendEmployeeFormMail(
-email: string, file: { fileName: string; mimeType: string; filePath: string; }, formTitle: string, userId: string, lastName: string, firstName: string  ) {
+email: string, file: { fileName: string; mimeType: string; filePath: string; }, formTitle: string, userId: string, lastName: string, firstName: string,  ) {
     await this.mailerService.sendMail({
       to: email,
       subject: `📄 Formulaire rempli : ${formTitle}`,

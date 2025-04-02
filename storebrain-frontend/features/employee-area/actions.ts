@@ -34,8 +34,12 @@ export const startEmployeeJobOnboarding = async (id: number) => {
     revalidatePath('/en/employee-area/home')
 }
 
-export const createTrainingWithOnboarding = async (employeeId: number, employeeOnboordingId: number) => {
-    const response = await fetchWithAuth(`employees/${employeeId}/start-training/${employeeOnboordingId}`, { method: 'POST' })
+
+export const createTraining = async (employeeId: number, employeeOnboordingId: number, trainingModelId: number | undefined, name: string, subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]) => { // ✅ Ajout du paramètre subjects
+    const response = await fetchWithAuth(`employees/${employeeId}/start-training/${employeeOnboordingId}`, {
+        method: 'POST',
+        body: JSON.stringify({ trainingModelId, name, subjects })
+    })
     revalidatePath('/en/employee-area/home')
     return response;
 }
@@ -56,9 +60,13 @@ export const getTraining = async (trainingId: number) => {
     return await fetchWithAuth(`trainings/${trainingId}`)
 }
 
-export const createTrainingAttachment = async (userId: number, trainingId: number, trainingSubjectId: number, data: FormData) => {
+export const createTrainingAttachment = async (trainingId: number, trainingSubjectId: number, data: FormData) => {
     return await fetchWithAuth(`trainings/${trainingId}/${trainingSubjectId}/add-attachment`, { method: 'POST', body: data }, true)
 }
+
+export const getTrainingModels = async () => {
+    return await fetchWithAuth(`trainings/training-models`);
+};
 
 
 export const saveTraining = async (userId: number, trainingId: number, data: any) => {
@@ -117,7 +125,8 @@ export const createAppointment = async (data: { date: Date, companyId: number })
         body: JSON.stringify(data)
     })
     revalidatePath('/en/employee-area/home')
-    return response;
+    const appointment = await response
+    return appointment.data;
 }
 
 export const getAppointment = async (appointmentId: number) => {
@@ -157,7 +166,7 @@ export const saveOmar = async (omarId: number, data: { objective: string, tool: 
 }
 
 export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date }) => {
-    const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) }) // ✅ Corrected URL
+    const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) })
     revalidatePath('/en/employee-area/home')
     return response;
 }

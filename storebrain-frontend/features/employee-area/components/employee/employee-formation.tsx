@@ -6,32 +6,41 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Training } from "../../types";
+import { Training, EmployeeJobOnboarding } from "../../types"; // Import EmployeeJobOnboarding
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "../status-badge";
 import { formatDate } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { PencilLine } from "lucide-react";
+import { CreateTrainingDialog } from "./create-training-dialog";
 
 type EmployeeFormationProps = {
     employeeId: number;
     trainings?: Training[];
+    jobOnboardings: EmployeeJobOnboarding[]; // Add jobOnboardings prop
 };
 
-export default function EmployeeFormation({ employeeId, trainings }: EmployeeFormationProps) {
+export default function EmployeeFormation({ employeeId, trainings, jobOnboardings }: EmployeeFormationProps) {
     const { data: session } = useSession();
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const pathName = usePathname();
     const searchParams = useSearchParams();
+    const isAdmin = session?.user?.name === "admin";
 
-    const handleViewTraining = (trainingId: number) => {
+    // ✅ Définition de employeeOnboordingId
+    const employeeOnboordingId = jobOnboardings.find(jobOnboarding => jobOnboarding.jobOnboardingStep.type === "TRAINING")?.id;
+
+    const handleViewTraining = (trainingId: number, mode: 'view' | 'edit') => {
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.set("trainingId", trainingId.toString());
-        newSearchParams.delete("edit");
-        router.push(`${pathName}?${newSearchParams.toString()}`);
+        newSearchParams.set("mode", mode);
+        router.replace(`${pathName}?${newSearchParams.toString()}`);
     };
+
+
 
     const columns = useMemo<ColumnDef<Training>[]>(() => [
         {
@@ -57,22 +66,30 @@ export default function EmployeeFormation({ employeeId, trainings }: EmployeeFor
             accessorKey: "actions",
             header: "Action",
             cell: ({ row }) => (
-                <Button variant="ghost" onClick={() => handleViewTraining(row.original.id)}>
-                    {row.original.status === "PENDING" ? "Continuer" : "Voir"}
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => handleViewTraining(row.original.id, 'view')}>
+                        {row.original.status === "PENDING" ? "Continuer" : "Voir"}
+                    </Button>
+                    {isAdmin && (
+                        <Button variant="ghost" onClick={() => handleViewTraining(row.original.id, 'edit')}>
+                            <PencilLine /> Modifier
+                        </Button>
+                    )}
+                </div>
             ),
         },
-    ], [searchParams]);
+    ], [searchParams, isAdmin]);
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Formations</CardTitle>
+            <CardHeader className="flex-row justify-between items-center ">
+                <CardTitle>Formation</CardTitle>
+                {employeeOnboordingId && <CreateTrainingDialog employeeId={employeeId} employeeOnboordingId={employeeOnboordingId} />} {/* Pass employeeOnboordingId to CreateTrainingDialog */}
             </CardHeader>
             <CardContent>
                 {loading ? (
                     <Skeleton className="w-full h-12" />
-                ) : trainings && trainings.length === 0 ? ( 
+                ) : trainings && trainings.length === 0 ? (
                     <p className="text-gray-500">Aucune formation trouvée.</p>
                 ) : (
                     <div className="rounded-md border">
@@ -85,7 +102,7 @@ export default function EmployeeFormation({ employeeId, trainings }: EmployeeFor
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {trainings && trainings.map((training) => ( 
+                                {trainings && trainings.map((training) => (
                                     <TableRow key={training.id}>
                                         {columns.map((column) => (
                                             <TableCell key={`${training.id}-${column.accessorKey}`}>

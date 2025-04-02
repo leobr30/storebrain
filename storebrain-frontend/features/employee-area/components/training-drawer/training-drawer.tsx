@@ -26,13 +26,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Training, TrainingSubject, TrainingSubjectFile } from "../../types"
 import { auth } from "@/lib/auth"
 import { useSession } from "next-auth/react"
+import { Input } from "@/components/ui/input"
 
 
 
 
 type TrainingDrawerProps = {
     userId: number;
-    trainingId: number
 }
 
 const statusOptions = [{ value: 'ACQUIRED', label: 'Acquis' }, { value: 'IN_PROGRESS', label: "En cours d'acquisition" }, { value: 'NOT_ACQUIRED', label: "Non acquis" }]
@@ -41,7 +41,7 @@ const subjectEvaluationSchema = z.object({
     subject: z.string(),
     status: z.enum(['ACQUIRED', 'IN_PROGRESS', 'NOT_ACQUIRED']),
     subjectId: z.number(),
-    files: z.array(z.object({ fileId: z.number(), fileName: z.string() }))
+    files: z.array(z.object({ fileId: z.number(), fileName: z.string(), createdAt: z.date() }))
 })
 
 const formSchema = z.object({
@@ -112,20 +112,20 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
     })
 
     const addAttachment = async (file: TrainingSubjectFile) => {
-        form.setValue("subjects", form.getValues('subjects').map(subject => subject.subjectId === file.trainingSubjectId ? 
-            ({ ...subject, files: [...subject.files, {fileId: file.id, fileName: file.fileName, createdAt: file.createdAt}] }) : subject))
-            setSelectedSubject({...selectedSubject!, files: [...selectedSubject!.files, file]})
-            toast.success("Pièce jointe ajoutée")
+        form.setValue("subjects", form.getValues('subjects').map(subject => subject.subjectId === file.trainingSubjectId ?
+            ({ ...subject, files: [...subject.files, { fileId: file.id, fileName: file.fileName, createdAt: file.createdAt }] }) : subject))
+        setSelectedSubject({ ...selectedSubject!, files: [...selectedSubject!.files, file] })
+        toast.success("Pièce jointe ajoutée")
     }
 
     const onSubmit = async () => {
         setLoginDialogOpen(true)
-       
+
     }
 
     const handleLoginSuccess = async () => {
 
-        await closeTraining(userId, parseInt(trainingId!), {
+        await closeTraining(parseInt(trainingId!), {
             comment: form.getValues('comment'),
             tool: form.getValues('tool'),
             exercise: form.getValues('exercise'),
@@ -143,7 +143,7 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
     }
 
     const handleSaveTraining = async () => {
-        await saveTraining(userId, parseInt(trainingId!), {
+        await saveTraining(parseInt(trainingId!), {
             comment: form.getValues('comment'),
             tool: form.getValues('tool'),
             exercise: form.getValues('exercise'),
@@ -153,39 +153,45 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
         handleCloseTraining()
     }
 
-    const handleFileDelete = async (attachmentId: number) => {        
+    const handleFileDelete = async (attachmentId: number) => {
         await deleteTrainingAttachment(parseInt(trainingId!), attachmentId)
         form.setValue("subjects", form.getValues('subjects').map(subject => ({ ...subject, files: subject.files.filter(file => file.fileId !== attachmentId) })))
-        setSelectedSubject({...selectedSubject!, files: selectedSubject!.files.filter(file => file.id !== attachmentId)})
+        setSelectedSubject({ ...selectedSubject!, files: selectedSubject!.files.filter(file => file.id !== attachmentId) })
         toast.success("Pièce jointe supprimée")
     }
 
-    
 
-    const handleDownloadAttachment = async (attachmentId: number) => {        
-       const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/files/trainings/${trainingId}/${attachmentId}`)
-       const fileBlob = await response.blob()
 
-       const header = response.headers.get('Content-Disposition');
-       const parts = header!.split(';');
-       const filename = parts[1].split('=')[1].replaceAll("\"", "");
+    const handleDownloadAttachment = async (attachmentId: number) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/files/trainings/${trainingId}/${attachmentId}`)
+        const fileBlob = await response.blob()
 
-       var link = document.createElement('a') 
-       link.href = window.URL.createObjectURL(fileBlob)
-       link.download = filename
-       link.click()
-       link.remove(); 
+        const header = response.headers.get('Content-Disposition');
+        const parts = header!.split(';');
+        const filename = parts[1].split('=')[1].replaceAll("\"", "");
+
+        var link = document.createElement('a')
+        link.href = window.URL.createObjectURL(fileBlob)
+        link.download = filename
+        link.click()
+        link.remove();
     }
-    
+
     const handleAttachmentsDialogClose = () => {
         setSelectedSubject(undefined)
     }
 
+    const handleUpdateFileName = (fileId: number, newName: string) => {
+        form.setValue("subjects", form.getValues('subjects').map(subject => ({ ...subject, files: subject.files.map(file => file.fileId === fileId ? ({ ...file, fileName: newName }) : file) })))
+        setSelectedSubject({ ...selectedSubject!, files: selectedSubject!.files.map(file => file.id === fileId ? ({ ...file, fileName: newName }) : file) })
+        toast.success("Nom du fichier modifié")
+    }
+
     return (
         <Sheet open={open} onOpenChange={handleCloseTraining} >
-            <SheetContent 
-            closeIcon={<X className="h-5 w-5 relative" />}
-            className="h-[90vh] flex flex-col p-0" side={'bottom'}>                
+            <SheetContent
+                closeIcon={<X className="h-5 w-5 relative" />}
+                className="h-[90vh] flex flex-col p-0" side={'bottom'}>
                 {loading ? (
                     <>
                         <SheetHeader>
@@ -252,8 +258,8 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                                                                 <div className="flex flex-col gap-5">
                                                                     {item.files.length === 0 ? <p>Aucune pièce jointe</p> : <p>{item.files.length} pièces jointes</p>}
                                                                     <Button variant={'ghost'} type="button" onClick={() => setSelectedSubject(training?.subjects.find(subject => subject.id === item.subjectId))}>Voir</Button>
-                                                                 
-                                                                    
+
+
                                                                 </div>
 
                                                             </TableCell>
@@ -348,9 +354,9 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                     </SheetClose>
                     {training?.status === 'PENDING' && <Button variant={'soft'} onClick={handleSaveTraining}>Enregister</Button>}
                     {training?.status === 'PENDING' && <Button onClick={form.handleSubmit(onSubmit)}>Validation</Button>}
-                </SheetFooter>                
+                </SheetFooter>
                 <LoginDialog title={`Signature requise de ${training?.user.name}`} userId={userId} open={loginDialogOpen} setOpen={setLoginDialogOpen} onSuccess={handleLoginSuccess} />
-                <AttachmentsDialog status={training?.status} userId={userId} selectedSubject={selectedSubject} addAttachment={addAttachment} onClose={handleAttachmentsDialogClose} onDownload={handleDownloadAttachment} onDelete={handleFileDelete}/>
+                <AttachmentsDialog trainingId={parseInt(trainingId!)} status={training?.status} userId={userId} selectedSubject={selectedSubject} addAttachment={addAttachment} onClose={handleAttachmentsDialogClose} onDownload={handleDownloadAttachment} onDelete={handleFileDelete} onUpdateFileName={handleUpdateFileName} />
             </SheetContent>
         </Sheet>
     )

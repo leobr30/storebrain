@@ -1,3 +1,4 @@
+// c:\Users\Gabriel\Desktop\storebrain\storebrain-backend\src\employees\trainings.controller.ts
 import { Controller, UseGuards, Get, Param, HttpStatus, Put, Body, UploadedFile, UseInterceptors, Post, Delete, StreamableFile } from "@nestjs/common";
 import { TrainingsService } from "./trainings.service";
 import { CheckPolicies } from "src/casl/policy.decorator";
@@ -13,6 +14,18 @@ import { TrainingAddAttachmentDto } from "./dto/training-add-attachement";
 @Controller('trainings')
 export class TrainingsController {
   constructor(private readonly trainingsService: TrainingsService) { }
+
+  // ... (autres routes) ...
+
+  @Get('user/:id')
+  async getTrainingsByUser(@Param('id') userId: number) {
+    return this.trainingsService.getTrainingsByUser(userId);
+  }
+
+  @Get('training-models')
+  async getTrainingModels() {
+    return this.trainingsService.getTrainingModels();
+  }
 
   @Get('/:trainingId')
   @UseGuards(PoliciesGuard)
@@ -103,11 +116,6 @@ export class TrainingsController {
       type: 'application/octet-stream',
       disposition: `attachment; filename="${file.filename}"`,
     });
-  }
-
-  @Get('user/:id')
-  async getTrainingsByUser(@Param('id') userId: number) {
-    return this.trainingsService.getTrainingsByUser(userId);
   }
 
 

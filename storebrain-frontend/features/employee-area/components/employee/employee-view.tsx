@@ -14,6 +14,7 @@ type EmployeeViewProps = {
 export const EmployeeView = ({ employee }: EmployeeViewProps) => {
     return (
         <>
+            <TrainingDrawer userId={employee.id} /> 
             <AbsenceDialog />
             <div className="grid grid-cols-12 gap-5">
                 <div className="col-span-12 lg:col-span-4 space-y-5">

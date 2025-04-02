@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "../status-badge";
 import { Button } from "@/components/ui/button";
-import { createTrainingWithOnboarding, refreshResponses, refreshSteps } from "../../actions";
+import { refreshResponses, refreshSteps } from "../../actions";
 import { TrainingDrawer } from "../training-drawer/training-drawer";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -20,25 +20,25 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     const router = useRouter();
     const pathName = usePathname();
     const searchParams = useSearchParams();
+    const handleViewTraining = (trainingId: number) => {
+        const newSearchParams = new URLSearchParams(searchParams)
+        newSearchParams.set('trainingId', trainingId.toString())
+        router.push(`${pathName}?${newSearchParams.toString()}`);
+    }
+
+
     const [localSteps, setLocalSteps] = useState<EmployeeJobOnboarding[]>(steps);
     const [open, setOpen] = useState(false);
 
-    const handleViewTraining = (trainingId: number) => {
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.set("trainingId", trainingId.toString());
-        router.push(`${pathName}?${newSearchParams.toString()}`);
-    };
 
     const handleCreateTraining = async (jobOnboardingStepId: number) => {
         const training = await createTrainingWithOnboarding(id, jobOnboardingStepId);
         handleViewTraining(training.id);
     };
 
-
     const handleRefreshSteps = async (stepId: number) => {
         try {
             const updatedSteps = await refreshSteps(id);
-            console.log("🚀 Données reçues de refreshSteps :", updatedSteps);
             if (updatedSteps && Array.isArray(updatedSteps)) {
                 const updatedStep = updatedSteps.find(step => step.id === stepId);
                 if (updatedStep) {

@@ -57,7 +57,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <EmployeeAbsence employeeId={employee.id} absences={employee.absences} vacations={employee.vacations} />
       </TabsContent>
       <TabsContent value="training" className="mt-2.5">
-        <EmployeeFormation employeeId={employee.id} trainings={employee.trainings} />
+        <EmployeeFormation employeeId={employee.id} trainings={employee.trainings} jobOnboardings={employee.jobOnboardings} />
       </TabsContent>
 
     </Tabs>

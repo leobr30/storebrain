@@ -48,6 +48,7 @@ export class EmployeesService {
   async getEmployees(companyId?: number) {
     return this.prisma.user.findMany({
       select: {
+        username: true,
         id: true,
         name: true,
         zone: true,
@@ -264,17 +265,17 @@ export class EmployeesService {
             },
           },
         },
-        trainings:{
-          select:{
-            id:true,
-            date:true,
-            status:true,
-            userId:true,
-            realizedById:true,
-            name:true,
-            realizedBy:{
-              select:{
-                name:true,
+        trainings: {
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            userId: true,
+            realizedById: true,
+            name: true,
+            realizedBy: {
+              select: {
+                name: true,
               }
             }
           }
@@ -424,61 +425,102 @@ export class EmployeesService {
     });
   }
 
+  // Dans ton fichier employees.service.ts
   async createTrainingWithEmployeeOnboardingId(
     dto: CreateTrainingWithOnboardingDto,
+    trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
+    name: string,
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[] // ✅ Ajout du paramètre subjects
   ) {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: dto.userId,
-      },
-      include: {
-        jobOnboardings: {
-          include: {
-            jobOnboardingStep: {
-              include: {
-                trainingModel: {
-                  include: {
-                    subjects: true,
-                  }
+    try {
+      // Vérifier si l'utilisateur existe
+      const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${dto.userId} not found`);
+      }
+      // Récupérer l'utilisateur avec les relations nécessaires
+      const userWithRelations = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          id: dto.userId,
+        },
+        include: {
+          jobOnboardings: {
+            include: {
+              jobOnboardingStep: {
+                include: {
+                  trainingModel: {
+                    include: {
+                      subjects: true,
+                    }
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
-    const integration = user.jobOnboardings.find(
-      (w) => w.id === dto.employeeJobOnboardId,
-    );
-    if (integration === undefined || !integration.jobOnboardingStep.trainingModel) throw new NotFoundException();
+      });
+      // Vérifier si l'intégration existe
+      const integration = userWithRelations.jobOnboardings.find(
+        (w) => w.id === dto.employeeJobOnboardId,
+      );
+      if (integration === undefined) {
+        throw new NotFoundException(`Integration with ID ${dto.employeeJobOnboardId} not found`);
+      }
 
-    const training = await this.prisma.training.create({
-      data: {
-        name: integration.jobOnboardingStep.trainingModel?.name,
-        subjects: {
-          create: integration.jobOnboardingStep.trainingModel?.subjects.map((subject) => ({
-            name: subject.name,
-          })),
+      let trainingModel;
+      if (trainingModelId) {
+        trainingModel = await this.prisma.trainingModel.findUnique({
+          where: {
+            id: trainingModelId,
+          },
+          include: {
+            subjects: true,
+          },
+        });
+        if (!trainingModel) {
+          throw new NotFoundException(`TrainingModel with ID ${trainingModelId} not found`);
+        }
+      }
+
+      // Créer la formation
+      const training = await this.prisma.training.create({
+        data: {
+          name: name,
+          subjects: {
+            create: trainingModel ? trainingModel.subjects?.map((subject) => ({
+              name: subject.name,
+            })) || [] : subjects?.map((subject) => ({ // ✅ Création des sujets si trainingModel est undefined
+              name: subject.name,
+            })) || [],
+          },
+          comment: '',
+          tool: trainingModel?.tool || '', // ✅ Utilisation de l'opérateur d'optional chaining
+          exercise: '',
+          realizedById: dto.currentUserId,
+          userId: dto.userId,
+          userJobOnboardingId: dto.employeeJobOnboardId,
         },
-        comment: '',
-        tool: integration.jobOnboardingStep.trainingModel.tool,
-        exercise: '',
-        realizedById: dto.currentUserId,
-        userId: dto.userId,
-        userJobOnboardingId: dto.employeeJobOnboardId,
-      },
-    });
+      });
 
-    await this.prisma.userJobOnboarding.update({
-      where: {
-        id: dto.employeeJobOnboardId,
-      },
-      data: {
-        status: Status.IN_PROGRESS,
-      },
-    });
-    return training;
+      // Mettre à jour le statut de l'intégration
+      await this.prisma.userJobOnboarding.update({
+        where: {
+          id: dto.employeeJobOnboardId,
+        },
+        data: {
+          status: Status.IN_PROGRESS,
+        },
+      });
+      return training;
+    } catch (error) {
+      console.error("Error in createTrainingWithEmployeeOnboardingId:", error);
+      if (error instanceof NotFoundException) {
+        throw error; // Relancer l'erreur NotFoundException
+      }
+      throw new HttpException('Error creating training', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
+
 
 
 
@@ -934,7 +976,7 @@ export class EmployeesService {
         vacationUserId: userId,
       },
     });
-  
+
     await this.prisma.userHistory.create({
       data: {
         title: 'Vacances',
@@ -944,7 +986,7 @@ export class EmployeesService {
         createdById: currentUser.sub,
       },
     });
-  
+
     return vacation;
   }
 

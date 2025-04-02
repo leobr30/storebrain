@@ -12,7 +12,8 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  UnauthorizedException
+  UnauthorizedException,
+  HttpException
 } from '@nestjs/common';
 import { CheckPolicies } from 'src/casl/policy.decorator';
 import { PoliciesGuard } from 'src/casl/policy.guard';
@@ -120,6 +121,7 @@ export class EmployeesController {
     return { message: "Integration started successfully" }; // ✅ Return a JSON response
   }
 
+  // Dans ton fichier employees.controller.ts
   @Post(':id/start-training/:employeeJobIntegrationId')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new StartTrainingPolicyHandler())
@@ -127,16 +129,29 @@ export class EmployeesController {
     @Param('id') userId: number,
     @Param('employeeJobIntegrationId') employeejobOnboardingId: number,
     @CurrentUser() currentUser: CurrentUserType,
+    @Body('trainingModelId') trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
+    @Body('name') name: string,
+    @Body('subjects') subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[] // ✅ Ajout du paramètre subjects
   ) {
-    const dto = new CreateTrainingWithOnboardingDto();
-    dto.userId = userId;
-    dto.employeeJobOnboardId = employeejobOnboardingId;
-    dto.currentUserId = currentUser.sub;
-    const result = await this.employeesService.createTrainingWithEmployeeOnboardingId(
-      dto,
-    );
-    return { message: "Training created successfully", data: result }; // ✅ Return a JSON response
+    try {
+      const dto = new CreateTrainingWithOnboardingDto();
+      dto.userId = userId;
+      dto.employeeJobOnboardId = employeejobOnboardingId;
+      dto.currentUserId = currentUser.sub;
+      const result = await this.employeesService.createTrainingWithEmployeeOnboardingId(
+        dto,
+        trainingModelId,
+        name,
+        subjects
+      );
+      return { message: "Training created successfully", data: result };
+    } catch (error) {
+      console.error("Error creating training:", error);
+      throw new HttpException(error.message || "Internal Server Error", error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
+
+
 
   @Post(':id/absences')
   async createAbsence(
@@ -172,20 +187,19 @@ export class EmployeesController {
     @CurrentUser() currentUser: CurrentUserType,
   ) {
     const appointment = await this.employeesService.createAppointment(dto, currentUser);
-    return { message: "Appointment created successfully", data: appointment }; // ✅ Return a JSON response
+    return { message: "Appointment created successfully", data: appointment };
   }
 
   @Get('appointments/:id')
   @UseGuards(PoliciesGuard)
-
   async getAppointment(@Param('id') id: number) {
-    return await this.employeesService.getAppointment(id); // ✅ Return the result
+    return await this.employeesService.getAppointment(id);
   }
 
   @Get('appointments')
   @UseGuards(PoliciesGuard)
   async getAppointments() {
-    return await this.employeesService.getAppointments(); // ✅ Return the result
+    return await this.employeesService.getAppointments();
   }
 
   @Post(':id/omar')

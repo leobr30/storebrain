@@ -10,6 +10,7 @@ import { MondayAppointment } from "../../types"
 import { id } from "date-fns/locale"
 import { TableWithHeader } from "../table-with-header"
 import { format } from "date-fns"
+import { ColumnDef } from "@tanstack/react-table"
 
 type AppointmentsCardProps = {
     appointments: MondayAppointment[]
@@ -21,15 +22,19 @@ export const AppointmentsCard = ({ appointments }: AppointmentsCardProps) => {
     const pathname = usePathname();
     const { replace } = useRouter();
     const handleCreateAppointmentClick = async () => {
-        if (!searchParams.get('company')) {
+        const companyId = searchParams.get('company'); // Get companyId from searchParams
+        if (!companyId) {
             toast.error("Veuillez sélectionner une entreprise")
+            return;
         }
-        else {
-            const appointment = await createAppointment({ date: new Date(), companyId: 1 })
+        try {
+            const appointment = await createAppointment({ date: new Date(), companyId: parseInt(companyId) }) // Use the correct companyId
             const newSearchParams = new URLSearchParams(searchParams)
             newSearchParams.set('appointmentId', appointment.id.toString())
             replace(`${pathname}?${newSearchParams.toString()}`);
-
+        } catch (error) {
+            console.error("Erreur lors de la création du rendez-vous :", error);
+            toast.error("Une erreur est survenue lors de la création du rendez-vous.");
         }
     }
 
@@ -60,7 +65,7 @@ export const AppointmentsCard = ({ appointments }: AppointmentsCardProps) => {
                 </Button>
             }
         }
-    ], [])
+    ], [searchParams, pathname, replace])
     return (
         <div>
             <Card>

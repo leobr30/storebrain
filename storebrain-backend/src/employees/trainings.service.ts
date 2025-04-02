@@ -15,6 +15,14 @@ export class TrainingsService {
     private eventEmitter: EventEmitter2,
   ) { }
 
+  async getTrainingModels() {
+    return await this.prisma.trainingModel.findMany({
+      include: {
+        subjects: true,
+      },
+    });
+  }
+
   async getTrainingsByUser(userId: number) {
     console.log("🚀 getTrainingsByUser appelé avec userId :", userId);
     const trainings = await this.prisma.training.findMany({

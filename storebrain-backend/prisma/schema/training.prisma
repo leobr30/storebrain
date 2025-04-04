@@ -1,20 +1,23 @@
 model Training {
-    id                  Int               @id @default(autoincrement())
-    date                DateTime          @default(now()) @db.Date
-    status              Status            @default(PENDING)
-    name                String
-    subjects            TrainingSubject[]
-    comment             String
-    tool                String
-    exercise            String
-    userId              Int
-    user                User              @relation(references: [id], fields: [userId], onDelete: Cascade, name: "Trainings")
-    realizedById        Int
-    realizedBy          User              @relation(references: [id], fields: [realizedById], onDelete: Cascade, name: "RealizedTrainings")
-    userJobOnboardingId Int               @unique
-    userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
-    validateAt          DateTime?
+  id                  Int               @id @default(autoincrement())
+  name                String
+  comment             String
+  tool                String
+  exercise            String
+  date                DateTime?
+  status              Status            @default(DRAFT)
+  validateAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt @default(now()) // Ajout de @default(now())
+  userId              Int
+  user                User              @relation(fields: [userId], references: [id], name: "Trainings")
+  realizedById        Int?
+  realizedBy          User?             @relation("RealizedTrainings", fields: [realizedById], references: [id])
+  subjects            TrainingSubject[]
+  userJobOnboardingId Int
+  userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
 }
+
 
 model TrainingSubject {
     id         Int                   @id @default(autoincrement())
@@ -57,4 +60,3 @@ model TrainingModelSubject {
     trainingModelId Int
     trainingModel TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
 }
-

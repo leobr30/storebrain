@@ -360,7 +360,11 @@ export class PdfService {
         { text: training!.exercise },
       ],
       footer: [
-        { text: `Formation réalisée le: ${training?.validateAt?.toLocaleDateString()} par ${training?.realizedBy.name}`, alignment: 'center', margin: 5 },
+        {
+          text: `Formation réalisée le: ${training?.validateAt?.toLocaleDateString()} par ${training?.realizedBy?.name ?? 'Inconnu'}`,
+          alignment: 'center',
+          margin: 5
+        },
       ],
       defaultStyle: {
         font: 'Inter',

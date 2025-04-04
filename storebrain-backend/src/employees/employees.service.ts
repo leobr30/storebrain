@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { JobsService } from 'src/jobs/jobs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import fs from 'fs';
@@ -405,7 +405,7 @@ export class EmployeesService {
       }
 
     });
-    await this.prisma.userJobOnboarding.createMany({
+    const userJobOnboardings = await this.prisma.userJobOnboarding.createMany({
       data: data,
     });
     await this.prisma.user.update({
@@ -423,7 +423,10 @@ export class EmployeesService {
         },
       },
     });
+    return userJobOnboardings;
   }
+
+
 
   // Dans ton fichier employees.service.ts
   async createTrainingWithEmployeeOnboardingId(
@@ -517,9 +520,10 @@ export class EmployeesService {
       if (error instanceof NotFoundException) {
         throw error; // Relancer l'erreur NotFoundException
       }
-      throw new HttpException('Error creating training', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message || 'Error creating training', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 
 
 
@@ -759,36 +763,69 @@ export class EmployeesService {
     return remainingDays;
   }
 
+  async updateMondayAppointmentDetail(id: number, remainingDays: number) {
+    console.log("🚀 updateMondayAppointmentDetail appelé avec id :", id, "et remainingDays :", remainingDays);
+    const appointmentDetail = await this.prisma.mondayAppointmentDetail.findUnique({
+      where: { id },
+    });
+
+    if (!appointmentDetail) {
+      throw new NotFoundException('Monday Appointment Detail not found');
+    }
+
+    const updatedAppointmentDetail = await this.prisma.mondayAppointmentDetail.update({
+      where: { id },
+      data: {
+        remainingDays: remainingDays,
+      },
+    });
+    console.log("🚀 updateMondayAppointmentDetail terminé avec updatedAppointmentDetail :", updatedAppointmentDetail);
+
+    return updatedAppointmentDetail;
+  }
+
+
   async createOmar(data: {
     createdById: number;
     userId: number;
     appointmentDetailId?: number;
   }) {
-    const omar = await this.prisma.omar.create({
-      data: {
-        objective: '',
-        tool: '',
-        action: '',
-        result: '',
-        observation: '',
-        status: 'DRAFT',
-        dueDate: addDays(startOfDay(new Date()), 5),
-        createdBy: { connect: { id: data.createdById } },
-        user: { connect: { id: data.userId } },
-      },
-    });
+    try {
+      console.log("🔧 Création OMAR - Données reçues :", data);
 
-    if (data.appointmentDetailId) {
-      await this.prisma.mondayAppointmentDetail.update({
-        where: { id: data.appointmentDetailId },
+      const omar = await this.prisma.omar.create({
         data: {
-          omarId: omar.id
-        }
-      })
-    }
+          objective: '',
+          tool: '',
+          action: '',
+          result: '',
+          observation: '',
+          status: 'DRAFT',
+          dueDate: addDays(startOfDay(new Date()), 5),
+          createdBy: { connect: { id: data.createdById } },
+          user: { connect: { id: data.userId } },
+        },
+      });
 
-    return omar
+      console.log("✅ OMAR créé avec ID :", omar.id);
+
+      if (data.appointmentDetailId) {
+        await this.prisma.mondayAppointmentDetail.update({
+          where: { id: data.appointmentDetailId },
+          data: {
+            omarId: omar.id,
+          },
+        });
+        console.log("🔗 OMAR lié à l’appointmentDetail :", data.appointmentDetailId);
+      }
+
+      return omar;
+    } catch (error) {
+      console.error("❌ Erreur dans createOmar :", error);
+      throw new Error("Erreur lors de la création de l'OMAR.");
+    }
   }
+
 
   async getOmar(id: number) {
     return this.prisma.omar.findUnique({

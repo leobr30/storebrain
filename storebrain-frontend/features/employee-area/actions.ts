@@ -148,10 +148,26 @@ export const signMondayAppointmentDetail = async (appointmentDetailId: number) =
 //OMAR
 
 export const createOmar = async (userId: number, appointmentDetailId?: number) => {
-    const response = await fetchWithAuth(`employees/${userId}/omar?appointmentDetailId=${appointmentDetailId}`, { method: 'POST' })
-    revalidatePath('/en/employee-area/home')
-    return response;
-}
+    const response = await fetchWithAuth(
+        `employees/${userId}/omar?appointmentDetailId=${appointmentDetailId}`,
+        { method: 'POST' }
+    );
+
+    const omar = response?.data;
+
+    console.log("✅ OMAR extrait :", omar);
+
+    if (!omar || !omar.id) {
+        console.error("❌ OMAR manquant ou invalide :", omar);
+        throw new Error("L'objet OMAR retourné est invalide.");
+    }
+
+    revalidatePath('/en/employee-area/home');
+    return omar;
+};
+
+
+
 
 export const getOmar = async (omarId: string) => {
     return await fetchWithAuth(`employees/omar/${omarId}`)
@@ -169,4 +185,15 @@ export const validateOmar = async (omarId: string, data: { objective: string; to
     const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) })
     revalidatePath('/en/employee-area/home')
     return response;
+}
+
+export const updateMondayAppointmentDetail = async (
+    onerpId: number,
+    value: string
+) => {
+    await fetchWithAuth(`employees/appointments/details/${onerpId}/update-remaining-days`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remainingDays: value }),
+    });
 }

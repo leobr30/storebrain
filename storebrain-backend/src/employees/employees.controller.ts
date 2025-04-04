@@ -13,7 +13,9 @@ import {
   UseGuards,
   UseInterceptors,
   UnauthorizedException,
-  HttpException
+  HttpException,
+  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { CheckPolicies } from 'src/casl/policy.decorator';
 import { PoliciesGuard } from 'src/casl/policy.guard';
@@ -129,9 +131,9 @@ export class EmployeesController {
     @Param('id') userId: number,
     @Param('employeeJobIntegrationId') employeejobOnboardingId: number,
     @CurrentUser() currentUser: CurrentUserType,
-    @Body('trainingModelId') trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
+    @Body('trainingModelId') trainingModelId: number | undefined,
     @Body('name') name: string,
-    @Body('subjects') subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[] // ✅ Ajout du paramètre subjects
+    @Body('subjects') subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]
   ) {
     try {
       const dto = new CreateTrainingWithOnboardingDto();
@@ -147,6 +149,9 @@ export class EmployeesController {
       return { message: "Training created successfully", data: result };
     } catch (error) {
       console.error("Error creating training:", error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new HttpException(error.message || "Internal Server Error", error.status || HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -250,6 +255,27 @@ export class EmployeesController {
     const result = await this.employeesService.signMondayAppointmentDetail(id, currentUser);
     return { message: "Appointment detail signed successfully", data: result }; // ✅ Return a JSON response
   }
+
+  @Put('appointments/details/:id/update-remaining-days')
+  async updateMondayAppointmentDetail(
+    @Param('id') id: number,
+    @Body() updateData: { remainingDays: string },
+  ) {
+    console.log("🛠️ Mise à jour reçue pour ID =", id, "→ remainingDays =", updateData.remainingDays);
+
+    if (!updateData.remainingDays) {
+      throw new BadRequestException('remainingDays is required');
+    }
+
+    const numericRemainingDays = Number(updateData.remainingDays);
+    if (isNaN(numericRemainingDays)) {
+      throw new BadRequestException('remainingDays must be a number');
+    }
+
+    const result = await this.employeesService.updateMondayAppointmentDetail(id, numericRemainingDays);
+    return { message: "Appointment detail updated successfully", data: result };
+  }
+
 
   @Get('absences/:absenceId')
   async getAbsence(

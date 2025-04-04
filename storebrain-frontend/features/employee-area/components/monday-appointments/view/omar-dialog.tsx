@@ -25,8 +25,8 @@ const omarFormSchema = z.object({
   objective: z.string().min(1, "Champ requis"),
   tool: z.string().min(1, "Champ requis"),
   action: z.string().min(1, "Champ requis"),
-  dueDate: z.date({message: REQUIRED}),
-  nextAppointment: z.date({message: REQUIRED}),
+  dueDate: z.date({ message: REQUIRED }),
+  nextAppointment: z.date({ message: REQUIRED }),
 })
 
 type OmarFormValues = z.infer<typeof omarFormSchema>
@@ -35,7 +35,7 @@ type OmarDialogProps = {
   onOmarValidate?: (omar: Omar) => void
 }
 
-export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
+export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -71,7 +71,7 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
       let omarData = await getOmar(id)
       omarData.dueDate = omarData.dueDate ? new Date(omarData.dueDate) : undefined
       omarData.nextAppointment = omarData.nextAppointment ? new Date(omarData.nextAppointment) : undefined
-      setOmar(omarData)      
+      setOmar(omarData)
       form.reset(omarData)
     } catch (error) {
       toast.error("Erreur lors du chargement de l'OMAR")
@@ -85,17 +85,17 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
     if (omarId) {
       try {
         const omar = await validateOmar(omarId, {
-        objective: form.getValues("objective"),
-        tool: form.getValues("tool"),
-        action: form.getValues("action"),
-        observation: form.getValues("observation"),
-        dueDate: form.getValues("dueDate"),
-        nextAppointment: form.getValues("nextAppointment"),
-      })
+          objective: form.getValues("objective"),
+          tool: form.getValues("tool"),
+          action: form.getValues("action"),
+          observation: form.getValues("observation"),
+          dueDate: form.getValues("dueDate"),
+          nextAppointment: form.getValues("nextAppointment"),
+        })
         if (onOmarValidate) {
           onOmarValidate(omar!)
         }
-        handleClose()        
+        handleClose()
       } catch (error) {
         console.error("Erreur lors de la mise à jour de l'OMAR:", error)
       }
@@ -128,6 +128,9 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose} >
       <DialogContent size="5xl" className="p-0">
+        <DialogHeader className="p-3 border-b border-default-200">
+          <DialogTitle>Omar de {omar?.user.name}</DialogTitle>
+        </DialogHeader>
         {isLoading ? (
           // <div className="flex flex-col gap-4 justify-center items-center h-64">
           <div className="p-4 grid grid-cols-3 gap-4">
@@ -139,16 +142,14 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
           </div>
         ) : (
           <>
-            <DialogHeader className="p-3 border-b border-default-200">
-              <DialogTitle>Omar de {omar?.user.name}</DialogTitle>
-            </DialogHeader>
+
             <ScrollArea className="max-h-[80vh]">
               <div className="p-5">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div className="col-span-3">
-                      <FormField
+                        <FormField
                           control={form.control}
                           name={'observation'}
                           render={({ field }) => (
@@ -170,7 +171,7 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
                             <FormItem>
                               <FormLabel>Objectif<RequiredAsterisk /></FormLabel>
                               <FormControl>
-                                <Textarea placeholder={`Entrez l'objectif`} {...field} readOnly={omar?.status !== "DRAFT"}  rows={10} />
+                                <Textarea placeholder={`Entrez l'objectif`} {...field} readOnly={omar?.status !== "DRAFT"} rows={10} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -185,7 +186,7 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
                             <FormItem>
                               <FormLabel>Moyens<RequiredAsterisk /></FormLabel>
                               <FormControl>
-                                <Textarea placeholder={`Entrez les moyens`} {...field} readOnly={omar?.status !== "DRAFT"}  rows={10} />
+                                <Textarea placeholder={`Entrez les moyens`} {...field} readOnly={omar?.status !== "DRAFT"} rows={10} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -200,7 +201,7 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
                             <FormItem>
                               <FormLabel>Actions<RequiredAsterisk /></FormLabel>
                               <FormControl>
-                                <Textarea placeholder={`Entrez les actions`} {...field} readOnly={omar?.status !== "DRAFT"}  rows={10} />
+                                <Textarea placeholder={`Entrez les actions`} {...field} readOnly={omar?.status !== "DRAFT"} rows={10} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -230,7 +231,7 @@ export const OmarDialog = ({onOmarValidate}: OmarDialogProps) => {
                             <FormItem>
                               <FormLabel>Echéance<RequiredAsterisk /></FormLabel>
                               <FormControl>
-                                <DateTimePicker disabled  value={field.value} onChange={field.onChange} granularity="day" />
+                                <DateTimePicker disabled value={field.value} onChange={field.onChange} granularity="day" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

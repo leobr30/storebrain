@@ -47,10 +47,10 @@ const formSchema = z.object({
 
 type CreateTrainingDialogProps = {
     employeeId: number;
-    employeeOnboordingId: number; // ✅ Ajout de employeeOnboordingId
+    employeeOnboordingId: number;
 };
 
-export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: CreateTrainingDialogProps) => { // ✅ Ajout de employeeOnboordingId
+export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: CreateTrainingDialogProps) => {
     const [open, setOpen] = useState(false);
     const [trainingModels, setTrainingModels] = useState<TrainingModel[]>([]);
     const [creationType, setCreationType] = useState<'model' | 'blank'>('model');

@@ -22,39 +22,42 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
 
         const res = await fetch(`${process.env.API_URL}/${url}`, {
             ...options,
-            headers: headers,
+            headers,
         });
 
         console.log("🔍 Réponse reçue :", res.status, res.statusText);
 
-        
+        // Si l'API renvoie 204 No Content → pas de body à traiter
+        if (res.status === 204) {
+            return {};
+        }
+
         if (!res.ok) {
             console.error(`❌ Erreur API (HTTP ${res.status}): ${res.statusText}`);
             throw new Error(`HTTP error! Status: ${res.status} - ${res.statusText}`);
         }
 
-        
-        if (res.status === 204) {
-            return null;
+        // Tenter de lire le corps de la réponse (text brut)
+        const text = await res.text();
+
+        // Si le corps est vide, on retourne un objet vide pour éviter les erreurs côté front
+        if (!text) {
+            return {};
         }
 
-        
-        const text = await res.text();
-        if (text.length > 0) {
-            try {
-                return JSON.parse(text);
-            } catch (error) {
-                console.error("❌ Erreur de parsing JSON :", error);
-                throw new Error("Réponse API non valide (impossible de parser en JSON).");
-            }
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            console.error("❌ Erreur de parsing JSON :", error);
+            throw new Error("Réponse API non valide (impossible de parser en JSON).");
         }
-        
-        return null;
+
     } catch (error) {
         console.error("❌ Erreur dans fetchWithAuth :", error);
         throw error;
     }
 };
+
 
 // 📌 Fonction spécifique pour le téléchargement de fichiers (ex: PDF)
 export const fetchFile = async (url: string, options: RequestInit = {}) => {

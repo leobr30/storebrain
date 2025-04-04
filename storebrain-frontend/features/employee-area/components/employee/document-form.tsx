@@ -16,7 +16,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { toast } from 'sonner';
+import { EmployeeJobOnboarding } from '../../types';
 
 const formSchema = z.object({
   comment: z.string().optional(),
@@ -29,16 +30,17 @@ const formSchema = z.object({
 interface DocumentFormProps {
   setOpen: (open: boolean) => void;
   open: boolean;
-  onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void; // ✅ Updated type
+  onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void;
   employeeId: number;
   stepId: number;
   status: string;
   responseId?: string;
 }
 
-export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeId, stepId, status, responseId }: DocumentFormProps) { // ✅ Ajout du status
+export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeId, stepId, status, responseId }: DocumentFormProps) {
   const [isCompleted, setIsCompleted] = useState(status === "COMPLETED");
   const { data: session } = useSession();
+  const username = session?.user?.username;
   const userId = session?.user?.id;
   const emailDestinataire = "gabriel.beduneau@diamantor.fr";
 
@@ -66,7 +68,6 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
         setLoading(true);
         let formData;
         if (responseId) {
-          // ✅ Utilisation de getFormWithResponse si responseId est présent
           formData = await getFormWithResponse(responseId);
           if (!formData || !formData.form || !formData.responses) throw new Error('Données du formulaire invalides');
           setFormId(formData.formId);
@@ -75,14 +76,13 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
             title: `${index + 1}° ${section.title}`,
             items: section.items.map((item: any) => ({
               label: item.label,
-              selected: formData.responses.find((r: any) => r.title === `${index + 1}° ${section.title}`)?.items.find((i: any) => i.label === item.label)?.selected || false, // ✅ Initialisation avec les réponses
+              selected: formData.responses.find((r: any) => r.title === `${index + 1}° ${section.title}`)?.items.find((i: any) => i.label === item.label)?.selected || false,
             })),
           })), { id: 'comment', title: 'Commentaire - Autres', textarea: true }];
           setInitialSections(initialSectionsData);
           setSections(initialSectionsData);
           form.reset({ comment: formData.comment || '' });
         } else {
-          // Utilisation de getDoc si responseId n'est pas présent
           formData = await getDoc();
           if (!formData || !formData.sections || !formData.id) throw new Error('Données du formulaire invalides');
           setFormId(formData.id);
@@ -134,7 +134,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
 
   const handleSubmit = async () => {
     if (!userId || !formId) {
-      alert("❌ Erreur de session ou formulaire.");
+      toast.error("❌ Erreur de session ou formulaire.");
       console.error("❌ userId ou formId est null :", { userId, formId });
       return;
     }
@@ -156,17 +156,18 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
       console.log("📨 Données envoyées à saveEmployeeResponse :", payload);
 
       const response = await saveEmployeeResponse(payload);
-      await handleGeneratePdfAndSendEmail(response.id, emailDestinataire);
-    
-      alert("✅ Formulaire soumis avec succès !");
+      if (username) {
+        await handleGeneratePdfAndSendEmail(response.id, emailDestinataire, username);
+      }
+
+      toast.success("✅ Formulaire soumis avec succès !");
       setOpen(false);
       setTimeout(() => {
         onSubmitSuccess(response.updatedStep);
       }, 500);
-
     } catch (error) {
       console.error("❌ Erreur lors de la soumission :", error);
-      alert("Échec de l'enregistrement");
+      toast.error("Échec de l'enregistrement");
       onSubmitSuccess(null);
     }
   };
@@ -203,7 +204,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                             placeholder="Ajoutez un commentaire..."
                             className="w-full border border-gray-300 rounded-md"
                             {...field}
-                            disabled={isCompleted} // Désactive si document complété
+                            disabled={isCompleted}
                           />
                         </FormControl>
                         <FormMessage />
@@ -227,7 +228,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
                                     form.setValue(`items.${index}.selected`, !item.selected);
                                   }}
                                   id={item.label}
-                                  disabled={isCompleted} // Désactive si document complété
+                                  disabled={isCompleted}
                                 />
                               </FormControl>
                               <FormMessage />

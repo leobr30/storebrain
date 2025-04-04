@@ -143,7 +143,11 @@ export class FormsController {
 
 
   @Post(':responseId/generate-pdf-email')
-  async generatePdfAndSendEmail(@Param('responseId') responseId: string) {
+  async generatePdfAndSendEmail(
+    @Param('responseId') responseId: string,
+    @Body('email') email: string, // ✅ Get email from the request body
+    @Body('username') username: string, // ✅ Get username from the request body
+  ) {
     try {
       console.log(`📩 Début de la génération du PDF pour responseId: ${responseId}`);
 
@@ -165,12 +169,13 @@ export class FormsController {
 
       console.log("✅ PDF généré avec succès, envoi de l'email...");
       await this.mailService.sendEmployeeFormMail(
-        'gabriel.beduneau@diamantor.fr',
+        email, // ✅ Use the email from the request body
         { fileName: 'formulaire.pdf', mimeType: 'application/pdf', filePath: 'generated.pdf' },
         response.form.title,
         response.userId.toString(),
         response.user.lastName.toString(),
-        response.user.firstName
+        response.user.firstName,
+        username // ✅ Pass the username to the mail service
       );
 
       console.log("📩 Email envoyé avec succès !");

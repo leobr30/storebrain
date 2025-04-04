@@ -63,7 +63,7 @@ export const saveEmployeeResponse = async (data) => {
             return { ...response, updatedStep };
         }
         //revalidatePath('/en/employee-area/home')
-        
+
 
         return response;
     } catch (error) {
@@ -92,13 +92,13 @@ export const markDocumentAsCompleted = async (employeeId: number, stepId: number
 
 
 
-export const handleGeneratePdfAndSendEmail = async (responseId: string, email: string) => {
+export const handleGeneratePdfAndSendEmail = async (responseId: string, email: string, username: string) => { // ✅ Ajout du paramètre username
     try {
         console.log(`📩 Envoi de la requête pour générer le PDF avec responseId: ${responseId}`);
 
-        const response = await fetchWithAuth(`forms/${responseId}/generate-pdf-email`, {
+        const response = await fetchWithAuth(`forms/${responseId}/generate-pdf-email`, { // ✅ Modifier l'url
             method: "POST",
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ email, username }), // ✅ Ajout de username
         });
 
         console.log("✅ Réponse du backend :", response);

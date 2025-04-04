@@ -50,7 +50,14 @@ export class MailService {
   }
 
   async sendEmployeeFormMail(
-email: string, file: { fileName: string; mimeType: string; filePath: string; }, formTitle: string, userId: string, lastName: string, firstName: string,  ) {
+    email: string,
+    file: { fileName: string; mimeType: string; filePath: string },
+    formTitle: string,
+    userId: string,
+    lastName: string,
+    firstName: string,
+    username: string, // ✅ Add username parameter
+  ) {
     await this.mailerService.sendMail({
       to: email,
       subject: `📄 Formulaire rempli : ${formTitle}`,
@@ -60,6 +67,7 @@ email: string, file: { fileName: string; mimeType: string; filePath: string; }, 
         lastName,
         userId,
         formTitle,
+        username, // ✅ Pass username to the template context
       },
       attachments: [
         {
@@ -69,9 +77,7 @@ email: string, file: { fileName: string; mimeType: string; filePath: string; }, 
         },
       ],
     });
-  
+
     console.log(`📧 E-mail envoyé avec succès à ${email} avec le PDF en pièce jointe.`);
   }
-  
-
 }

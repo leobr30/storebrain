@@ -23,8 +23,8 @@ model User {
   histories UserHistory[] @relation("Histories")
   createdHistories UserHistory[] @relation("CreatedHistories")  
   jobOnboardings UserJobOnboarding[]
-  trainings Training[] @relation("Trainings")
-  realizedTrainings Training[] @relation("RealizedTrainings")
+  trainings Training[] @relation("Trainings") // Corrected relation name
+  realizedTrainings Training[] @relation("RealizedTrainings") // Corrected relation name
   absences UserAbsence[]
   createdAbsences UserAbsence[] @relation("CreatedAbsences")
   vacations UserAbsence[] @relation("UserVacations")
@@ -103,7 +103,7 @@ model UserJobOnboarding {
   userId              Int
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   status              Status
-  training            Training?
+  training            Training[]
   responseId          String?
 
   formId              String? // ✅ nouvelle clé étrangère
@@ -155,4 +155,3 @@ enum HistoryType {
   MONDAY_APPOINTMENT
   ACTION
 }
-

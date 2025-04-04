@@ -9,12 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Training, EmployeeJobOnboarding } from "../../types"; // Import EmployeeJobOnboarding
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "../status-badge";
-import { formatDate } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { PencilLine } from "lucide-react";
 import { CreateTrainingDialog } from "./create-training-dialog";
+import { fr } from "date-fns/locale";
 
 type EmployeeFormationProps = {
     employeeId: number;
@@ -46,7 +47,15 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
         {
             accessorKey: "date",
             header: "Date de création",
-            cell: ({ row }) => <span>{formatDate(row.original.date, "dd/MM/yyyy")}</span>,
+            cell: ({ row }) => {
+                const date = row.original.date;
+                if (date && isValid(new Date(date))) {
+                    return <span>{format(new Date(date), "dd/MM/yyyy", { locale: fr })}</span>;
+                } else {
+                    console.error("Date invalide:", date);
+                    return <span>Date invalide</span>; // Ou une chaîne vide : <span></span>
+                }
+            },
         },
         {
             accessorKey: "name",
@@ -84,7 +93,7 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
         <Card>
             <CardHeader className="flex-row justify-between items-center ">
                 <CardTitle>Formation</CardTitle>
-                {employeeOnboordingId && <CreateTrainingDialog employeeId={employeeId} employeeOnboordingId={employeeOnboordingId} />} {/* Pass employeeOnboordingId to CreateTrainingDialog */}
+                {employeeOnboordingId && <CreateTrainingDialog employeeId={employeeId} employeeOnboordingId={employeeOnboordingId} />}
             </CardHeader>
             <CardContent>
                 {loading ? (

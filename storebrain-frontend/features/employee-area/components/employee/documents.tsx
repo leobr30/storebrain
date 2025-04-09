@@ -4,24 +4,22 @@
 import { useEffect, useState, useMemo } from 'react';
 import { deleteDocument, getDocumentsForUser, uploadDocument } from '@/features/employee-area/actions';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectItem, SelectTrigger, SelectContent } from '@/components/ui/select';
 import { Document, DocumentType, documentTypeLabels } from '../../types'; // Import the types and labels
 import { useSession } from 'next-auth/react';
-import { Loader2, PencilLine } from 'lucide-react';
+import { PencilLine } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
+import { UploadDocumentModal } from './upload-document-modal';
 
 export default function EmployeeDocuments() {
     const [documents, setDocuments] = useState<Document[]>([]);
-    const [file, setFile] = useState<File | null>(null);
-    const [type, setType] = useState<DocumentType>(DocumentType.OTHER); // Use the enum here
     const { data: session } = useSession();
     const userId = session?.user?.id;
     const [isLoading, setIsLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchDocuments = async () => {
         setIsLoading(true);
@@ -37,8 +35,8 @@ export default function EmployeeDocuments() {
         fetchDocuments();
     }, [userId]);
 
-    const handleUpload = async () => {
-        if (!file || !userId) return;
+    const handleUpload = async (file: File, type: DocumentType) => {
+        if (!userId) return;
 
         const formData = new FormData();
         formData.append('file', file);
@@ -46,7 +44,6 @@ export default function EmployeeDocuments() {
         formData.append('type', type);
 
         await uploadDocument(formData);
-        setFile(null);
         fetchDocuments();
     };
 
@@ -73,7 +70,7 @@ export default function EmployeeDocuments() {
             header: "Type",
             cell: ({ row }) => {
                 const documentType = row.original.type;
-                return <span>{documentTypeLabels[documentType]}</span>; // Use the mapping here
+                return <span>{documentTypeLabels[documentType]}</span>;
             },
         },
         {
@@ -97,22 +94,9 @@ export default function EmployeeDocuments() {
         <Card>
             <CardHeader className="flex-row justify-between items-center">
                 <CardTitle>Mes documents</CardTitle>
-                <Button onClick={handleUpload} disabled={!file} >Uploader</Button>
+                <UploadDocumentModal onUpload={handleUpload} setOpen={setIsModalOpen} open={isModalOpen} />
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex flex-col md:flex-row flex-wrap gap-2 items-center">
-                    <Input type="file" className="w-full" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                    <Select value={type} onValueChange={(value) => setType(value as DocumentType)}>
-                        <SelectTrigger className="w-full" />
-                        <SelectContent>
-                            {Object.values(DocumentType).map((docType) => (
-                                <SelectItem key={docType} value={docType}>
-                                    {documentTypeLabels[docType]}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
                 {isLoading ? (
                     <Skeleton className="w-full h-12" />
                 ) : documents.length === 0 ? (

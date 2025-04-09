@@ -167,8 +167,6 @@ export const createOmar = async (userId: number, appointmentDetailId?: number) =
 };
 
 
-
-
 export const getOmar = async (omarId: string) => {
     return await fetchWithAuth(`employees/omar/${omarId}`)
 }
@@ -197,3 +195,21 @@ export const updateMondayAppointmentDetail = async (
         body: JSON.stringify({ remainingDays: value }),
     });
 }
+
+// RDV
+
+export const sendMondayAppointmentSummary = async (appointmentId: number, email: string) => {
+    const res = await fetchWithAuth(`employees/${appointmentId}/send-summary`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!res || !res.ok) {
+        throw new Error('Erreur lors de l’envoi du résumé');
+    }
+
+    return await res.json();
+};

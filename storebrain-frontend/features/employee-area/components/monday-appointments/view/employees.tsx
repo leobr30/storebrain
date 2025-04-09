@@ -7,7 +7,7 @@ import {
     TableBody,
     TableCell,
 } from "@/components/ui/table";
-import { MondayAppointmentDetail } from "@/features/employee-area/types";
+import { MondayAppointmentDetail, MondayAppointment } from "@/features/employee-area/types";
 import { cn, formatDate } from "@/lib/utils";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,9 +20,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     signMondayAppointmentDetail,
     updateMondayAppointmentDetail,
+    getAppointment
 } from "@/features/employee-area/actions";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+
+// Importez vos fonctions de génération de PDF et d'envoi d'e-mail ici
+// import { generatePdf } from "./pdf-generator"; // Exemple
+// import { sendEmail } from "./email-sender"; // Exemple
 
 const formSchema = z.object({
     remainingDays: z.record(
@@ -42,6 +47,7 @@ type EmployeesProps = {
     appointmentId: number;
     handleCreateOmar: (userId: number, appointmentDetailId?: number) => void;
     handleSuccesLogin: (id: number) => void;
+    onGeneratePdfAndSendEmail: (appointment: MondayAppointment, details: MondayAppointmentDetail[]) => Promise<void>;
 };
 
 export const Employees = ({
@@ -50,16 +56,19 @@ export const Employees = ({
     appointmentId,
     handleCreateOmar,
     handleSuccesLogin,
+    onGeneratePdfAndSendEmail
 }: EmployeesProps) => {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const { replace } = useRouter();
     const [isUpdating, setIsUpdating] = useState(false);
+    const [appointment, setAppointment] = useState<MondayAppointment>()
+    const validDetails = details.filter((d) => d.id !== undefined);
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             remainingDays: Object.fromEntries(
-                details.map((d) => [d.id.toString(), d.remainingDays.toString()])
+                validDetails.map((d) => [d.id.toString(), d.remainingDays.toString()])
             ),
         },
     });
@@ -110,6 +119,18 @@ export const Employees = ({
         }
     };
 
+    useEffect(() => {
+        fetchAppointment()
+    }, [appointmentId])
+
+    const fetchAppointment = async () => {
+        try {
+            const fetchedAppointment = await getAppointment(appointmentId)
+            setAppointment(fetchedAppointment)
+        } catch (error) {
+            console.error("Erreur lors de la récupération du rendez-vous:", error)
+        }
+    }
 
     return (
         <div className="rounded-md border">
@@ -127,7 +148,7 @@ export const Employees = ({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {details
+                    {validDetails
                         .sort((a, b) => a.id - b.id)
                         .map((detail) => {
                             console.log("🔍 OMAR du détail ID", detail.id, ":", detail.omar);

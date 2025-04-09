@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import fs from 'fs';
 import { Table, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { CreateEmployeePdfDto } from 'src/employees/dto/create-employee-pdf.dto';
@@ -292,6 +292,64 @@ export class PdfService {
     return;
 
   }
+
+
+  async generateMondayAppointmentPdf(appointmentId: number): Promise<Buffer> {
+    const appointment = await this.prismaService.mondayAppointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        company: true,
+        details: {
+          include: {
+            user: true,
+            omar: true,
+          },
+        },
+      },
+    });
+
+    if (!appointment) throw new NotFoundException('Rendez-vous non trouvé');
+
+    const doc = new PDFDocument();
+    const buffers: any[] = [];
+
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => { });
+
+    doc.fontSize(18).text(`Rendez-vous du ${format(appointment.date, 'dd/MM/yyyy')}`, { underline: true });
+    doc.moveDown();
+
+    appointment.details.forEach((detail: any, index: any) => {
+      doc.fontSize(12).text(`${index + 1}. ${detail.fullname}`);
+      doc.text(`Objectif: ${detail.objective} €`);
+      doc.text(`Réalisé: ${detail.realizedRevenue} €`);
+      doc.text(`Restant: ${detail.remainingRevenue} €`);
+      doc.text(`Jour restant: ${detail.remainingDays}`);
+      doc.moveDown();
+      if (detail.omar) {
+        doc.text(`➡ OMAR :`);
+        doc.text(`Objectif : ${detail.omar.objective}`);
+        doc.text(`Actions : ${detail.omar.action}`);
+        doc.text(`Résultat : ${detail.omar.result}`);
+        doc.text(`Observation : ${detail.omar.observation}`);
+        doc.text(`Statut : ${detail.omar.status}`);
+        doc.moveDown();
+      }
+      doc.moveDown();
+    });
+
+    doc.end();
+
+    return new Promise((resolve, reject) => {
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', reject);
+    });
+  }
+
+
+
+
+
   async createTrainingPdf(trainingId: number, filePath: string) {
     const training = await this.prismaService.training.findUnique({
       where: {

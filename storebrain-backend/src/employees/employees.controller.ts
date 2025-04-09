@@ -16,6 +16,7 @@ import {
   HttpException,
   NotFoundException,
   InternalServerErrorException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CheckPolicies } from 'src/casl/policy.decorator';
 import { PoliciesGuard } from 'src/casl/policy.guard';
@@ -41,12 +42,17 @@ import { UpdateAbsenceDto } from './dto/create-absence.dto';
 import { CreateAppointmentDto } from './dto/create-monday-appointment.dto';
 import { OmarDto } from './dto/save-omar.dto';
 import { ValidateOmarDto } from './dto/validate-omar.dto';
-import { User } from '@prisma/client'; // ✅ Ajoute cet import
+import { User } from '@prisma/client';
+import { PdfService } from 'src/pdf/pdf.service';
+import { MailService } from 'src/mail/mail.service';
 
 
 @Controller('employees')
 export class EmployeesController {
-  constructor(private employeesService: EmployeesService) { }
+  constructor(private employeesService: EmployeesService,
+    private readonly pdfService: PdfService,
+    private readonly mailService: MailService,
+  ) { }
 
 
   @Get()
@@ -195,6 +201,18 @@ export class EmployeesController {
     return { message: "Appointment created successfully", data: appointment };
   }
 
+  @Post(':id/send-summary')
+  async sendSummary(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('email') email: string,
+  ) {
+    const buffer = await this.pdfService.generateMondayAppointmentPdf(id);
+    await this.mailService.sendMondayAppointmentMail(email, buffer, new Date());
+    return { message: 'Résumé envoyé par e-mail' };
+  }
+
+
+
   @Get('appointments/:id')
   @UseGuards(PoliciesGuard)
   async getAppointment(@Param('id') id: number) {
@@ -220,7 +238,7 @@ export class EmployeesController {
       userId,
       appointmentDetailId
     });
-    return { message: "Omar created successfully", data: result }; // ✅ Return a JSON response
+    return { message: "Omar created successfully", data: result };
   }
 
   @Put('omar/:id/save')

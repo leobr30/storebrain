@@ -1,66 +1,68 @@
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { createOmar, getAppointment, signMondayAppointmentDetail } from "@/features/employee-area/actions"
-import { format } from "date-fns"
-import { Loader2, X } from "lucide-react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { AppointmentsCard } from "../appointments-card"
-import { ObjectiveCard } from "./objective-card"
-import { Employees } from "./employees"
-import { Separator } from "@/components/ui/separator"
-import { TableSkeleton } from "@/components/skeletons/table-skeleton"
-import { MondayAppointment, Omar } from "@/features/employee-area/types"
-import { OmarDialog } from "./omar-dialog"
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { createOmar, getAppointment, sendMondayAppointmentSummary, signMondayAppointmentDetail } from "@/features/employee-area/actions";
+import { format } from "date-fns";
+import { Loader2, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AppointmentsCard } from "../appointments-card";
+import { ObjectiveCard } from "./objective-card";
+import { Employees } from "./employees";
+import { Separator } from "@/components/ui/separator";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
+import { MondayAppointment, Omar, MondayAppointmentDetail } from "@/features/employee-area/types";
+import { OmarDialog } from "./omar-dialog";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+
+// import { generatePdf } from "./pdf-generator";
+// import { sendEmail } from "./email-sender"; 
 
 export const AppointmentSheet = () => {
-
-    const [open, setOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
     const pathname = usePathname();
     const { replace } = useRouter();
-    const [appointment, setAppointment] = useState<MondayAppointment>()
-    const searchParams = useSearchParams()
-    const appointmentId = searchParams.get("appointmentId")
+    const [appointment, setAppointment] = useState<MondayAppointment>();
+    const searchParams = useSearchParams();
+    const appointmentId = searchParams.get("appointmentId");
 
     useEffect(() => {
-        fetchAppointment()
-    }, [appointmentId])
-
+        fetchAppointment();
+    }, [appointmentId]);
 
     const fetchAppointment = async () => {
-
         if (appointmentId) {
-            setOpen(true)
-            setLoading(true)
+            setOpen(true);
+            setLoading(true);
             try {
-                const fetchedAppointment = await getAppointment(parseInt(appointmentId))
-                setAppointment(fetchedAppointment)
+                const fetchedAppointment = await getAppointment(parseInt(appointmentId));
+                setAppointment(fetchedAppointment);
             } catch (error) {
-                console.error("Erreur lors de la récupération du rendez-vous:", error)
+                console.error("Erreur lors de la récupération du rendez-vous:", error);
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
         } else {
-            setOpen(false)
+            setOpen(false);
         }
-    }
+    };
 
     const handleClose = () => {
-        const newSearchParams = new URLSearchParams(searchParams)
-        newSearchParams.delete("appointmentId")
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("appointmentId");
         replace(`${pathname}?${newSearchParams.toString()}`);
-    }
+    };
 
     const handleChangeRemainingDays = (onerpId: number, value: number) => {
-        setAppointment(prevAppointment => {
-            const updatedDetails = prevAppointment.details.map(detail => {
+        setAppointment((prevAppointment) => {
+            const updatedDetails = prevAppointment.details.map((detail) => {
                 if (detail.onerpId === onerpId) {
                     return { ...detail, remainingDays: value };
                 }
-                return { ...detail }; // Return a new object for unchanged details as well
+                return { ...detail };
             });
-            return { ...prevAppointment, details: updatedDetails }; // Return a new appointment object
+            return { ...prevAppointment, details: updatedDetails };
         });
     };
 
@@ -72,18 +74,18 @@ export const AppointmentSheet = () => {
                 throw new Error("L'objet OMAR retourné est invalide.");
             }
 
-            setAppointment(prev => {
+            setAppointment((prev) => {
                 if (!prev) return prev;
 
-                const updatedDetails = prev.details.map(detail =>
+                const updatedDetails = prev.details.map((detail) =>
                     detail.id === appointmentDetailId
-                        ? { ...detail, omar: { ...omar } } // clone l'objet omar
-                        : { ...detail } // clone tous les autres détails aussi
+                        ? { ...detail, omar: { ...omar } }
+                        : { ...detail }
                 );
 
                 const updatedAppointment = {
                     ...prev,
-                    details: updatedDetails, // nouvelle référence pour le tableau
+                    details: updatedDetails,
                 };
 
                 console.log("✅ OMAR inséré dans l'état :", updatedAppointment);
@@ -91,7 +93,6 @@ export const AppointmentSheet = () => {
                 return updatedAppointment;
             });
 
-            // Mise à jour des params pour afficher la modale OMAR directement
             const newSearchParams = new URLSearchParams(searchParams);
             newSearchParams.set("omarId", omar.id.toString());
             replace(`${pathname}?${newSearchParams.toString()}`);
@@ -100,12 +101,9 @@ export const AppointmentSheet = () => {
         }
     };
 
-
-
-
     const onOmarValidate = (omar: Omar) => {
         setAppointment((prevAppointment: MondayAppointment) => {
-            const updatedDetails = prevAppointment.details.map(detail => {
+            const updatedDetails = prevAppointment.details.map((detail) => {
                 if (detail.omar?.id === omar.id) {
                     return { ...detail, omar };
                 }
@@ -113,45 +111,84 @@ export const AppointmentSheet = () => {
             });
             return { ...prevAppointment, details: updatedDetails };
         });
-    }
+    };
 
     const handleSuccesLogin = async (id: number) => {
-        const responseDetail = await signMondayAppointmentDetail(id)
+        const responseDetail = await signMondayAppointmentDetail(id);
         setAppointment((prevAppointment: MondayAppointment) => {
-            const updatedDetails = prevAppointment.details.map(detail => {
+            const updatedDetails = prevAppointment.details.map((detail) => {
                 if (detail.id === id) {
                     return responseDetail;
                 }
                 return detail;
             });
-            console.log(updatedDetails)
+            console.log(updatedDetails);
             return { ...prevAppointment, details: updatedDetails };
         });
-    }
+    };
+
+    // vérifier si tous les détails sont signés
+    const areAllDetailsSigned = () => {
+        if (!appointment || !appointment.details) return false;
+        return appointment.details.every((detail) => detail.signedAt);
+    };
+
+    const handleGeneratePdfAndSendEmail = async () => {
+        if (!appointment) return;
+      
+        const allSigned = areAllDetailsSigned();
+      
+        if (!allSigned) {
+          toast.error("Tous les détails n'ont pas encore été signés.");
+          return;
+        }
+      
+        try {
+          console.log("📤 Envoi du résumé pour l'appointment ID :", appointment.id);
+      
+          const response = await sendMondayAppointmentSummary(
+            appointment.id,
+            "gabriel.beduneau@diamantor.fr"
+          );
+      
+          console.log("✅ Réponse backend :", response);
+          toast.success("PDF généré et envoyé par e-mail avec succès !");
+        } catch (error: any) {
+          console.error("❌ Erreur frontend dans sendMondayAppointmentSummary :", error);
+          toast.error("Erreur lors de la génération du PDF ou de l'envoi de l'e-mail.");
+        }
+      };
+      
+
 
     return (
         <>
             <OmarDialog onOmarValidate={onOmarValidate} />
-            <Sheet open={open} onOpenChange={handleClose} >
+            <Sheet open={open} onOpenChange={handleClose}>
                 <SheetContent
                     closeIcon={<X className="h-5 w-5 relative" />}
-                    className="p-0 min-h-[80vh] max-h-[95vh]" side={"bottom"} >
+                    className="p-0 min-h-[80vh] max-h-[95vh]"
+                    side={"bottom"}
+                >
                     {loading || !appointment ? (
                         <>
                             <TableSkeleton rows={4} columns={6} />
                             <TableSkeleton rows={8} columns={8} />
                         </>
-
-
                     ) : (
                         <>
-                            <SheetHeader className="p-3 border-b border-default-200">
-                                <SheetTitle>Rendez-vous du lundi du {format(appointment.date, 'dd/MM/yyyy')}</SheetTitle>
+                            <SheetHeader className="p-3 border-b border-default-200 flex justify-between items-center">
+                                <SheetTitle>
+                                    Rendez-vous du lundi du {format(appointment.date, "dd/MM/yyyy")}
+                                </SheetTitle>
+
+                                {areAllDetailsSigned() && (
+                                    <Button onClick={handleGeneratePdfAndSendEmail}>Générer PDF et Envoyer par Email</Button>
+                                )}
                             </SheetHeader>
                             <ScrollArea className="h-[90vh] pt-5">
                                 <div className="p-5">
                                     <div className="space-y-5">
-
                                         <ObjectiveCard appointment={appointment} />
                                         <Separator />
                                         <Employees
@@ -160,18 +197,15 @@ export const AppointmentSheet = () => {
                                             appointmentId={appointment.id}
                                             handleChangeRemainingDays={handleChangeRemainingDays}
                                             handleSuccesLogin={handleSuccesLogin}
+                                            onGeneratePdfAndSendEmail={handleGeneratePdfAndSendEmail}
                                         />
                                     </div>
                                 </div>
-
-
                             </ScrollArea>
                         </>
-
                     )}
                 </SheetContent>
             </Sheet>
         </>
-
-    )
-}
+    );
+};

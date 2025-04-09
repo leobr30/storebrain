@@ -32,10 +32,13 @@ import { OmarDto } from './dto/save-omar.dto';
 import { ValidateOmarDto } from './dto/validate-omar.dto';
 import { AbsenceUpdatedEvent } from './events/absence-updated.event';
 import { User } from '@prisma/client';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class EmployeesService {
   constructor(
+    private readonly mailService: MailService,
+    private readonly pdfService: PdfService,
     private prisma: PrismaService,
     private jobsService: JobsService,
     private companiesService: CompaniesService,
@@ -1142,6 +1145,31 @@ export class EmployeesService {
     });
     if (!user) throw new NotFoundException();
     return user.jobOnboardings;
+  }
+
+
+  async sendMondayAppointmentSummary(appointmentId: number, email: string) {
+    const appointment = await this.prisma.mondayAppointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        company: true,
+        details: {
+          include: {
+            omar: true,
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      throw new Error('Rendez-vous du lundi non trouvé');
+    }
+
+    const buffer = await this.pdfService.generateMondayAppointmentPdf(appointment.id);
+    await this.mailService.sendMondayAppointmentMail(email, buffer, appointment.date);
+
+    return { message: 'Résumé envoyé avec succès' };
   }
 
 }

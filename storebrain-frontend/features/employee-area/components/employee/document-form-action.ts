@@ -96,9 +96,9 @@ export const handleGeneratePdfAndSendEmail = async (responseId: string, email: s
     try {
         console.log(`📩 Envoi de la requête pour générer le PDF avec responseId: ${responseId}`);
 
-        const response = await fetchWithAuth(`forms/${responseId}/generate-pdf-email`, { // ✅ Modifier l'url
+        const response = await fetchWithAuth(`forms/${responseId}/generate-pdf-email`, {
             method: "POST",
-            body: JSON.stringify({ email, username }), // ✅ Ajout de username
+            body: JSON.stringify({ email, username }),
         });
 
         console.log("✅ Réponse du backend :", response);

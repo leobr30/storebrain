@@ -3,10 +3,24 @@ import { Injectable } from '@nestjs/common';
 import { MailStoreShipment } from './mail.interfaces';
 import { Prisma, Training } from '@prisma/client';
 import { userInfo } from 'os';
+import { formatDate } from 'date-fns';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  constructor(private mailerService: MailerService) { }
+
+
+  private transporter: nodemailer.Transporter;
+  constructor(private mailerService: MailerService) {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      auth: {
+        user: process.env.EMAIL_ID,
+        pass: process.env.EMAIL_PASS,
+      }
+    });
+  }
 
   async sendEmployeeCreatedMail(
     files: { fileName: string; mimeType: string; filePath: string }[],
@@ -48,6 +62,22 @@ export class MailService {
       ],
     });
   }
+
+  async sendMondayAppointmentMail(to: string, pdfBuffer: Buffer, date: Date) {
+    await this.transporter.sendMail({
+      from: `"Diamantor" <${process.env.EMAIL_ID}>`,
+      to,
+      subject: `Résumé du rendez-vous du lundi ${date.toLocaleDateString('fr-FR')}`,
+      text: 'Vous trouverez en pièce jointe le résumé du rendez-vous du lundi.',
+      attachments: [
+        {
+          filename: 'rdv-lundi.pdf',
+          content: pdfBuffer,
+        },
+      ],
+    });
+  }
+
 
   async sendEmployeeFormMail(
     email: string,

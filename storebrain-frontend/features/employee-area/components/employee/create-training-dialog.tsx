@@ -187,7 +187,7 @@ export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: Creat
                                         </Button>
                                     </div>
                                 ))}
-                                <Button type="button" variant="secondary" onClick={handleAddSubject}>
+                                <Button className="flex items-center space-x-2" type="button" variant="secondary" onClick={handleAddSubject}>
                                     Ajouter un sujet
                                 </Button>
                             </>

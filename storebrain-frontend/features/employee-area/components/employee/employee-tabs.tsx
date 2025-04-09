@@ -9,6 +9,7 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import EmployeeFormation from "./employee-formation"
 import { Employee } from "../../types"
+import EmployeeDocuments from "./documents"
 
 type EmployeeTabsProps = {
   employee: Employee
@@ -58,6 +59,9 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
       </TabsContent>
       <TabsContent value="training" className="mt-2.5">
         <EmployeeFormation employeeId={employee.id} trainings={employee.trainings} jobOnboardings={employee.jobOnboardings} />
+      </TabsContent>
+      <TabsContent value="document" className="mt-2.5">
+        <EmployeeDocuments/>
       </TabsContent>
 
     </Tabs>

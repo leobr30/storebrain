@@ -7,6 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { format } from 'date-fns';
 import PDFDocument from 'pdfkit';
 import PdfPrinter from 'pdfmake';
+import path from 'path';
 
 
 @Injectable()
@@ -16,13 +17,9 @@ export class PdfService {
 
 
   private readonly fonts = {
-    Inter: {
-      normal: './src/pdf/fonts/Inter-Regular.ttf',
-      bold: './src/pdf/fonts/Inter-Bold.ttf',
-    },
     Roboto: {
-      normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-      bold: 'node_modules/pdfmake/build/vfs_fonts.js'
+      normal: path.join(process.cwd(), 'node_modules/roboto-font/fonts/Roboto/roboto-regular-webfont.ttf'),
+      bold: path.join(process.cwd(), 'node_modules/roboto-font/fonts/Roboto/roboto-bold-webfont.ttf'),
     },
   };
 
@@ -32,7 +29,7 @@ export class PdfService {
       try {
         console.log("📄 [PDF Service] Début de la génération du PDF...");
 
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({ margin: 50, layout: 'landscape' }); // Ajout de layout: 'landscape'
         const writeStream = fs.createWriteStream(filePath);
         doc.pipe(writeStream);
 
@@ -105,6 +102,8 @@ export class PdfService {
     const printer = new PdfPrinter(this.fonts);
 
     const docDefinition: TDocumentDefinitions = {
+      pageSize: 'A4', // Ajout de pageSize: 'A4'
+      pageOrientation: 'landscape', // Ajout de pageOrientation: 'landscape'
       content: [
         { text: 'NOUVEAU SALARIE', alignment: 'center', margin: 5 },
         {
@@ -169,7 +168,7 @@ export class PdfService {
         },
       ],
       defaultStyle: {
-        font: 'Inter',
+        font: 'Roboto',
         margin: 500,
       },
     };
@@ -243,6 +242,8 @@ export class PdfService {
 
     const printer = new PdfPrinter(this.fonts);
     let docDefinition: TDocumentDefinitions = {
+      pageSize: 'A4', // Ajout de pageSize: 'A4'
+      pageOrientation: 'landscape', // Ajout de pageOrientation: 'landscape'
       content: [
         { text: 'Absence Salarié', alignment: 'center', margin: 5 },
         {
@@ -281,7 +282,7 @@ export class PdfService {
         },
       ],
       defaultStyle: {
-        font: 'Inter',
+        font: 'Roboto',
         margin: 500,
       },
     };
@@ -310,40 +311,243 @@ export class PdfService {
 
     if (!appointment) throw new NotFoundException('Rendez-vous non trouvé');
 
-    const doc = new PDFDocument();
-    const buffers: any[] = [];
-
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', () => { });
-
-    doc.fontSize(18).text(`Rendez-vous du ${format(appointment.date, 'dd/MM/yyyy')}`, { underline: true });
-    doc.moveDown();
-
-    appointment.details.forEach((detail: any, index: any) => {
-      doc.fontSize(12).text(`${index + 1}. ${detail.fullname}`);
-      doc.text(`Objectif: ${detail.objective} €`);
-      doc.text(`Réalisé: ${detail.realizedRevenue} €`);
-      doc.text(`Restant: ${detail.remainingRevenue} €`);
-      doc.text(`Jour restant: ${detail.remainingDays}`);
-      doc.moveDown();
-      if (detail.omar) {
-        doc.text(`➡ OMAR :`);
-        doc.text(`Objectif : ${detail.omar.objective}`);
-        doc.text(`Actions : ${detail.omar.action}`);
-        doc.text(`Résultat : ${detail.omar.result}`);
-        doc.text(`Observation : ${detail.omar.observation}`);
-        doc.text(`Statut : ${detail.omar.status}`);
-        doc.moveDown();
-      }
-      doc.moveDown();
+    const printer = new PdfPrinter({
+      Roboto: {
+        normal: path.join(process.cwd(), 'node_modules/roboto-font/fonts/Roboto/roboto-regular-webfont.ttf'),
+        bold: path.join(process.cwd(), 'node_modules/roboto-font/fonts/Roboto/roboto-bold-webfont.ttf'),
+      },
     });
 
-    doc.end();
+    // Objective Card Table
+    const objectiveTableBody = [
+      [
+        { text: 'Zone', style: 'tableHeader' },
+        { text: 'Objectif', style: 'tableHeader' },
+        { text: 'Réalisé', style: 'tableHeader' },
+        { text: 'Reste à réaliser', style: 'tableHeader' },
+        { text: 'Jour restant', style: 'tableHeader' },
+        { text: 'a réaliser par jour', style: 'tableHeader' },
+      ],
+      [
+        'Magasin',
+        `${appointment.objective.toLocaleString()} €`,
+        `${appointment.realizedRevenue.toLocaleString()} €`,
+        `${appointment.remainingRevenue >= 0 ? appointment.remainingRevenue.toLocaleString() : 0} €`,
+        appointment.remainingDays.toString(),
+        `${appointment.realizedRevenue >= appointment.objective ? 0 : Math.round((appointment.remainingRevenue) / appointment.remainingDays).toLocaleString()} €`,
+      ],
+      [
+        'OR',
+        `${appointment.objectiveOr.toLocaleString()} €`,
+        `${appointment.realizedRevenueOr.toLocaleString()} €`,
+        `${appointment.remainingRevenueOr >= 0 ? appointment.remainingRevenueOr.toLocaleString() : 0} €`,
+        appointment.remainingDays.toString(),
+        `${appointment.realizedRevenueOr >= appointment.objectiveOr ? 0 : Math.round((appointment.remainingRevenueOr) / appointment.remainingDays).toLocaleString()} €`,
+      ],
+      [
+        'MODE',
+        `${appointment.objectiveMode.toLocaleString()} €`,
+        `${appointment.realizedRevenueMode.toLocaleString()} €`,
+        `${appointment.remainingRevenueMode >= 0 ? appointment.remainingRevenueMode.toLocaleString() : 0} €`,
+        appointment.remainingDays.toString(),
+        `${appointment.realizedRevenueMode >= appointment.objectiveMode ? 0 : Math.round((appointment.remainingRevenueMode) / appointment.remainingDays).toLocaleString()} €`,
+      ],
+    ];
+
+    const tableBody = [
+      [
+        { text: 'Nom', style: 'tableHeader' },
+        { text: 'Objectif', style: 'tableHeader' },
+        { text: 'Réalisé', style: 'tableHeader' },
+        { text: 'Restant', style: 'tableHeader' },
+        { text: 'Jours Restants', style: 'tableHeader' },
+        { text: 'OMAR', style: 'tableHeader' },
+      ],
+    ];
+
+    appointment.details.forEach((detail: any) => {
+      const omarTableBody = detail.omar
+        ? [
+          [
+            { text: 'Objectif', style: 'omarTableHeader' },
+            { text: detail.omar.objective, style: 'omarTableCell' },
+          ],
+          [
+            { text: 'Actions', style: 'omarTableHeader' },
+            { text: detail.omar.action, style: 'omarTableCell' },
+          ],
+          [
+            { text: 'Résultat', style: 'omarTableHeader' },
+            { text: detail.omar.result, style: 'omarTableCell' },
+          ],
+          [
+            { text: 'Observation', style: 'omarTableHeader' },
+            { text: detail.omar.observation, style: 'omarTableCell' },
+          ],
+          [
+            { text: 'Statut', style: 'omarTableHeader' },
+            { text: detail.omar.status, style: 'omarTableCell' },
+          ],
+        ]
+        : [[{ text: 'Aucun OMAR', style: 'omarTableCell', colSpan: 2 }, {}]];
+
+      tableBody.push([
+        detail.fullname,
+        `${detail.objective} €`,
+        `${detail.realizedRevenue} €`,
+        `${detail.remainingRevenue} €`,
+        detail.remainingDays.toString(),
+        {
+          table: {
+            widths: ['auto', '*'],
+            body: omarTableBody,
+
+          },
+          layout: {
+            ...this.getLayout(),
+            hLineWidth: function (i: number, node: any) {
+              return 0.5;
+            },
+            vLineWidth: function (i: number, node: any) {
+              return 0.5;
+            },
+            hLineColor: function (i: number, node: any) {
+              return 'gray';
+            },
+            vLineColor: function (i: number, node: any) {
+              return 'gray';
+            },
+            paddingLeft: function (i: number, node: any) { return 5; },
+            paddingRight: function (i: number, node: any) { return 5; },
+            paddingTop: function (i: number, node: any) { return 5; },
+            paddingBottom: function (i: number, node: any) { return 5; },
+            noWrap: false,
+          },
+        },
+      ]);
+    });
+
+    const docDefinition: TDocumentDefinitions = {
+      pageSize: 'A4', // Ajout de pageSize: 'A4'
+      pageOrientation: 'landscape', // Ajout de pageOrientation: 'landscape'
+      content: [
+        { text: `Rendez-vous du ${format(appointment.date, 'dd/MM/yyyy')}`, style: 'header' },
+        { text: `Entreprise : ${appointment.company.name}`, style: 'subheader' },
+        { text: `Objectif de l'entreprise : ${appointment.objective} €`, style: 'subheader' },
+        {
+          margin: [0, 20, 0, 20],
+          style: 'tableExample',
+          table: {
+            headerRows: 1,
+            widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+            body: objectiveTableBody,
+          },
+          layout: {
+            fillColor: function (rowIndex: number, node: any, columnIndex: number) {
+              return rowIndex === 0 ? '#007bff' : rowIndex % 2 === 0 ? '#f2f2f2' : null;
+            },
+            hLineWidth: function (i: number, node: any) {
+              return i === 0 || i === node.table.body.length ? 2 : 1;
+            },
+            vLineWidth: function (i: number, node: any) {
+              return 1;
+            },
+            hLineColor: function (i: number, node: any) {
+              return i === 0 || i === node.table.body.length ? 'black' : 'gray';
+            },
+            vLineColor: function (i: number, node: any) {
+              return 'gray';
+            },
+            paddingLeft: function (i: number, node: any) { return 10; },
+            paddingRight: function (i: number, node: any) { return 10; },
+            paddingTop: function (i: number, node: any) { return 10; },
+            paddingBottom: function (i: number, node: any) { return 10; },
+          },
+        },
+        {
+          style: 'tableExample',
+          table: {
+            headerRows: 1,
+            widths: [80, 60, 60, 60, 60, '*'], // Adjusted widths
+            body: tableBody,
+          },
+          layout: {
+            fillColor: function (rowIndex: number, node: any, columnIndex: number) {
+              return rowIndex === 0 ? '#007bff' : rowIndex % 2 === 0 ? '#f2f2f2' : null;
+            },
+            hLineWidth: function (i: number, node: any) {
+              return i === 0 || i === node.table.body.length ? 2 : 1;
+            },
+            vLineWidth: function (i: number, node: any) {
+              return 1;
+            },
+            hLineColor: function (i: number, node: any) {
+              return i === 0 || i === node.table.body.length ? 'black' : 'gray';
+            },
+            vLineColor: function (i: number, node: any) {
+              return 'gray';
+            },
+            paddingLeft: function (i: number, node: any) { return 10; },
+            paddingRight: function (i: number, node: any) { return 10; },
+            paddingTop: function (i: number, node: any) { return 10; },
+            paddingBottom: function (i: number, node: any) { return 10; },
+          },
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 22,
+          bold: true,
+          margin: [0, 0, 0, 20],
+          alignment: 'center',
+          color: '#333333',
+        },
+        subheader: {
+          fontSize: 16,
+          bold: true,
+          margin: [0, 0, 0, 15],
+          alignment: 'center',
+          color: '#555555',
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 13,
+          color: 'white',
+        },
+        omarTableHeader: {
+          bold: true,
+          fontSize: 11,
+          color: 'black',
+        },
+        omarTableCell: {
+          fontSize: 10,
+          color: 'black',
+        },
+      },
+      defaultStyle: {
+        font: 'Roboto'
+      }
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const buffers: any[] = [];
+    pdfDoc.on('data', buffers.push.bind(buffers));
+    pdfDoc.on('end', () => { });
+    pdfDoc.end();
 
     return new Promise((resolve, reject) => {
-      doc.on('end', () => resolve(Buffer.concat(buffers)));
-      doc.on('error', reject);
+      pdfDoc.on('end', () => resolve(Buffer.concat(buffers)));
+      pdfDoc.on('error', reject);
     });
+  }
+
+  getLayout() {
+    return {
+      paddingLeft: function (i: number, node: any) { return 5; },
+      paddingRight: function (i: number, node: any) { return 5; },
+      paddingTop: function (i: number, node: any) { return 5; },
+      paddingBottom: function (i: number, node: any) { return 5; },
+    }
   }
 
 
@@ -393,6 +597,8 @@ export class PdfService {
     }
     const printer = new PdfPrinter(this.fonts);
     let docDefinition: TDocumentDefinitions = {
+      pageSize: 'A4', // Ajout de pageSize: 'A4'
+      pageOrientation: 'landscape', // Ajout de pageOrientation: 'landscape'
       content: [
         { text: `Formation: Rdv N°${training?.userJobOnboarding.appointmentNumber} - ${training?.name}`, alignment: 'center', margin: 5, bold: true, fontSize: 12 },
         { text: `Salarié: ${training?.user.name}`, alignment: 'center', margin: 5 },
@@ -425,7 +631,7 @@ export class PdfService {
         },
       ],
       defaultStyle: {
-        font: 'Inter',
+        font: 'Roboto',
         margin: 500,
       },
     };

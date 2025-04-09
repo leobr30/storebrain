@@ -1,0 +1,16 @@
+model Document {
+  id        Int          @id @default(autoincrement())
+  fileName  String
+  mimeType  String
+  filePath  String
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id])
+  type      DocumentType
+  createdAt DateTime     @default(now())
+}
+
+enum DocumentType {
+  SICK_LEAVE
+  VITAL_CARD
+  OTHER
+}

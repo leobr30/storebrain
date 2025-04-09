@@ -20,11 +20,17 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     const router = useRouter();
     const pathName = usePathname();
     const searchParams = useSearchParams();
-    const handleViewTraining = (trainingId: number) => {
-        const newSearchParams = new URLSearchParams(searchParams)
-        newSearchParams.set('trainingId', trainingId.toString())
+    const handleViewTraining = (trainingId: number | undefined) => {
+        if (trainingId === undefined) {
+            console.error("trainingId est undefined");
+            return;
+        }
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set('trainingId', trainingId.toString());
         router.push(`${pathName}?${newSearchParams.toString()}`);
-    }
+    };
+
+
 
 
     const [localSteps, setLocalSteps] = useState<EmployeeJobOnboarding[]>(steps);
@@ -121,10 +127,20 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                     ) : (
                                                         <Button
                                                             variant={"ghost"}
-                                                            onClick={() => handleViewTraining(step.training.id)}
+                                                            onClick={() => {
+                                                                if (step.training && step.training.length > 0 && step.training[0].id) {
+                                                                    handleViewTraining(step.training[0].id);
+                                                                } else {
+                                                                    console.error("Erreur : step.training est vide ou step.training[0].id est undefined", { step });
+                                                                }
+                                                            }}
                                                         >
-                                                            {step.training.status === "PENDING" ? "Continuer" : "Voir"} la formation
+                                                            {step.training && step.training.length > 0 && step.training[0].status === "PENDING" ? "Continuer" : "Voir"} la formation
                                                         </Button>
+
+
+
+
                                                     )}
                                                 </TableCell>
                                                 <TableCell>

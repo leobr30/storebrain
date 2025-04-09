@@ -6,16 +6,16 @@ model JobOnboarding {
 }
 
 model JobOnboardingStep {
-  id                          Int                        @id @default(autoincrement())
-  day                         Int                        @default(0)
-  month                       Int                        @default(0)
-  type                        JobOnboardingStepType
-  jobOnboardingId             Int
-  jobOnboarding               JobOnboarding              @relation(fields: [jobOnboardingId], references: [id], onDelete: Cascade)
-  userJobOnboardings          UserJobOnboarding[]
-  trainingModel               TrainingModel?             @relation(fields: [trainingModelId], references: [id])
-  trainingModelId             Int?
-  
+  id                 Int                   @id @default(autoincrement())
+  day                Int                   @default(0)
+  month              Int                   @default(0)
+  type               JobOnboardingStepType
+  jobOnboardingId    Int
+  jobOnboarding      JobOnboarding         @relation(fields: [jobOnboardingId], references: [id], onDelete: Cascade)
+  userJobOnboardings UserJobOnboarding[]
+  trainingModel      TrainingModel?        @relation(fields: [trainingModelId], references: [id])
+  trainingModelId    Int?
+
   jobOnboardingResultReview   JobOnboardingResultReview? @relation(fields: [jobOnboardingResultReviewId], references: [id])
   jobOnboardingResultReviewId Int?
   jobOnboardingDocuments      JobOnboardingDocument[]
@@ -28,16 +28,14 @@ enum JobOnboardingStepType {
 }
 
 model JobOnboardingResultReview {
-  id                  Int                 @id @default(autoincrement())
-  name                String  
-  jobOnboardingSteps  JobOnboardingStep[]
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  jobOnboardingSteps JobOnboardingStep[]
 }
 
-
-
 model JobOnboardingDocument {
-  id                  Int                 @id @default(autoincrement())
-  name                String  
+  id                  Int               @id @default(autoincrement())
+  name                String
   jobOnboardingStepId Int
   jobOnboardingStep   JobOnboardingStep @relation(fields: [jobOnboardingStepId], references: [id])
 }

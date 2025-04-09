@@ -189,3 +189,26 @@ export type Omar = {
         name: string;
     }
 }
+
+export enum DocumentType {
+    SICK_LEAVE = "SICK_LEAVE",
+    VITAL_CARD = "VITAL_CARD",
+    OTHER = "OTHER",
+}
+
+export interface Document {
+    id: number;
+    fileName: string;
+    mimeType: string;
+    filePath: string;
+    userId: number;
+    type: DocumentType;
+    createdAt: Date;
+}
+
+export const documentTypeLabels: Record<DocumentType, string> = {
+    [DocumentType.SICK_LEAVE]: "Arrêt maladie",
+    [DocumentType.VITAL_CARD]: "Carte Vitale",
+    [DocumentType.OTHER]: "Autre",
+};
+

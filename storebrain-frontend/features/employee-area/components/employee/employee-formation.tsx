@@ -20,7 +20,7 @@ import { fr } from "date-fns/locale";
 type EmployeeFormationProps = {
     employeeId: number;
     trainings?: Training[];
-    jobOnboardings: EmployeeJobOnboarding[]; // Add jobOnboardings prop
+    jobOnboardings: EmployeeJobOnboarding[];
 };
 
 export default function EmployeeFormation({ employeeId, trainings, jobOnboardings }: EmployeeFormationProps) {
@@ -31,7 +31,7 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
     const searchParams = useSearchParams();
     const isAdmin = session?.user?.name === "admin";
 
-    // ✅ Définition de employeeOnboordingId
+    
     const employeeOnboordingId = jobOnboardings.find(jobOnboarding => jobOnboarding.jobOnboardingStep.type === "TRAINING")?.id;
 
     const handleViewTraining = (trainingId: number, mode: 'view' | 'edit') => {
@@ -53,7 +53,7 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
                     return <span>{format(new Date(date), "dd/MM/yyyy", { locale: fr })}</span>;
                 } else {
                     console.error("Date invalide:", date);
-                    return <span>Date invalide</span>; // Ou une chaîne vide : <span></span>
+                    return <span>Date invalide</span>;
                 }
             },
         },

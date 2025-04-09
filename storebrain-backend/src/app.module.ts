@@ -25,10 +25,12 @@ import { PrismaService } from './prisma/prisma.service';
 import { FormsController } from './forms/forms.controller';
 import { EmployeeResponsesController } from './forms/forms.controller';
 import { FormsModule } from './forms/forms.module';
+import { DocumentsModule } from './documents/documents.module';
 
 
 @Module({
   imports: [
+    DocumentsModule,
     FormsModule,
     OnerpModule,
     AnalyseModule,

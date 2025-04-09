@@ -1,28 +1,25 @@
-
 model Alert {
-  id Int @id @default(autoincrement())
-  name String
+  id          Int         @id @default(autoincrement())
+  name        String
   description String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  conditions Condition[]
-  isActive Boolean @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  conditions  Condition[]
+  isActive    Boolean     @default(true)
 }
 
 model Condition {
-  id Int @id @default(autoincrement())
+  id        Int                @id @default(autoincrement())
   parameter ConditionParameter
-  value String
-  alertId Int
-  alert Alert @relation(fields: [alertId], references: [id],onDelete: Cascade)
+  value     String
+  alertId   Int
+  alert     Alert              @relation(fields: [alertId], references: [id], onDelete: Cascade)
   companyId Int
-  company Company @relation(fields: [companyId], references: [id],onDelete: Cascade)
-  isActive Boolean @default(true)
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isActive  Boolean            @default(true)
 }
 
 enum ConditionParameter {
-    DATE_RECEIVED
-    DAY
+  DATE_RECEIVED
+  DAY
 }
-
-

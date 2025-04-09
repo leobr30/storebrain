@@ -8,7 +8,7 @@ model Training {
   status              Status            @default(DRAFT)
   validateAt          DateTime?
   createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt @default(now()) // Ajout de @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt // Ajout de @default(now())
   userId              Int
   user                User              @relation(fields: [userId], references: [id], name: "Trainings")
   realizedById        Int?
@@ -18,45 +18,44 @@ model Training {
   userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
 }
 
-
 model TrainingSubject {
-    id         Int                   @id @default(autoincrement())
-    name       String
-    state      State                 @default(NOT_ACQUIRED)
-    trainingId Int
-    training   Training              @relation(references: [id], fields: [trainingId], onDelete: Cascade)
-    files      TrainingSubjectFile[]
+  id         Int                   @id @default(autoincrement())
+  name       String
+  state      State                 @default(NOT_ACQUIRED)
+  trainingId Int
+  training   Training              @relation(references: [id], fields: [trainingId], onDelete: Cascade)
+  files      TrainingSubjectFile[]
 }
 
 model TrainingSubjectFile {
-    id                Int             @id @default(autoincrement())
-    fileName          String
-    filePath          String
-    trainingSubjectId Int
-    trainingSubject   TrainingSubject @relation(references: [id], fields: [trainingSubjectId], onDelete: Cascade)
-    createdAt         DateTime        @default(now())
-    updatedAt         DateTime        @updatedAt
+  id                Int             @id @default(autoincrement())
+  fileName          String
+  filePath          String
+  trainingSubjectId Int
+  trainingSubject   TrainingSubject @relation(references: [id], fields: [trainingSubjectId], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 enum State {
-    ACQUIRED
-    IN_PROGRESS
-    NOT_ACQUIRED
+  ACQUIRED
+  IN_PROGRESS
+  NOT_ACQUIRED
 }
 
 model TrainingModel {
-    id       Int                        @id @default(autoincrement())
-    name     String
-    subjects TrainingModelSubject[]
-    tool     String
-    exercise String
-    numberOAppointmentsRequired Int @default(2)
-    jobOnboardingSteps JobOnboardingStep[]
+  id                          Int                    @id @default(autoincrement())
+  name                        String
+  subjects                    TrainingModelSubject[]
+  tool                        String
+  exercise                    String
+  numberOAppointmentsRequired Int                    @default(2)
+  jobOnboardingSteps          JobOnboardingStep[]
 }
 
 model TrainingModelSubject {
-    id Int @id @default(autoincrement())
-    name String
-    trainingModelId Int
-    trainingModel TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
+  id              Int           @id @default(autoincrement())
+  name            String
+  trainingModelId Int
+  trainingModel   TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
 }

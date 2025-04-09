@@ -1,14 +1,13 @@
 model Form {
-  id        String   @id @default(uuid())
-  title     String
-  comment   String? 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sections  Section[]  
-  responses EmployeeResponse[]
-  histories FormHistory[]
+  id                 String              @id @default(uuid())
+  title              String
+  comment            String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sections           Section[]
+  responses          EmployeeResponse[]
+  histories          FormHistory[]
   userJobOnboardings UserJobOnboarding[]
-  
 }
 
 model Section {
@@ -17,14 +16,14 @@ model Section {
   title     String
   createdAt DateTime @default(now())
   form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
-  items     Item[]   
+  items     Item[]
 }
 
 model Item {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   sectionId String
   label     String
-  selected  Boolean @default(false) 
+  selected  Boolean @default(false)
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }
 
@@ -45,13 +44,9 @@ model FormHistory {
   userId    Int
   formId    String
   responses Json
-  comment   String?  // ✅ Ajout du champ comment
+  comment   String? // ✅ Ajout du champ comment
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 }
-
-
-
-

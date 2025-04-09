@@ -199,17 +199,65 @@ export const updateMondayAppointmentDetail = async (
 // RDV
 
 export const sendMondayAppointmentSummary = async (appointmentId: number, email: string) => {
-    const res = await fetchWithAuth(`employees/${appointmentId}/send-summary`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-    });
+    try {
+        const res = await fetchWithAuth(`employees/${appointmentId}/send-summary`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
 
-    if (!res || !res.ok) {
+
+        return res;
+    } catch (error) {
+        console.error("❌ Erreur dans sendMondayAppointmentSummary :", error);
         throw new Error('Erreur lors de l’envoi du résumé');
     }
-
-    return await res.json();
 };
+
+// Documents
+
+export const uploadDocument = async (formData: FormData) => {
+    await fetchWithAuth('documents/upload', {
+        method: 'POST',
+        body: formData,
+    }, true);
+    revalidatePath('/en/employee-area/documents');
+};
+
+export const getDocumentsForUser = async (userId: number) => {
+    const url = `documents/${userId}`;
+    console.log("Fetching documents from:", url);
+    try {
+        const response = await fetchWithAuth(url);
+        return response;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des documents:", error);
+        if (error instanceof Error) {
+            console.error("Error message:", error.message);
+        }
+        throw error;
+    }
+};
+
+export const deleteDocument = async (documentId: number) => {
+    await fetchWithAuth(`documents/${documentId}`, {
+        method: 'DELETE',
+    });
+    revalidatePath('/en/employee-area/documents');
+};
+
+
+export const downloadDocument = async (documentId: number) => {
+    const response = await fetchFile(`documents/download/${documentId}`);
+    const header = response.headers.get('Content-Disposition');
+    const parts = header!.split(';');
+    const filename = parts[1].split('=')[1].replaceAll("\"", "");
+    const blob = await response.blob();
+
+    return { blob, filename };
+};
+
+
+

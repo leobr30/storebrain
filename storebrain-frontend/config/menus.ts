@@ -1059,8 +1059,8 @@ export const menusConfig = {
             href: "/configuration/documents",
           },
           {
-            title:'Contrats',
-            href: "/tools/balance",
+            title:'Quizz',
+            href: "/configuring/quizz",
           },      
           {
             title:'Emploies',

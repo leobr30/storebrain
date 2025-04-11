@@ -360,4 +360,9 @@ export class EmployeesController {
   async getEmployeeOnboarding(@Param('id') id: number) {
     return this.employeesService.getEmployeeOnboarding(id);
   }
+
+  @Get(':id/onboarding')
+  async getOnboardingSteps(@Param('id', ParseIntPipe) id: number) {
+    return this.employeesService.getOnboardingSteps(id);
+  }
 }

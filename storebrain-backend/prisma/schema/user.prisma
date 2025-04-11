@@ -30,6 +30,9 @@ model User {
   vacations                UserAbsence[]             @relation("UserVacations")
   omars                    Omar[]                    @relation("UserOmars")
   createdOmars             Omar[]                    @relation("UserCreatedOmars")
+  assignedQuizz            Quizz[]                   @relation("AssignedQuizz")
+  createdQuizz             Quizz[]                   @relation("CreatedQuizz")
+  quizzAnswers             QuizzAnswer[]
   mondayAppointmentDetails MondayAppointmentDetail[]
   closingDayComments       ClosingDayComment[]
 

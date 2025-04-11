@@ -1056,11 +1056,11 @@ export const menusConfig = {
         child: [
           {
             title:'Documents',
-            href: "/configuration/documents",
+            href: "/configuration/documents/formulaire",
           },
           {
             title:'Quizz',
-            href: "/configuring/quizz",
+            href: "/configuration/documents/quizz",
           },      
           {
             title:'Emploies',

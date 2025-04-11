@@ -8,6 +8,7 @@ import {
   JobNotFoundException,
   UserNotFoundException,
 } from './employees.errors';
+import { QuizzService } from 'src/quizz/quizz.service';
 import { CompaniesService } from 'src/companies/companies.service';
 import { CompanyNotFoundException } from 'src/companies/companies.errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -33,13 +34,17 @@ import { ValidateOmarDto } from './dto/validate-omar.dto';
 import { AbsenceUpdatedEvent } from './events/absence-updated.event';
 import { User } from '@prisma/client';
 import { MailService } from 'src/mail/mail.service';
+import { UserJobOnboarding } from '@prisma/client';
+
+
+
 
 @Injectable()
 export class EmployeesService {
   constructor(
     private readonly mailService: MailService,
     private readonly pdfService: PdfService,
-    private prisma: PrismaService,
+    private prisma: PrismaService, private quizzService: QuizzService,
     private jobsService: JobsService,
     private companiesService: CompaniesService,
     private eventEmitter: EventEmitter2,
@@ -358,6 +363,8 @@ export class EmployeesService {
     });
   }
 
+  // ...
+
   async startIntegration(id: number, currentUser: CurrentUserType) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -405,6 +412,14 @@ export class EmployeesService {
           status: Status.PENDING,
           userId: user.id,
         });
+      } else if (step.type === 'QUIZZ' && step.jobOnboardingQuizzId) {
+        data.push({
+          date: add(new Date(), { days: step.day, months: step.month }),
+          appointmentNumber: 0,
+          jobOnboardingStepId: step.id,
+          status: Status.PENDING,
+          userId: user.id,
+        });
       }
 
     });
@@ -428,6 +443,8 @@ export class EmployeesService {
     });
     return userJobOnboardings;
   }
+
+
 
 
 
@@ -1146,6 +1163,72 @@ export class EmployeesService {
     if (!user) throw new NotFoundException();
     return user.jobOnboardings;
   }
+
+  async getOnboardingSteps(employeeId: number) { // This is the implementation that should be kept
+    const employee = await this.prisma.user.findUnique({
+      where: { id: employeeId },
+      include: {
+        jobOnboardings: {
+          include: {
+            jobOnboardingStep: {
+              include: {
+                trainingModel: {
+                  include: {
+                    subjects: true,
+                  },
+                },
+                jobOnboardingResultReview: true,
+                jobOnboardingDocuments: true,
+                jobOnboardingQuizz: true,
+              },
+            },
+            training: {
+              include: {
+                subjects: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!employee) {
+      throw new Error('Employee not found');
+    }
+    console.log("🚀 ~ getOnboardingSteps ~ employee:", employee);
+
+    const stepsWithQuizzDetails = await Promise.all(
+      employee.jobOnboardings.map(async (jobOnboarding) => {
+        const onboarding = jobOnboarding as UserJobOnboarding & {
+          jobOnboardingStep: {
+            jobOnboardingQuizz?: { id: number };
+          };
+        };
+        console.log("🚀 ~ getOnboardingSteps ~ onboarding:", onboarding);
+
+        if (onboarding.jobOnboardingStep?.jobOnboardingQuizz) {
+          const quizzDetails = await this.quizzService.getQuizzForOnboarding(
+            onboarding.jobOnboardingStep.jobOnboardingQuizz.id,
+          );
+          console.log("🚀 ~ getOnboardingSteps ~ quizzDetails:", quizzDetails);
+
+          return {
+            ...onboarding,
+            jobOnboardingStep: {
+              ...onboarding.jobOnboardingStep,
+              jobOnboardingQuizz: quizzDetails,
+            },
+          };
+        }
+
+        return onboarding;
+      }),
+    );
+
+    return stepsWithQuizzDetails;
+  }
+
+
 
 
   async sendMondayAppointmentSummary(appointmentId: number, email: string) {

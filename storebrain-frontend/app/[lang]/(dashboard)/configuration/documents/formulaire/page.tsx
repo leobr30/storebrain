@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { saveDoc } from "./action";
+import { saveDoc } from "../action";
 import { PencilLine } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
 import { Eraser } from 'lucide-react';

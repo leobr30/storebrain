@@ -26,10 +26,12 @@ import { FormsController } from './forms/forms.controller';
 import { EmployeeResponsesController } from './forms/forms.controller';
 import { FormsModule } from './forms/forms.module';
 import { DocumentsModule } from './documents/documents.module';
+import { QuizzModule } from './quizz/quizz.module';
 
 
 @Module({
   imports: [
+    QuizzModule,
     DocumentsModule,
     FormsModule,
     OnerpModule,

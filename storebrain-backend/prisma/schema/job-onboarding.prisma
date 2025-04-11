@@ -19,12 +19,15 @@ model JobOnboardingStep {
   jobOnboardingResultReview   JobOnboardingResultReview? @relation(fields: [jobOnboardingResultReviewId], references: [id])
   jobOnboardingResultReviewId Int?
   jobOnboardingDocuments      JobOnboardingDocument[]
+  jobOnboardingQuizz          Quizz?                     @relation(fields: [jobOnboardingQuizzId], references: [id]) // Add this line
+  jobOnboardingQuizzId        Int? // Add this line
 }
 
 enum JobOnboardingStepType {
   TRAINING
   RESULT_REVIEW
   DOCUMENT
+  QUIZZ // Add this line
 }
 
 model JobOnboardingResultReview {

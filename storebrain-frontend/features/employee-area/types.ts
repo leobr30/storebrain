@@ -46,6 +46,7 @@ export interface EmployeeJobOnboarding {
     date: Date;
     status: Status;
     appointmentNumber: number;
+    responseId?: string;
     jobOnboardingStep: {
         id: number;
         type: string;
@@ -63,10 +64,14 @@ export interface EmployeeJobOnboarding {
             id: number;
             name: string;
         };
-        jobOnboardingDocuments: {
+        jobOnboardingDocuments?: { // Ajout du ? pour rendre la propriété optionnelle
             id: number;
             name: string;
         }[];
+        jobOnboardingQuizz?: { // Ajout de la propriété pour le quizz
+            id: number;
+            name: string;
+        };
     };
     training?: {
         id: number;
@@ -76,8 +81,9 @@ export interface EmployeeJobOnboarding {
             state: string;
         }[];
     };
-    responseId?: string;
 }
+
+
 
 
 

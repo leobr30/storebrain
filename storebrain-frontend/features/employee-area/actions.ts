@@ -282,12 +282,7 @@ export const submitQuizzAnswers = async (quizzId: number, data: {
         },
     });
 
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Erreur inconnue');
-        throw new Error(`HTTP error! ${response.statusText}: ${errorText}`);
-    }
-
-    return await response.json();
+    return await response;
 };
 
 export const getAssignedQuizz = async (quizzId: number, userId: number) => {

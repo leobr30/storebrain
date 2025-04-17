@@ -176,7 +176,7 @@ export class QuizzService {
       data: dto.answers.map((answer) => ({
         questionId: answer.questionId,
         userId: dto.userId,
-        text: answer.answer, // ✅ Accepte bien un texte libre
+        text: answer.answer,
       })),
     });
 

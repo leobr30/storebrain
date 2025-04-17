@@ -262,11 +262,6 @@ export const downloadDocument = async (documentId: number) => {
 // QUIZZ
 
 // Récupérer un quizz complet
-// ...
-
-// QUIZZ
-
-// Récupérer un quizz complet
 export const getQuizzById = async (quizzId: number) => {
     return await fetchWithAuth(`quizz/${quizzId}`);
 };
@@ -276,7 +271,7 @@ export const submitQuizzAnswers = async (quizzId: number, data: {
     userId: number;
     answers: {
         questionId: number;
-        answer: string; // ✅ Modification du nom de la propriété
+        answer: string;
     }[];
 }) => {
     const response = await fetchWithAuth(`quizz/${quizzId}/submit`, {
@@ -295,9 +290,8 @@ export const submitQuizzAnswers = async (quizzId: number, data: {
     return await response.json();
 };
 
-// Récupérer les réponses d’un utilisateur pour un quizz
 export const getAssignedQuizz = async (quizzId: number, userId: number) => {
-    return await fetchWithAuth(`quizz/${quizzId}`); // ✅ Suppression de /answers
+    return await fetchWithAuth(`quizz/${quizzId}`);
 };
 
 

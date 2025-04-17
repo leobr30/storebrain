@@ -1,19 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuizzDto } from './dto/create-quizz.dto';
 import { SubmitQuizzAnswersDto } from './dto/submit-quizz-answers.dto';
-import { JobOnboardingStepType } from '@prisma/client';
+import { JobOnboardingStepType, Status } from '@prisma/client';
 
 @Injectable()
 export class QuizzService {
   constructor(private prisma: PrismaService) { }
 
   async createQuizz(data: CreateQuizzDto) {
+    console.log("📥 Requête reçue dans le controller /quizz POST");
+    console.log("🧾 Données reçues :", data);
+
+    // 1. Création du quizz avec sections et questions (sans les réponses)
     const quizz = await this.prisma.quizz.create({
       data: {
         title: data.title,
         createdBy: { connect: { id: data.createdById } },
-        assignedTo: { connect: { id: data.assignedToId } },
+        assignedTo: { connect: { id: data.employeeId } },
         sections: {
           create: data.sections.map((section) => ({
             title: section.title,
@@ -21,11 +25,7 @@ export class QuizzService {
               create: section.questions.map((question) => ({
                 text: question.text,
                 imageUrl: question.imageUrl,
-                answers: {
-                  create: question.answers.map((answer) => ({
-                    text: answer.text,
-                  })),
-                },
+                // ❌ Suppression de la création des réponses
               })),
             },
           })),
@@ -35,25 +35,45 @@ export class QuizzService {
         sections: {
           include: {
             questions: {
-              include: {
-                answers: true,
-              },
+              // ❌ Suppression de l'inclusion des réponses
             },
           },
         },
       },
     });
 
-    
-    await this.prisma.jobOnboardingStep.create({
+    // 2. Vérifie que l'onboarding existe
+    const onboarding = await this.prisma.jobOnboarding.findUnique({
+      where: { id: data.jobOnboardingId },
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException(`Aucun JobOnboarding avec l'id ${data.jobOnboardingId}`);
+    }
+
+    // 3. Création d'une nouvelle étape QUIZZ dans l'onboarding
+    const onboardingStep = await this.prisma.jobOnboardingStep.create({
       data: {
-        type: JobOnboardingStepType.QUIZZ,
+        type: 'QUIZZ',
         jobOnboardingId: data.jobOnboardingId,
         jobOnboardingQuizzId: quizz.id,
         day: 1,
         month: 0,
       },
     });
+
+    // 4. Association de cette étape à l'utilisateur dans UserJobOnboarding
+    await this.prisma.userJobOnboarding.create({
+      data: {
+        userId: data.employeeId,
+        jobOnboardingStepId: onboardingStep.id,
+        date: new Date(),
+        appointmentNumber: 0,
+        status: 'PENDING',
+      },
+    });
+
+    console.log("✅ Quizz et étape QUIZZ créés et liés à l'utilisateur.");
 
     return quizz;
   }
@@ -75,9 +95,7 @@ export class QuizzService {
         sections: {
           include: {
             questions: {
-              include: {
-                answers: true,
-              },
+              // ❌ Suppression de l'inclusion des réponses
             },
           },
         },
@@ -96,9 +114,7 @@ export class QuizzService {
         sections: {
           include: {
             questions: {
-              include: {
-                answers: true,
-              },
+              // ❌ Suppression de l'inclusion des réponses
             },
           },
         },
@@ -114,9 +130,7 @@ export class QuizzService {
         sections: {
           include: {
             questions: {
-              include: {
-                answers: true,
-              },
+              // ❌ Suppression de l'inclusion des réponses
             },
           },
         },
@@ -132,9 +146,7 @@ export class QuizzService {
         sections: {
           include: {
             questions: {
-              include: {
-                answers: true,
-              },
+              // ❌ Suppression de l'inclusion des réponses
             },
           },
         },
@@ -164,7 +176,7 @@ export class QuizzService {
       data: dto.answers.map((answer) => ({
         questionId: answer.questionId,
         userId: dto.userId,
-        text: answer.answer,
+        text: answer.answer, // ✅ Accepte bien un texte libre
       })),
     });
 

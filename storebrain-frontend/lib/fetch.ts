@@ -24,6 +24,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
             ...options,
             headers,
         });
+        console.log("➡️ URL finale appelée :", res.url);
+
 
         console.log("🔍 Réponse reçue :", res.status, res.statusText);
 
@@ -52,10 +54,12 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
             throw new Error("Réponse API non valide (impossible de parser en JSON).");
         }
 
+
     } catch (error) {
         console.error("❌ Erreur dans fetchWithAuth :", error);
         throw error;
     }
+
 };
 
 

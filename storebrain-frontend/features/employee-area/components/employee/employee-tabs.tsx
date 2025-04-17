@@ -1,32 +1,34 @@
-"use client"
-import { Tabs, TabsList } from "@/components/ui/tabs"
-import { TabsContent, TabsTrigger } from "@radix-ui/react-tabs"
-import { EmployeeHistory } from "./employee-history"
-import { EmployeeOnboardings } from "./emloyee-onboarding"
-import { Badge } from "@/components/ui/badge"
-import { EmployeeAbsence } from "./employee-absense"
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import EmployeeFormation from "./employee-formation"
-import { Employee } from "../../types"
-import EmployeeDocuments from "./documents"
+// features/employee-area/components/employee/employee-tabs.tsx
+"use client";
+import { Tabs, TabsList } from "@/components/ui/tabs";
+import { TabsContent, TabsTrigger } from "@radix-ui/react-tabs";
+import { EmployeeHistory } from "./employee-history";
+import { EmployeeOnboardings } from "./emloyee-onboarding";
+import { Badge } from "@/components/ui/badge";
+import { EmployeeAbsence } from "./employee-absense";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import EmployeeFormation from "./employee-formation";
+import { Employee } from "../../types";
+import EmployeeDocuments from "./documents";
 
 type EmployeeTabsProps = {
-  employee: Employee
-}
+  employee: Employee;
+  // jobOnboardingId: number | null; // Accepter jobOnboardingId en tant que prop
+};
 
 export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
-  const [tab, setTab] = useState('history')
-  const searchParams = useSearchParams()
-  const searchTab = searchParams.get('tab')
+  const [tab, setTab] = useState("history");
+  const searchParams = useSearchParams();
+  const searchTab = searchParams.get("tab");
 
-  console.log(employee)
+  console.log(employee);
   useEffect(() => {
     if (searchTab) {
-      setTab(searchTab)
+      setTab(searchTab);
     }
-    console.log(employee)
-  }, [searchParams])
+    console.log(employee);
+  }, [searchParams]);
   return (
     <Tabs value={tab} onValueChange={setTab} defaultValue="history">
       <TabsList className="bg-card overflow-x-auto md:overflow-hidden  w-full px-5 pt-6 pb-2.5 h-fit border-b border-default-200  rounded-none justify-start gap-12 rounded-t-md">
@@ -52,6 +54,7 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <EmployeeHistory histories={employee.histories} />
       </TabsContent>
       <TabsContent value="onboarding" className="mt-2.5">
+        {/* Passer jobOnboardingId à EmployeeOnboardings */}
         <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id} />
       </TabsContent>
       <TabsContent value="absence" className="mt-2.5">
@@ -61,9 +64,9 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <EmployeeFormation employeeId={employee.id} trainings={employee.trainings} jobOnboardings={employee.jobOnboardings} />
       </TabsContent>
       <TabsContent value="document" className="mt-2.5">
-        <EmployeeDocuments/>
+        <EmployeeDocuments />
       </TabsContent>
 
     </Tabs>
-  )
-}
+  );
+};

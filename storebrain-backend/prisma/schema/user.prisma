@@ -108,6 +108,8 @@ model UserJobOnboarding {
 
   formId String? // ✅ nouvelle clé étrangère
   form   Form?   @relation(fields: [formId], references: [id]) // ✅ lien relationnel
+
+
 }
 
 model UserAbsence {

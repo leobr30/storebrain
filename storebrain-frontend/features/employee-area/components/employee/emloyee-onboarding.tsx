@@ -16,6 +16,7 @@ type EmployeeOnboardingsProps = {
     id: number;
     steps: EmployeeJobOnboarding[];
     onStepUpdated?: (updatedStep: EmployeeJobOnboarding) => void;
+    //jobOnboardingId: number | null;
 };
 
 export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboardingsProps) => {
@@ -37,7 +38,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
 
 
     const [localSteps, setLocalSteps] = useState<EmployeeJobOnboarding[]>(steps);
-    const [open, setOpen] = useState(false);
+    const [isDocumentOpen, setIsDocumentOpen] = useState(false); // ✅ Nouvelle variable pour le document
+    const [isQuizzOpen, setIsQuizzOpen] = useState(false); // ✅ Nouvelle variable pour le quizz
 
 
     const handleCreateTraining = async (jobOnboardingStepId: number) => {
@@ -185,8 +187,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                     <TableCell>
                                                         <DocumentForm
                                                             stepId={step.id}
-                                                            setOpen={setOpen}
-                                                            open={open}
+                                                            setOpen={setIsDocumentOpen} // ✅ Utilisation de setIsDocumentOpen
+                                                            open={isDocumentOpen} // ✅ Utilisation de isDocumentOpen
                                                             status={step.status}
                                                             onSubmitSuccess={async (updatedStep) => {
                                                                 if (updatedStep) {
@@ -205,35 +207,47 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                 </>
                                             ) : null}
 
-                                            {step.jobOnboardingStep.type === "QUIZZ" && step.jobOnboardingStep.jobOnboardingQuizz && step.jobOnboardingStep.jobOnboardingQuizz.id && step.jobOnboardingStep.jobOnboardingQuizz.name ? (
-                                                <>
-                                                    <TableCell>{step.jobOnboardingStep.jobOnboardingQuizz.name}</TableCell>
-                                                    <TableCell>
-                                                        <EmployeeQuizzWrapper
-                                                            stepId={step.id}
-                                                            setOpen={setOpen}
-                                                            open={open}
-                                                            status={step.status}
-                                                            quizzId={step.jobOnboardingStep.jobOnboardingQuizz.id}
-                                                            onSubmitSuccess={async (updatedStep) => {
-                                                                if (updatedStep) {
-                                                                    await handleRefreshSteps(step.id);
-                                                                    updateStep(updatedStep);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <StatusBadge status={step.status} />
-                                                    </TableCell>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <TableCell>Quizz non configuré</TableCell>
-                                                    <TableCell>Quizz non configuré</TableCell>
-                                                    <TableCell>Quizz non configuré</TableCell>
-                                                </>
-                                            )}
+                                            {step.jobOnboardingStep.type === "QUIZZ" ? (
+                                                step.jobOnboardingStep.jobOnboardingQuizz &&
+                                                    step.jobOnboardingStep.jobOnboardingQuizz.id &&
+                                                    step.jobOnboardingStep.jobOnboardingQuizz.title ? (
+                                                    <>
+                                                        <TableCell>{step.jobOnboardingStep.jobOnboardingQuizz.title}</TableCell>
+                                                        <TableCell>
+                                                            <EmployeeQuizzWrapper
+                                                                stepId={step.id}
+                                                                setOpen={setIsQuizzOpen}
+                                                                open={isQuizzOpen}
+                                                                status={step.status}
+                                                                quizzId={step.jobOnboardingStep.jobOnboardingQuizz.id}
+                                                                onSubmitSuccess={async (updatedStep) => {
+                                                                    if (updatedStep) {
+                                                                        await handleRefreshSteps(step.id);
+                                                                        updateStep(updatedStep);
+                                                                    }
+                                                                }}
+
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <StatusBadge status={step.status} />
+                                                        </TableCell>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <TableCell>Quizz non configuré</TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" disabled>
+                                                                Indisponible
+                                                            </Button>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <StatusBadge status={step.status} />
+                                                        </TableCell>
+                                                    </>
+                                                )
+                                            ) : null}
+
                                         </TableRow>
                                     )
                                 })}

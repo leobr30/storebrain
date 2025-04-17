@@ -10,22 +10,15 @@ import { useSession } from 'next-auth/react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Employee {
-    id: number;
-    name: string;
-}
-
-interface Answer {
     id: string;
-    text: string;
+    name: string;
 }
 
 interface Question {
     id: string;
     text: string;
     imageUrl?: string;
-    answers: Answer[];
 }
-
 
 interface Section {
     id: string;
@@ -33,13 +26,17 @@ interface Section {
     questions: Question[];
 }
 
-export default function QuizzPage() {
+interface QuizzPageProps {
+    jobOnboardingId: number;
+}
+
+export default function QuizzPage({ }: QuizzPageProps) {
     const { data: session } = useSession();
     const createdById = session?.user?.id;
 
     const [title, setTitle] = useState('');
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [isAssignUserDialogOpen, setIsAssignUserDialogOpen] = useState(false);
     const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
@@ -51,7 +48,6 @@ export default function QuizzPage() {
                 {
                     id: uuidv4(),
                     text: '',
-                    answers: [{ id: uuidv4(), text: '' }],
                 },
             ],
         },
@@ -66,10 +62,8 @@ export default function QuizzPage() {
                 title: section.title,
                 questions: section.questions.map((question) => ({
                     text: question.text,
-                    answers: question.answers.map((answer) => ({ text: answer.text })),
                 })),
             })),
-            jobOnboardingId: jobOnboardingId,
         };
 
         try {
@@ -80,9 +74,9 @@ export default function QuizzPage() {
                 sections,
             });
 
-            alert('🎉 Le quizz a été créé avec succès !'); // Changed message here
+            alert('Le quizz a été créé avec succès !');
         } catch (error) {
-            console.error('❌ Erreur lors de la sauvegarde du quizz :', error);
+            console.error(' Erreur lors de la sauvegarde du quizz :', error);
             alert('ça fonctionne pas');
         }
     };
@@ -93,7 +87,7 @@ export default function QuizzPage() {
             {
                 id: uuidv4(),
                 title: '',
-                questions: [{ id: uuidv4(), text: '', answers: [{ id: uuidv4(), text: '' }] }],
+                questions: [{ id: uuidv4(), text: '' }],
             },
         ]);
     };
@@ -109,7 +103,6 @@ export default function QuizzPage() {
         updated[sectionIndex].questions.push({
             id: uuidv4(),
             text: '',
-            answers: [{ id: uuidv4(), text: '' }],
         });
         setSections(updated);
     };
@@ -120,47 +113,35 @@ export default function QuizzPage() {
         setSections(updated);
     };
 
-    const handleAddAnswer = (sectionIndex: number, questionIndex: number) => {
-        const updated = [...sections];
-        updated[sectionIndex].questions[questionIndex].answers.push({ id: uuidv4(), text: '' });
-        setSections(updated);
-    };
-
-    const handleRemoveAnswer = (sectionIndex: number, questionIndex: number, answerIndex: number) => {
-        const updated = [...sections];
-        updated[sectionIndex].questions[questionIndex].answers.splice(answerIndex, 1);
-        setSections(updated);
-    };
-
     useEffect(() => {
         const loadEmployees = async () => {
             try {
                 const list = await fetchAllEmployees();
+                console.log("👥 Employés récupérés :", list);
+
                 const typedList: Employee[] = list.map((employee: any) => ({
                     id: employee.id,
                     name: employee.name,
                 }));
                 setEmployees(typedList);
             } catch (error) {
-                console.error('Error fetching employees:', error);
+                console.error('❌ Erreur lors du fetch des employés :', error);
             }
         };
         loadEmployees();
     }, []);
 
-    const handleAssign = useCallback((userId: number) => {
+    const handleAssign = useCallback((userId: string) => {
         console.log('QuizzPage: onAssign called with:', userId);
         setSelectedEmployeeId(userId);
     }, []);
 
     return (
         <div className="p-6 space-y-6">
-
             <div className="flex items-center space-x-2">
                 <FileEdit className="w-6 h-6 text-indigo-500" />
                 <h1 className="text-2xl font-bold">Création d’un Quizz</h1>
             </div>
-
 
             <Input
                 value={title}
@@ -169,11 +150,9 @@ export default function QuizzPage() {
                 className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
             />
 
-
             <div className="space-y-8">
                 {sections.map((section, sectionIndex) => (
                     <div key={section.id} className="border p-4 rounded-md space-y-4 shadow-md bg-white">
-
                         <div className="flex justify-between items-center">
                             <Input
                                 value={section.title}
@@ -194,11 +173,9 @@ export default function QuizzPage() {
                             </Button>
                         </div>
 
-
                         <div className="space-y-4">
                             {section.questions.map((question, questionIndex) => (
                                 <div key={question.id} className="border p-4 rounded-md space-y-2 bg-gray-50">
-
                                     <div className="flex items-center justify-between">
                                         <Input
                                             value={question.text}
@@ -241,48 +218,9 @@ export default function QuizzPage() {
                                             />
                                         )}
                                     </div>
-
-
-                                    <div className="space-y-2">
-                                        {question.answers.map((answer, answerIndex) => (
-                                            <div key={answer.id} className="flex items-center space-x-2">
-                                                <Input
-                                                    value={answer.text}
-                                                    onChange={(e) => {
-                                                        const updated = [...sections];
-                                                        updated[sectionIndex].questions[questionIndex].answers[answerIndex].text =
-                                                            e.target.value;
-                                                        setSections(updated);
-                                                    }}
-                                                    placeholder={`Réponse ${answerIndex + 1}`}
-                                                    className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                                />
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    onClick={() => handleRemoveAnswer(sectionIndex, questionIndex, answerIndex)}
-                                                >
-                                                    <XCircle className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-
-
-                                    <div className="flex justify-end">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleAddAnswer(sectionIndex, questionIndex)}
-                                            className="flex items-center text-sm"
-                                        >
-                                            <PlusCircle className="w-4 h-4 mr-2" /> Ajouter une réponse
-                                        </Button>
-                                    </div>
                                 </div>
                             ))}
                         </div>
-
 
                         <div className="flex justify-end">
                             <Button onClick={() => handleAddQuestion(sectionIndex)} className="flex items-center text-sm">
@@ -293,14 +231,11 @@ export default function QuizzPage() {
                 ))}
             </div>
 
-
-            <Button onClick={() => handleAddSection()} className="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white">
+            <Button onClick={handleAddSection} className="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white">
                 <PlusCircle className="w-4 h-4 mr-2" /> Ajouter une section
             </Button>
 
-
             <div className="flex justify-end items-center space-x-4 mt-8">
-
                 <AssignUserDialog
                     users={employees}
                     onAssign={handleAssign}
@@ -316,7 +251,6 @@ export default function QuizzPage() {
                     <Save className="w-4 h-4 mr-2" /> Sauvegarder le Quizz
                 </Button>
             </div>
-
 
             {selectedEmployeeId && (
                 <p className="text-sm text-muted-foreground flex items-center space-x-2">

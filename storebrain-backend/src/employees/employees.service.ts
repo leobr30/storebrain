@@ -213,7 +213,7 @@ export class EmployeesService {
             documents: true,
           },
         },
-        jobOnboardings: {
+        jobOnboardings: { // ✅ Ajout de jobOnboardings dans l'include
           select: {
             id: true,
             date: true,
@@ -225,6 +225,9 @@ export class EmployeesService {
                 trainingModel: true,
                 jobOnboardingResultReview: true,
                 jobOnboardingDocuments: true,
+                jobOnboardingQuizz: true,
+                jobOnboarding: true,
+
               }
             },
             training: {

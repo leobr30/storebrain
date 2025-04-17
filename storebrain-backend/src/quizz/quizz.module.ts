@@ -9,4 +9,8 @@ import { QuizzController } from './quizz.controller';
   controllers: [QuizzController],
   exports: [QuizzService],
 })
-export class QuizzModule {}
+export class QuizzModule {
+  constructor() {
+    console.log("✅ QuizzModule chargé !");
+  }
+}

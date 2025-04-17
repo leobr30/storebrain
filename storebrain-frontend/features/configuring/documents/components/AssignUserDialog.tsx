@@ -6,19 +6,19 @@ import { useState, useCallback, memo, useEffect, useRef } from "react";
 import { User } from "lucide-react";
 
 interface User {
-    id: number;
+    id: string;
     name: string;
 }
 
 type AssignUserDialogProps = {
     users: User[];
-    onAssign: (userId: number) => void;
+    onAssign: (userId: string) => void; // ✅ string
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 };
 
 export const AssignUserDialog = memo(function AssignUserDialog({ users, onAssign, isOpen, onOpenChange }: AssignUserDialogProps) {
-    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const selectRef = useRef<HTMLSelectElement>(null);
 
     const handleAssign = useCallback(() => {
@@ -33,7 +33,7 @@ export const AssignUserDialog = memo(function AssignUserDialog({ users, onAssign
     const handleValueChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
         console.log("AssignUserDialog: onValueChange called with:", value);
-        setSelectedUserId(Number(value));
+        setSelectedUserId(value); // ✅ PAS Number()
     }, []);
 
     useEffect(() => {

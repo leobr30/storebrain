@@ -8,25 +8,10 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateQuizzAnswerDto {
-    @IsString()
-    @IsNotEmpty()
-    text: string;
-}
-
 export class CreateQuizzQuestionDto {
     @IsString()
     @IsNotEmpty()
     text: string;
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CreateQuizzAnswerDto)
-    answers: CreateQuizzAnswerDto[];
-
-    @IsOptional()
-    @IsNumber()
-    correctAnswerId?: number;
 
     @IsString()
     @IsOptional()
@@ -53,7 +38,8 @@ export class CreateQuizzDto {
     createdById: number;
 
     @IsNumber()
-    assignedToId: number;
+    employeeId: number;
+
 
     @IsArray()
     @ValidateNested({ each: true })
@@ -62,6 +48,4 @@ export class CreateQuizzDto {
 
     @IsNumber()
     jobOnboardingId: number;
-
-    
 }

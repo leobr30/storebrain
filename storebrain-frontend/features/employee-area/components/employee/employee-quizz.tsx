@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSession } from 'next-auth/react';
-import { getQuizzById, submitQuizzAnswers } from '../../actions'; // ✅ Modification de l'import
+import { getQuizzById, submitQuizzAnswers } from '../../actions';
 import { EmployeeJobOnboarding } from '../../types';
 
 interface EmployeeQuizzProps {
@@ -19,40 +19,39 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: Empl
     const userId = session?.user?.id;
 
     const [quizz, setQuizz] = useState<any>(null);
-    const [answers, setAnswers] = useState<{ [questionId: number]: string[] }>({}); // ✅ Modification du type
+    const [answers, setAnswers] = useState<{ [questionId: number]: string[] }>({});
     const [isCompleted, setIsCompleted] = useState(false);
 
     useEffect(() => {
         const fetchQuizz = async () => {
             if (!userId) return;
-            const data = await getQuizzById(quizzId); // ✅ Modification de la fonction
-            setQuizz(data.data); // ✅ Modification de la propriété
+            const data = await getQuizzById(quizzId);
+            setQuizz(data.data);
         };
         fetchQuizz();
     }, [userId, quizzId]);
 
-    const handleToggle = (questionId: number, answerId: string) => { // ✅ Modification du type
-        setAnswers(prev => {
-            const current = prev[questionId] || [];
-            const exists = current.includes(answerId);
-            return {
-                ...prev,
-                [questionId]: exists
-                    ? current.filter(id => id !== answerId)
-                    : [...current, answerId]
-            };
-        });
+    const handleInputChange = (questionId: number, value: string) => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: [value],
+        }));
     };
 
     const handleSubmit = async () => {
-        const answersToSubmit = Object.entries(answers).map(([questionId, answerIds]) => ({
+        const answersToSubmit = Object.entries(answers).map(([questionId, answerArray]) => ({
             questionId: Number(questionId),
-            answer: answerIds[0] // ✅ Modification pour envoyer la réponse
+            answer: answerArray[0],
         }));
-        const response = await submitQuizzAnswers(quizzId, { userId: userId!, answers: answersToSubmit }); // ✅ Modification de la fonction
+
+        const response = await submitQuizzAnswers(quizzId, {
+            userId: userId!,
+            answers: answersToSubmit,
+        });
+
         setIsCompleted(true);
         if (response) {
-            onSubmitSuccess(null); // ✅ Modification pour envoyer null
+            onSubmitSuccess(null);
         }
     };
 
@@ -67,16 +66,14 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: Empl
                     {section.questions.map((question: any) => (
                         <div key={question.id} className="space-y-2">
                             <p className="font-medium">{question.text}</p>
-                            {question.answers.map((answer: any) => (
-                                <div key={answer.id} className="flex items-center gap-3">
-                                    <Checkbox
-                                        checked={answers[question.id]?.includes(answer.id)}
-                                        onCheckedChange={() => handleToggle(question.id, answer.id)}
-                                        disabled={isCompleted}
-                                    />
-                                    <span>{answer.text}</span>
-                                </div>
-                            ))}
+                            <Input
+                                type="text"
+                                placeholder="Votre réponse"
+                                value={answers[question.id]?.[0] || ''}
+                                onChange={(e) => handleInputChange(question.id, e.target.value)}
+                                disabled={isCompleted}
+                                className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            />
                         </div>
                     ))}
                 </div>
@@ -84,7 +81,7 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: Empl
 
             {!isCompleted && (
                 <Button onClick={handleSubmit} className="mt-4">
-                    ✅ Soumettre mes réponses
+                    Soumettre mes réponses
                 </Button>
             )}
 

@@ -6,17 +6,30 @@ import { SubmitQuizzAnswersDto } from './dto/submit-quizz-answers.dto';
 
 @Controller('quizz')
 export class QuizzController {
-  constructor(private readonly quizzService: QuizzService) { }
+  constructor(private readonly quizzService: QuizzService) {
+    console.log("✅ QuizzController chargé !");
+  }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createQuizzDto: CreateQuizzDto) {
-    const result = await this.quizzService.createQuizz(createQuizzDto);
-    return {
-      message: 'Quizz créé avec succès ✅',
-      data: result,
-    };
+    console.log('📥 Requête reçue dans le controller /quizz POST');
+    console.log('🧾 Données reçues :', JSON.stringify(createQuizzDto, null, 2));
+
+    try {
+      const result = await this.quizzService.createQuizz(createQuizzDto);
+      console.log('✅ Quizz créé avec succès :', result);
+      return {
+        message: 'Quizz créé avec succès ✅',
+        data: result,
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la création du quizz :', error);
+      throw error;
+    }
   }
+
+
+
 
   @Get(':id')
   async getOne(@Param('id', ParseIntPipe) id: number) {
@@ -67,6 +80,6 @@ export class QuizzController {
   async getQuizzForOnboarding(@Param('quizzId', ParseIntPipe) quizzId: number) {
     return this.quizzService.getQuizzForOnboarding(quizzId);
   }
-  
+
 
 }

@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EmployeeQuizz from './employee-quizz';
 import { X } from 'lucide-react';
 import { EmployeeJobOnboarding } from '../../types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EmployeeQuizzWrapperProps {
     stepId: number;
@@ -21,20 +22,18 @@ export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitS
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-                <Button variant={"ghost"} onClick={() => setOpen(true)}>
-                    {isCompleted ? "Consulter le Quizz" : "Démarrer le Quizz"}
-                </Button>
-            </SheetTrigger>
+            <Button variant={"ghost"} onClick={() => setOpen(true)}>
+                {isCompleted ? "Consulter le Quizz" : "Démarrer le Quizz"}
+            </Button>
             <SheetContent closeIcon={<X className="h-5 w-5 relative" />} className="flex flex-col h-[90vh] p-0" side="bottom">
                 <SheetHeader>
                     <SheetTitle className="p-3 border-b border-gray-200">
                         {isCompleted ? "Quizz Complété" : "Quizz"}
                     </SheetTitle>
                 </SheetHeader>
-                <div className='p-4'>
+                <ScrollArea className='flex-grow p-4'>
                     <EmployeeQuizz quizzId={quizzId} onSubmitSuccess={onSubmitSuccess} stepId={stepId} />
-                </div>
+                </ScrollArea>
                 <SheetFooter className="p-4 flex justify-end items-center bg-white border-t border-gray-200">
                     <SheetClose asChild>
                         <Button>Fermer</Button>

@@ -1,7 +1,8 @@
 "use server";
 
 import { fetchWithAuth } from "@/lib/fetch";
-import { QuizzPayload } from "./type";
+import { json } from "stream/consumers";
+import { revalidatePath } from "next/cache"
 
 // FORMULAIRE
 
@@ -23,32 +24,45 @@ export const saveQuizz = async (data: any) => {
     return response;
 };
 
-// Récupération de tous les employés pour assignation d’un quizz
 export const fetchAllEmployees = async () => {
     return await fetchWithAuth("employees");
 };
 
 export const createQuizz = async (data: {
     title: string;
-    assignedToId: number;
-    createdById: number;
+    assignedToId: string;
+    createdById: string;
     sections: {
         title: string;
         questions: {
             imageUrl?: string;
             text: string;
-            answers: { text: string }[];
         }[];
     }[];
-    jobOnboardingId: number;
 }) => {
-    const res = await fetchWithAuth('quizz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+    const apiPayload = {
+        title: data.title,
+        employeeId: parseInt(data.assignedToId), // ✅ OK !
+        createdById: parseInt(data.createdById),
+        jobOnboardingId: 1,
+        sections: data.sections.map((section) => ({
+            title: section.title,
+            questions: section.questions.map((question) => ({
+                text: question.text,
+                imageUrl: question.imageUrl,
+            })),
+        })),
+    };
+
+    console.log("📦 Payload envoyé à l’API : ", JSON.stringify(apiPayload, null, 2));
+
+    const response = await fetchWithAuth("quizz", {
+        method: "POST",
+        body: JSON.stringify(apiPayload),
     });
 
-    return res;
+    revalidatePath('/en/employee-area/home');
+    return response;
 };
 
 

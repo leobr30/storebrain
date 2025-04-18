@@ -34,4 +34,4 @@ import { join } from 'path';
   ],
   exports: [MailService]
 })
-export class MailModule {}
+export class MailModule { }

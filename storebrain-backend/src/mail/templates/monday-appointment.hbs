@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Formulaire rempli</title>
+    <title>Résumé du rendez-vous du lundi</title>
     <style>
         body {
             font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
@@ -58,15 +58,15 @@
 <body>
     <div class="container">
         <div class="header">
+            <!-- Tu peux ajouter un logo ici si tu le souhaites -->
             <!-- <img src="https://www.ton-site.com/logo.png" alt="Diamantor" class="logo" /> -->
-            <h1>📄 Formulaire rempli - {{formTitle}}</h1>
+            <h1>Résumé du rendez-vous du lundi</h1>
         </div>
 
         <div class="content">
             <p>Bonjour,</p>
-            <p>L'employé <strong>{{username}} {{firstName}} {{lastName}}</strong> (ID : {{userId}}) a complété le
-                formulaire <strong>{{formTitle}}</strong>.</p>
-            <p>Vous trouverez en pièce jointe le document PDF contenant ses réponses.</p>
+            <p>Vous trouverez ci-joint le résumé du rendez-vous du lundi <strong>{{date}}</strong>.</p>
+            <p>Nous restons à votre disposition si besoin.</p>
             <p>Cordialement,</p>
             <p><strong>L'équipe Diamantor</strong></p>
         </div>

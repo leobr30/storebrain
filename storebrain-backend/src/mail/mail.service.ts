@@ -1,16 +1,12 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { MailStoreShipment } from './mail.interfaces';
-import { Prisma, Training } from '@prisma/client';
-import { userInfo } from 'os';
-import { formatDate } from 'date-fns';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-
-
   private transporter: nodemailer.Transporter;
+
   constructor(private mailerService: MailerService) {
     this.transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -18,7 +14,7 @@ export class MailService {
       auth: {
         user: process.env.EMAIL_ID,
         pass: process.env.EMAIL_PASS,
-      }
+      },
     });
   }
 
@@ -26,49 +22,87 @@ export class MailService {
     files: { fileName: string; mimeType: string; filePath: string }[],
     subject: string,
   ) {
-    console.log('Send mail');
+    console.log('Envoi de l\'email de création d\'employé...');
     await this.mailerService.sendMail({
-      to: 'leo.rigal@diamantor.Fr',
+      to: 'leo.rigal@diamantor.Fr', // À modifier avec l'adresse de destination appropriée
       subject,
-      template: './user-created',
+      template: './user-created', // Utilisation d'un template
+      context: {
+        // Tu peux ajouter des données contextuelles ici si nécessaire
+        files: files.map((file) => ({
+          filename: file.fileName,
+          path: file.filePath,
+        })),
+      },
       attachments: files.map((file) => ({
         filename: file.fileName,
         path: file.filePath,
       })),
     });
+    console.log('Email de création d\'employé envoyé avec succès.');
   }
 
-  async sendStoreShipmentAlertMail(magasin: number, storeShipments: MailStoreShipment[]) {
+  async sendStoreShipmentAlertMail(
+    magasin: number,
+    storeShipments: MailStoreShipment[],
+  ) {
+    console.log(`Envoi de l'email d'alerte de livraison pour le magasin M${magasin}...`);
     await this.mailerService.sendMail({
-      to: 'leo.rigal@diamantor.Fr',
-      //cc: ['stephane.rigal@diamantor.fr','sandrine.teule@diamantor.fr'],
+      to: 'leo.rigal@diamantor.Fr', // À modifier avec l'adresse de destination appropriée
+      //cc: ['stephane.rigal@diamantor.fr','sandrine.teule@diamantor.fr'], // Décommenter si nécessaire
       subject: `Livraisons non posées M${magasin}`,
-      template: './store-shipment-alert',
-      context: { magasin, storeShipments, totalStoreShipments: storeShipments.length, totalQuantity: storeShipments.reduce((acc, curr) => acc + curr.quantity, 0) },
+      template: './store-shipment-alert', // Utilisation d'un template
+      context: {
+        magasin,
+        storeShipments,
+        totalStoreShipments: storeShipments.length,
+        totalQuantity: storeShipments.reduce(
+          (acc, curr) => acc + curr.quantity,
+          0,
+        ),
+      },
     });
+    console.log(`Email d'alerte de livraison pour le magasin M${magasin} envoyé avec succès.`);
   }
 
-  async sendTrainingMail(realizedBy: string, subject: string, file: { fileName: string; mimeType: string; filePath: string }) {
+  async sendTrainingMail(
+    realizedBy: string,
+    subject: string,
+    file: { fileName: string; mimeType: string; filePath: string },
+  ) {
+    console.log(`Envoi de l'email de validation de formation par ${realizedBy}...`);
     await this.mailerService.sendMail({
-      to: 'leo.rigal@diamantor.Fr',
+      to: 'leo.rigal@diamantor.Fr', // À modifier avec l'adresse de destination appropriée
       subject,
-      template: './training-validate',
-      context: { realizedBy },
+      template: './training-validate', // Utilisation d'un template
+      context: { realizedBy, file },
       attachments: [
         {
           filename: file.fileName,
           path: file.filePath,
-        }
+        },
       ],
     });
+    console.log(`Email de validation de formation par ${realizedBy} envoyé avec succès.`);
   }
 
-  async sendMondayAppointmentMail(to: string, pdfBuffer: Buffer, date: Date) {
-    await this.transporter.sendMail({
-      from: `"Diamantor" <${process.env.EMAIL_ID}>`,
+  async sendMondayAppointmentMail(
+    to: string,
+    pdfBuffer: Buffer,
+    date: Date,
+  ) {
+    console.log(`Envoi de l'email de résumé du rendez-vous du lundi à ${to}...`);
+    await this.mailerService.sendMail({ // Use mailerService here
       to,
-      subject: `Résumé du rendez-vous du lundi ${date.toLocaleDateString('fr-FR')}`,
-      text: 'Vous trouverez en pièce jointe le résumé du rendez-vous du lundi.',
+      from: `"Diamantor" <${process.env.EMAIL_ID}>`,
+      subject: `Résumé du rendez-vous du lundi ${date.toLocaleDateString(
+        'fr-FR',
+      )}`,
+      template: './monday-appointment', // Utilisation d'un template
+      context: {
+        date: date.toLocaleDateString('fr-FR'),
+        year: new Date().getFullYear(),
+      },
       attachments: [
         {
           filename: 'rdv-lundi.pdf',
@@ -76,8 +110,8 @@ export class MailService {
         },
       ],
     });
+    console.log(`Email de résumé du rendez-vous du lundi envoyé avec succès à ${to}.`);
   }
-
 
   async sendEmployeeFormMail(
     email: string,
@@ -86,18 +120,21 @@ export class MailService {
     userId: string,
     lastName: string,
     firstName: string,
-    username: string, // ✅ Add username parameter
+    username: string,
   ) {
+    console.log(`Envoi de l'email de formulaire rempli à ${email}...`);
     await this.mailerService.sendMail({
       to: email,
       subject: `📄 Formulaire rempli : ${formTitle}`,
-      template: './employee-form',
+      template: './employee-form', // Utilisation d'un template
       context: {
         firstName,
         lastName,
         userId,
         formTitle,
-        username, // ✅ Pass username to the template context
+        username,
+        file,
+        year: new Date().getFullYear(),
       },
       attachments: [
         {
@@ -107,7 +144,29 @@ export class MailService {
         },
       ],
     });
+    console.log(
+      `Email de formulaire rempli envoyé avec succès à ${email} avec le PDF en pièce jointe.`,
+    );
+  }
 
-    console.log(`📧 E-mail envoyé avec succès à ${email} avec le PDF en pièce jointe.`);
+  async sendQuizzResult(email: string, name: string, pdfBuffer: Buffer) {
+    console.log(`Envoi de l'email de résultat de quizz à ${email}...`);
+    await this.mailerService.sendMail({
+      to: email, // Send to the employee's email
+      subject: `Résultat du quizz`,
+      template: './quizz-result', // Utilisation d'un template
+      context: {
+        name,
+        year: new Date().getFullYear(),
+      },
+      attachments: [
+        {
+          filename: 'quizz.pdf',
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    console.log(`Email de résultat de quizz envoyé avec succès à ${email}.`);
   }
 }

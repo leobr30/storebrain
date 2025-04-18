@@ -5,16 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSession } from 'next-auth/react';
-import { getQuizzById, submitQuizzAnswers } from '../../actions';
+import { getQuizzById, submitQuizzAnswers, getQuizzAnswersByUserId, getQuizzResponse } from '../../actions'; // Import getQuizzAnswersByUserId et getQuizzResponse
 import { EmployeeJobOnboarding } from '../../types';
 
 interface EmployeeQuizzProps {
     quizzId: number;
     onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void;
     stepId: number;
+    responseId?: string;
 }
 
-export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: EmployeeQuizzProps) {
+export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId, responseId }: EmployeeQuizzProps) { // ✅ On ajoute responseId
     const { data: session } = useSession();
     const userId = session?.user?.id;
 
@@ -27,11 +28,26 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: Empl
             if (!userId) return;
             const data = await getQuizzById(quizzId);
             setQuizz(data.data);
+
+            // Fetch existing answers
+            if (responseId) {
+                const existingAnswers = await getQuizzResponse(responseId);
+                if (existingAnswers && existingAnswers.length > 0) {
+                    const formattedAnswers: { [questionId: number]: string[] } = {};
+                    existingAnswers.forEach(answer => {
+                        formattedAnswers[answer.questionId] = [answer.answer];
+                    });
+                    setAnswers(formattedAnswers);
+                    setIsCompleted(true);
+                }
+            }
         };
         fetchQuizz();
-    }, [userId, quizzId]);
+    }, [userId, quizzId, responseId]); // ✅ On ajoute responseId
+    // ✅ On ajoute responseId
 
     const handleInputChange = (questionId: number, value: string) => {
+        if (isCompleted) return; // Prevent changes if completed
         setAnswers(prev => ({
             ...prev,
             [questionId]: [value],
@@ -51,9 +67,10 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId }: Empl
 
         setIsCompleted(true);
         if (response) {
-            onSubmitSuccess(null);
+            onSubmitSuccess(response.updatedStep); // ✅ Call onSubmitSuccess with the updated step
         }
     };
+
 
     if (!quizz) return <p>Chargement du quizz...</p>;
 

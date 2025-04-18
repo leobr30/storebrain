@@ -57,7 +57,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                 const updatedStep = updatedSteps.find(step => step.id === stepId);
                 console.log("🚀 ~ handleRefreshSteps ~ updatedStep:", updatedStep);
                 if (updatedStep) {
-                    updateStep(updatedStep);
+                    updateStep(updatedStep); // ✅ Call updateStep with the updated step
 
                 } else {
                     console.log("❌ Aucun updatedStep trouvé pour stepId:", stepId);
@@ -71,6 +71,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         }
         console.log("🚀 Fin de handleRefreshSteps");
     };
+
 
 
 
@@ -226,8 +227,9 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                                         updateStep(updatedStep);
                                                                     }
                                                                 }}
-
+                                                                responseId={step.responseId} // ✅ On passe le responseId
                                                             />
+
                                                         </TableCell>
                                                         <TableCell>
                                                             <StatusBadge status={step.status} />

@@ -2,11 +2,19 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPip
 import { QuizzService } from './quizz.service';
 import { CreateQuizzDto } from './dto/create-quizz.dto';
 import { SubmitQuizzAnswersDto } from './dto/submit-quizz-answers.dto';
-
+import { EmployeesService } from 'src/employees/employees.service'; // ✅ Importation corrigée
+import { MailService } from 'src/mail/mail.service';
+import { PdfService } from 'src/pdf/pdf.service';
+import { QuizzAnswer, QuizzQuestion } from '@prisma/client'; // ✅ Import QuizzQuestion
 
 @Controller('quizz')
 export class QuizzController {
-  constructor(private readonly quizzService: QuizzService) {
+  constructor(
+    private readonly quizzService: QuizzService,
+    private readonly employeeService: EmployeesService, // ✅ Nom du service corrigé
+    private readonly mailService: MailService,
+    private readonly pdfService: PdfService
+  ) {
     console.log("✅ QuizzController chargé !");
   }
 
@@ -42,7 +50,7 @@ export class QuizzController {
 
   @Get('user/:userId')
   async getByUser(@Param('userId', ParseIntPipe) userId: number) {
-    const quizzList = await this.quizzService.getQuizzByUser(userId);
+    const quizzList = await this.quizzService.getQuizzes(userId, 'all');
     return {
       message: `Quizz pour l'utilisateur ${userId} récupérés avec succès ✅`,
       data: quizzList,
@@ -60,12 +68,12 @@ export class QuizzController {
 
   @Get('created-by/:userId')
   async getCreatedQuizz(@Param('userId', ParseIntPipe) userId: number) {
-    return this.quizzService.getQuizzCreatedBy(userId);
+    return this.quizzService.getQuizzes(userId, 'created');
   }
 
   @Get('assigned-to/:userId')
   async getAssignedQuizz(@Param('userId', ParseIntPipe) userId: number) {
-    return this.quizzService.getQuizzAssignedTo(userId);
+    return this.quizzService.getQuizzes(userId, 'assigned');
   }
 
   @Post(':id/submit')
@@ -73,13 +81,35 @@ export class QuizzController {
     @Param('id', ParseIntPipe) quizzId: number,
     @Body() dto: SubmitQuizzAnswersDto,
   ) {
-    return this.quizzService.submitAnswers(quizzId, dto);
+    const result = await this.quizzService.submitAnswers(quizzId, dto);
+    const employee = await this.employeeService.getEmployee(dto.userId);
+    const quizzWithAnswers = await this.quizzService.getQuizzWithAnswers(result.quizzId, String(dto.userId));
+    if (quizzWithAnswers.quizz && employee) {
+      await this.generatePdfAndSendEmail(
+        quizzWithAnswers.quizz.title,
+        employee.name ?? "Nom Inconnu",
+        employee.email ?? "gabriel.beduneau@diamantor.fr", // Use employee's email
+        quizzWithAnswers.answers.map(answer => ({ question: answer.question, answer: answer.text })) // ✅ Accès à answer.text
+      );
+    }
+    return result;
   }
+
+  async generatePdfAndSendEmail(quizzTitle: string, employeeName: string, employeeEmail: string, answers: { question: QuizzQuestion; answer: string; }[]) {
+    const pdfBuffer = await this.pdfService.generateQuizzPdf(quizzTitle, employeeName, answers);
+    await this.mailService.sendQuizzResult(employeeEmail, employeeName, pdfBuffer); // Send to the employee
+  }
+
 
   @Get('onboarding/:quizzId')
   async getQuizzForOnboarding(@Param('quizzId', ParseIntPipe) quizzId: number) {
-    return this.quizzService.getQuizzForOnboarding(quizzId);
+    return {
+      message: 'Quizz récupéré avec succès ✅',
+      data: await this.quizzService.getQuizzForOnboarding(quizzId)
+    };
   }
+
+
 
 
 }

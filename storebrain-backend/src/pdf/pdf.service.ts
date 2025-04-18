@@ -2,12 +2,13 @@ import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestj
 import fs from 'fs';
 import { Table, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { CreateEmployeePdfDto } from 'src/employees/dto/create-employee-pdf.dto';
-import { State, UserAbsence, UserAbsenceType } from '@prisma/client'
+import { State, UserAbsence, UserAbsenceType, QuizzAnswer, QuizzQuestion } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { format } from 'date-fns';
 import PDFDocument from 'pdfkit';
 import PdfPrinter from 'pdfmake';
 import path from 'path';
+import dayjs from 'dayjs';
 
 
 @Injectable()
@@ -639,5 +640,113 @@ export class PdfService {
     pdfDoc.pipe(fs.createWriteStream(filePath));
     pdfDoc.end();
     return;
+  }
+
+  async generateQuizzPdf(
+    quizzTitle: string,
+    employeeName: string,
+    answers: { question: QuizzQuestion; answer: string }[],
+  ): Promise<Buffer> {
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => { });
+
+    // Optionnel : Logo en haut à gauche
+    // const logoPath = path.resolve(__dirname, '../../assets/logo.png');
+    // doc.image(logoPath, 50, 50, { width: 60 });
+
+    // Titre
+    doc
+      .fillColor('#1F2937')
+      .font('Helvetica-Bold')
+      .fontSize(26)
+      .text(`Quizz : ${quizzTitle}`, { align: 'center' });
+
+    doc
+      .moveDown(0.5)
+      .fillColor('#374151')
+      .font('Helvetica')
+      .fontSize(18)
+      .text(`Réponses de : ${employeeName}`, { align: 'center' });
+
+    doc
+      .moveDown()
+      .strokeColor('#D1D5DB')
+      .lineWidth(1)
+      .moveTo(50, doc.y)
+      .lineTo(550, doc.y)
+      .stroke();
+
+    doc.moveDown(2);
+
+    // Boucle sur les questions/réponses
+    answers.forEach((answer, index) => {
+      const startY = doc.y;
+
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(13)
+        .fillColor('#111827')
+        .text(`Question ${index + 1}`, { underline: true });
+
+      doc
+        .moveDown(0.3)
+        .font('Helvetica')
+        .fontSize(12)
+        .fillColor('#1F2937')
+        .text(answer.question.text, {
+          width: 480,
+        });
+
+      doc
+        .moveDown(0.5)
+        .font('Helvetica-Bold')
+        .fillColor('#10B981')
+        .text('Réponse :');
+
+      // Zone colorée pour la réponse
+      const answerText = answer.answer || '(Aucune réponse)';
+      const textHeight = doc.heightOfString(answerText, {
+        width: 470,
+      });
+
+      doc
+        .moveDown(0.2)
+        .rect(55, doc.y - 2, 490, textHeight + 10)
+        .fill('#F0FDF4');
+
+      doc
+        .fillColor('#1F2937')
+        .font('Helvetica')
+        .text(answerText, 60, doc.y, {
+          width: 480,
+          lineGap: 4,
+        });
+
+      doc.moveDown();
+
+      // Ligne de séparation
+      doc
+        .strokeColor('#E5E7EB')
+        .lineWidth(0.5)
+        .moveTo(50, doc.y + 5)
+        .lineTo(550, doc.y + 5)
+        .stroke();
+
+      doc.moveDown(1.5);
+    });
+
+    // Footer avec date
+    const date = dayjs().format('DD/MM/YYYY');
+    doc
+      .fontSize(10)
+      .fillColor('#9CA3AF')
+      .text(`📅 Généré le ${date}`, 50, 770, { align: 'center' });
+
+    doc.end();
+
+    await new Promise((resolve) => doc.on('end', resolve));
+    return Buffer.concat(buffers);
   }
 }

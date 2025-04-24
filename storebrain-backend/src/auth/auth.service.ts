@@ -16,10 +16,12 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(dto: LoginDto) {
+    console.log('🟡 Tentative de login avec :', dto.username);
     const user = await this.validateUser(dto);
+    console.log('🟢 Utilisateur validé :', user);
     const permissions = [
       ...new Set(
         ...user.roles.map((role) =>
@@ -46,23 +48,40 @@ export class AuthService {
   }
 
   async validateUser(dto: LoginDto) {
+    console.log('🔍 Vérification de l’utilisateur dans la BDD :', dto.username);
     const user = await this.userService.findByUsernameWithRoles(dto.username);
+
+    if (!user) {
+      console.warn('🔴 Utilisateur non trouvé');
+    } else {
+      console.log('🟢 Utilisateur trouvé, vérification du mot de passe...');
+    }
 
     if (user && (await compare(dto.password, user.password!))) {
       const { password, refreshToken, ...result } = user;
       return result;
     }
 
+    console.warn('🔴 Mot de passe incorrect ou utilisateur inexistant');
+
     throw new UnauthorizedException();
   }
 
   async refreshToken(userId: number, refreshToken: string) {
     const user = await this.userService.findByIdWithPermissions(userId);
-    if (!user || !user.refreshToken) throw new UnauthorizedException();
+    if (!user || !user.refreshToken) {
+      console.warn('🔴 Utilisateur introuvable ou pas de refreshToken');
+      throw new UnauthorizedException();
+    }
+
+
 
     const refreshTokenMatches = await compare(refreshToken, user.refreshToken);
 
-    if (!refreshTokenMatches) throw new UnauthorizedException();
+    if (!refreshTokenMatches) {
+      console.warn('🔴 Refresh token invalide');
+      throw new UnauthorizedException();
+    }
     const permissions = [
       ...new Set(
         ...user.roles.map((role) =>
@@ -89,6 +108,7 @@ export class AuthService {
     name: string,
     permissions: { action: string; subject: string }[],
   ) {
+    console.log(`🔐 Génération des tokens pour l'utilisateur : ${username}`);
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
@@ -125,7 +145,7 @@ export class AuthService {
 
   async updateRefreshToken(userId: number, refreshToken: string) {
     const hashedRefreshToken = await hash(refreshToken, 10);
-
+    console.log(`🔄 Mise à jour du refreshToken pour userId: ${userId}`);
     await this.userService.updateRefreshToken(userId, hashedRefreshToken);
   }
 }

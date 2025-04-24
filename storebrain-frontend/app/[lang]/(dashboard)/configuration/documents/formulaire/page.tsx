@@ -11,6 +11,7 @@ import { Trash2 } from 'lucide-react';
 import { Eraser } from 'lucide-react';
 import { ArrowDown } from 'lucide-react';
 import { ArrowUp} from 'lucide-react';
+import toast from "react-hot-toast";
 
 
 export default function DocumentForm() {
@@ -141,10 +142,10 @@ export default function DocumentForm() {
       })
 
 
-      alert("Formulaire sauvegardé avec succès !");
+      toast.success("Formulaire sauvegardé avec succès !");
     } catch (error) {
       console.error("❌ Erreur:", error);
-      alert("Échec de l'enregistrement");
+      toast.error('Impossible de sauvegardé le formulaire')
     }
   };
 

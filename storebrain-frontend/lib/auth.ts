@@ -4,20 +4,21 @@ import Credentials from "next-auth/providers/credentials";
 
 
 async function refreshToken(token: any): Promise<any> {
-  const response = await fetch(`${process.env.API_URL}/auth/refresh`,{
-    method:'POST',
-    headers:{
+  console.log("♻️ API_URL dans refreshToken :", process.env.API_URL);
+  const response = await fetch(`${process.env.API_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
       authorization: `Refresh ${token.tokens.refreshToken}`,
       "Content-Type": 'application/json'
     }
-  })  
-  if(!response.ok) {
+  })
+  if (!response.ok) {
     return null
   }
 
   return {
-      ...token,
-      tokens:await response.json(),
+    ...token,
+    tokens: await response.json(),
   };
 }
 
@@ -35,13 +36,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           password: string,
         };
 
-        if (!credentials?.username || !credentials?.password) return null;        
-        const res =  await fetch(`${process.env.API_URL}/auth/login`,{
-          method:'POST',
+        console.log("🔧 API_URL dans authorize :", process.env.API_URL);
+
+        if (!credentials?.username || !credentials?.password) return null;
+        const res = await fetch(`${process.env.API_URL}/auth/login`, {
+          method: 'POST',
           headers: {
             "Content-Type": 'application/json'
           },
-          body:JSON.stringify({username,password})
+          body: JSON.stringify({ username, password })
         })
         if (!res.ok) {
           return null
@@ -51,19 +54,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
     }),
   ],
-  callbacks:{
-    async jwt({token,user}) {
-        //Login        
-        if(user) return {...token, ...user};
-        
-        if(new Date().getTime() < token.tokens.expiresIn) return token;
-        return await refreshToken(token);
-    },
-    async session({token, session}) {
-        session.user = token.user;
-        session.tokens = token.tokens
+  callbacks: {
+    async jwt({ token, user }) {
+      //Login        
+      if (user) return { ...token, ...user };
 
-        return session;
+      if (new Date().getTime() < token.tokens.expiresIn) return token;
+      return await refreshToken(token);
+    },
+    async session({ token, session }) {
+      session.user = token.user;
+      session.tokens = token.tokens
+
+      return session;
     }
-},
+  },
 })

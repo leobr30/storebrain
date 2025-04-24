@@ -160,7 +160,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
         await handleGeneratePdfAndSendEmail(response.id, emailDestinataire, username);
       }
 
-      toast.success("✅ Formulaire soumis avec succès !");
+      toast.success("Formulaire soumis avec succès !");
       setOpen(false);
       setTimeout(() => {
         onSubmitSuccess(response.updatedStep);

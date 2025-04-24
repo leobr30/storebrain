@@ -17,7 +17,7 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('api/v1');
   app.enableCors();
-  await app.listen(3010);
-  
+  await app.listen(3010, '0.0.0.0');
+
 }
 bootstrap();

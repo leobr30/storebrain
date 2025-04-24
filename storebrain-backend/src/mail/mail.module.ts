@@ -23,11 +23,9 @@ import { join } from 'path';
           from: 'Diamantor no-reply@diamantor.fr>', // outgoing email ID
         },
         template: {
-          dir: join(__dirname, 'templates'),
+          dir: join(__dirname, '..', 'templates'), // <-- à la racine du projet (hors src)
           adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
+          options: { strict: true },
         },
       }),
     }),

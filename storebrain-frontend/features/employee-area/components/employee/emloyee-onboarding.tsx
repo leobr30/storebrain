@@ -188,8 +188,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                     <TableCell>
                                                         <DocumentForm
                                                             stepId={step.id}
-                                                            setOpen={setIsDocumentOpen} // ✅ Utilisation de setIsDocumentOpen
-                                                            open={isDocumentOpen} // ✅ Utilisation de isDocumentOpen
+                                                            setOpen={setIsDocumentOpen}
+                                                            open={isDocumentOpen}
                                                             status={step.status}
                                                             onSubmitSuccess={async (updatedStep) => {
                                                                 if (updatedStep) {

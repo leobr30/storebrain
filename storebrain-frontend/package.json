@@ -132,6 +132,7 @@
     "reactflow": "^11.11.4",
     "recharts": "^2.15.1",
     "sass": "^1.84.0",
+    "sharp": "^0.34.1",
     "simplebar-react": "^3.3.0",
     "sonner": "^1.7.4",
     "styled-components": "^6.1.15",

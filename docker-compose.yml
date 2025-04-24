@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Diamantor-G
+      POSTGRES_DB: store-brain
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  storebrain-backend:
+    build: ./storebrain-backend
+    restart: always
+    env_file:
+      - ./storebrain-backend/.env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - db
+    ports:
+      - "3010:3010"
+      - "5555:5555"
+    networks:
+      - app-network
+
+  storebrain-frontend:
+    build:
+      context: ./storebrain-frontend
+      args:
+        NEXTAUTH_URL: http://192.168.1.231:3000
+        NEXTAUTH_URL_INTERNAL: http://192.168.1.231:3000
+        AUTH_SECRET: 0lDqincx26d0HZ4onEvTeYO4vJegfa6xmpiqp7cupwk=
+        AUTH_TRUST_HOST: "true"
+        NEXT_PUBLIC_API_URL: http://storebrain-backend:3010/api/v1
+        API_URL: http://storebrain-backend:3010/api/v1
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: http://storebrain-backend:3010/api/v1
+      API_URL: http://storebrain-backend:3010/api/v1
+      NEXTAUTH_URL: http://192.168.1.231:3000
+      NEXTAUTH_URL_INTERNAL: http://192.168.1.231:3000
+      AUTH_TRUST_HOST: "true"
+      AUTH_SECRET: 0lDqincx26d0HZ4onEvTeYO4vJegfa6xmpiqp7cupwk=
+    ports:
+      - "3000:3000"
+    depends_on:
+      - storebrain-backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+
+networks:
+  app-network:
+    driver: bridge

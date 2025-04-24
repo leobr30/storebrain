@@ -127,26 +127,41 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
                 className="z-[9999] w-[340px] p-4 rounded-xl shadow-xl bg-white border border-gray-200 absolute left-0"
                 align="start"
             >
-                <div className="flex items-center justify-between gap-3 mb-4">
-                    <Select value={month.toString()} onValueChange={handleMonthChange}>
-                        <SelectTrigger className="h-9 w-[150px] rounded-md border border-gray-300 bg-gray-50 px-3 text-sm shadow-sm hover:bg-gray-100">
-                            <SelectValue placeholder="Mois" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {months.map((month, index) => (
-                                <SelectItem
-                                    key={index}
-                                    value={index.toString()}
-                                    disabled={isMonthDisabled(index)}
-                                >
-                                    {month}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between mb-4 px-2 gap-2">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-gray-100"
+                            onClick={() => {
+                                const prev = new Date(year, month - 1);
+                                setMonth(prev.getMonth());
+                                setYear(prev.getFullYear());
+                            }}
+                        >
+                            <span className="text-xl">&lt;</span>
+                        </Button>
+
+                        <div className="text-sm font-medium w-[100px] text-center">
+                            {months[month]} {year}
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-gray-100"
+                            onClick={() => {
+                                const next = new Date(year, month + 1);
+                                setMonth(next.getMonth());
+                                setYear(next.getFullYear());
+                            }}
+                        >
+                            <span className="text-xl">&gt;</span>
+                        </Button>
+                    </div>
 
                     <Select value={year.toString()} onValueChange={handleYearChange}>
-                        <SelectTrigger className="h-9 w-[120px] rounded-md border border-gray-300 bg-gray-50 px-3 text-sm shadow-sm hover:bg-gray-100">
+                        <SelectTrigger className="h-8 w-[90px] text-xs rounded-md border border-gray-300 bg-gray-50 px-2 shadow-sm hover:bg-gray-100">
                             <SelectValue placeholder="Année" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[200px]">
@@ -174,6 +189,7 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
                     </Select>
                 </div>
 
+
                 <div className="rounded-lg border border-gray-200 bg-white p-2">
                     <Calendar
                         mode="single"
@@ -190,8 +206,8 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
                         fromDate={minDate}
                         toDate={maxDate}
                         className="w-full min-h-[320px] text-sm [&_table]:w-full [&_table]:table-fixed"
-                    // 👆 les sélecteurs personnalisés assurent que le calendrier n’est pas écrasé
                     />
+
 
                 </div>
             </PopoverContent>

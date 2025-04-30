@@ -54,11 +54,11 @@ export const UploadDocumentModal = ({ onUpload, setOpen }: UploadDocumentModalPr
     return (
         <Dialog onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>Uploader</Button>
+                <Button>Ajouter</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Uploader un document</DialogTitle>
+                    <DialogTitle>Ajouter un document</DialogTitle>
                     <DialogDescription>
                         Sélectionnez un fichier et son type.
                     </DialogDescription>
@@ -90,7 +90,7 @@ export const UploadDocumentModal = ({ onUpload, setOpen }: UploadDocumentModalPr
                     </select>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="submit" disabled={!file}>Uploader</Button>
+                            <Button type="submit" disabled={!file}>Ajouter</Button>
                         </DialogClose>
                     </DialogFooter>
                 </form>

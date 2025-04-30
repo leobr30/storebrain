@@ -6,7 +6,7 @@ import { deleteDocument, getDocumentsForUser, uploadDocument } from '@/features/
 import { Button } from '@/components/ui/button';
 import { Document, DocumentType, documentTypeLabels } from '../../types'; // Import the types and labels
 import { useSession } from 'next-auth/react';
-import { PencilLine } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -83,7 +83,7 @@ export default function EmployeeDocuments() {
             cell: ({ row }) => (
                 <div className="flex gap-2">
                     <Button variant="ghost" onClick={() => handleDelete(row.original.id)}>
-                        <PencilLine className="w-4 h-4" /> Supprimer
+                        <Trash className="w-4 h-4" /> Supprimer
                     </Button>
                 </div>
             ),

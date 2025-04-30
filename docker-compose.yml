@@ -10,6 +10,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
+    ports:
+      - "5432:5432"
+
 
   storebrain-backend:
     build: ./storebrain-backend

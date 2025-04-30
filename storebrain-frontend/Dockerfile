@@ -10,7 +10,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libfftw3-dev \
   build-essential \
   curl \
+  || (sleep 10 && apt-get update && apt-get install -y --no-install-recommends \
+  libc6-dev \
+  libvips-dev \
+  libfftw3-dev \
+  build-essential \
+  curl --fix-missing) \
   && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /app
 

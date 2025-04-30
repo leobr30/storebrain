@@ -60,7 +60,9 @@ const LogInForm = () => {
         password: data.password,
         redirect: false,
       });
+      console.log(response);
       if (response?.ok) {
+        console.log(response);
         toast.success("Login Successful");
         window.location.assign("/analyze1");
         reset();

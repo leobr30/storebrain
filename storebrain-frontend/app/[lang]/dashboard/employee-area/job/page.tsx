@@ -1,4 +1,4 @@
-import { CardTable } from "@/app/[lang]/(dashboard)/employee-area/job/card-table";
+import { CardTable } from "@/app/[lang]/dashboard/employee-area/job/card-table";
 import { getJobs } from "../employee-area-action";
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header";
 import { Button } from "@/components/ui/button";

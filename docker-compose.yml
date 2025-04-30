@@ -45,7 +45,7 @@ services:
       AUTH_TRUST_HOST: "true"
       AUTH_SECRET: 0lDqincx26d0HZ4onEvTeYO4vJegfa6xmpiqp7cupwk=
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - storebrain-backend
     networks:

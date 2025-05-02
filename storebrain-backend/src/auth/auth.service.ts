@@ -118,7 +118,7 @@ export class AuthService {
           permissions,
         },
         {
-          secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+          secret: process.env.jwtSecretKey,
           expiresIn: '15min',
         },
       ),
@@ -130,7 +130,7 @@ export class AuthService {
           permissions,
         },
         {
-          secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+          secret: process.env.jwtRefreshTokenKey,
           expiresIn: '7d',
         },
       ),

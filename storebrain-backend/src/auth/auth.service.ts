@@ -7,6 +7,7 @@ import { LoginDto } from './dto/auth.dto';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { hash, compare } from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 //20S
 const EXPIRE_TIME = 20 * 1000;
@@ -16,6 +17,7 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) { }
 
   async login(dto: LoginDto) {
@@ -108,29 +110,22 @@ export class AuthService {
     name: string,
     permissions: { action: string; subject: string }[],
   ) {
+    const jwtSecret = this.configService.get<string>('jwtSecretKey');
+    const jwtRefreshSecret = this.configService.get<string>('jwtRefreshTokenKey');
+
     console.log(`🔐 Génération des tokens pour l'utilisateur : ${username}`);
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
+        { sub: userId, username, name, permissions },
         {
-          sub: userId,
-          username,
-          name,
-          permissions,
-        },
-        {
-          secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+          secret: jwtSecret,
           expiresIn: '15min',
         },
       ),
       this.jwtService.signAsync(
+        { sub: userId, username, name, permissions },
         {
-          sub: userId,
-          username,
-          name,
-          permissions,
-        },
-        {
-          secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+          secret: jwtRefreshSecret,
           expiresIn: '7d',
         },
       ),

@@ -8,12 +8,14 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
+    private configService: ConfigService,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -33,8 +35,9 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+        secret: this.configService.get<string>('jwtSecretKey'),
       });
+
 
       request['user'] = payload;
     } catch {
@@ -52,7 +55,11 @@ export class AuthGuard implements CanActivate {
 
 @Injectable()
 export class RefreshAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) { }
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) { }
+
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -63,7 +70,8 @@ export class RefreshAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+        secret: this.configService.get<string>('jwtSecretKey')
+
       });
       payload.refreshToken = token;
       request['user'] = payload;

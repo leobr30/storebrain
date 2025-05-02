@@ -17,6 +17,8 @@ services:
   storebrain-backend:
     build: ./storebrain-backend
     restart: always
+    env_file:
+      - ./storebrain-backend/.env
     environment:
       NODE_ENV: production
     depends_on:

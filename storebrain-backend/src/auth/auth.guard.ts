@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -33,7 +33,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.jwtSecretKey,
+        secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
       });
 
       request['user'] = payload;
@@ -52,7 +52,7 @@ export class AuthGuard implements CanActivate {
 
 @Injectable()
 export class RefreshAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(private jwtService: JwtService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -63,8 +63,8 @@ export class RefreshAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.jwtRefreshTokenKey,
-      });      
+        secret: 'HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==',
+      });
       payload.refreshToken = token;
       request['user'] = payload;
     } catch {

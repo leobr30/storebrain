@@ -13,19 +13,28 @@ services:
     ports:
       - "5432:5432"
 
-
   storebrain-backend:
-    build: ./storebrain-backend
-    restart: always
-    environment:
-      NODE_ENV: production
-    depends_on:
-      - db
-    ports:
-      - "3010:3010"
-      - "5555:5555"
-    networks:
-      - app-network
+  build: ./storebrain-backend
+  restart: always
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: "postgresql://postgres:Diamantor-G@db:5432/store-brain?schema=public"
+    jwtSecretKey: HoFE0l2Hba0SgKK3lhyL/HjdA6/6IDqsfNtnupHFHaWXuNOc3nAHXlVam7msJNDX3eNPygSXK6ot3v780h6K/Q==
+    jwtRefreshTokenKey: snfd8fZ9mBVSQUp0itECLax17wqrNVVTAppPROws+2x5BSW0iXXNwEBEoP70RSDigTKDWBxEfO32FSI8GvpSsQ==
+    EMAIL_ID: no-reply@diamantor.fr
+    EMAIL_PASS: Y@849080337560ow
+    EMAIL_HOST: smtp.office365.com
+    EMAIL_PORT: 587
+    PRESTA_URL: https://www.diamantor.fr/api
+    PRESTA_KEY: NjlZRkgxSTM3SUxBOEJZTkZHRVRQMkQ1WUZUSUFRR1I6
+    NEST_DEBUG: "true"
+  depends_on:
+    - db
+  ports:
+    - "3010:3010"
+    - "5555:5555"
+  networks:
+    - app-network
 
   storebrain-frontend:
     build:

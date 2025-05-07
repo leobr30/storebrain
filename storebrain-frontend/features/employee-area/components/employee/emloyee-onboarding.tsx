@@ -227,7 +227,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                                         updateStep(updatedStep);
                                                                     }
                                                                 }}
-                                                                responseId={step.responseId} // ✅ On passe le responseId
+                                                                responseId={step.responseId}
                                                             />
 
                                                         </TableCell>

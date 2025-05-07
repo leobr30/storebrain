@@ -125,6 +125,7 @@ export class EmployeesController {
     @Param('id') id: number,
     @CurrentUser() currentUser: CurrentUserType,
   ) {
+    console.log("➡️ Reçu ID:", id, "CurrentUser:", currentUser);
     await this.employeesService.startIntegration(id, currentUser);
     return { message: "Integration started successfully" }; // ✅ Return a JSON response
   }

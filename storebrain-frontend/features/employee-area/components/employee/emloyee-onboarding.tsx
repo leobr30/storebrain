@@ -162,11 +162,11 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                         <StatusBadge
                                                             status={step.status}
                                                             text={
-                                                                step.status === "COMPLETED" && step.training
-                                                                    ? `${step.training.subjects.filter((w) => w.state === "ACQUIRED").length
-                                                                    } / ${step.training.subjects.length}`
+                                                                step.status === "COMPLETED" && step.training && step.training.subjects
+                                                                    ? `${step.training.subjects.filter((w) => w.state === "ACQUIRED").length} / ${step.training.subjects.length}`
                                                                     : ""
                                                             }
+
                                                         />
                                                     </TableCell>
                                                 </>

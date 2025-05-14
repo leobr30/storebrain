@@ -19,7 +19,6 @@ const layout = async ({ children, params: { lang } }: { children: React.ReactNod
   }
 
   const trans = await getDictionary(lang);
-  console.log(trans);
 
   return (
     <DashBoardLayoutProvider trans={trans}>{children}</DashBoardLayoutProvider>

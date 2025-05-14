@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { createOmar, getAppointment, sendMondayAppointmentSummary, signMondayAppointmentDetail } from "@/features/employee-area/actions";
+import { createOmar, getAppointment, sendMondayAppointmentSummary, sendUnsignedDocuments, signMondayAppointmentDetail } from "@/features/employee-area/actions";
 import { format } from "date-fns";
 import { Loader2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -112,8 +112,9 @@ export const AppointmentSheet = () => {
         });
     };
 
-    const handleSuccesLogin = async (id: number) => {
+    const handleSuccesLogin = async (id: number, userId?: number) => {
         const responseDetail = await signMondayAppointmentDetail(id);
+
         setAppointment((prevAppointment: MondayAppointment) => {
             const updatedDetails = prevAppointment.details.map((detail) => {
                 if (detail.id === id) {
@@ -121,10 +122,21 @@ export const AppointmentSheet = () => {
                 }
                 return detail;
             });
-            console.log(updatedDetails);
             return { ...prevAppointment, details: updatedDetails };
         });
+
+        if (userId) {
+            try {
+                await sendUnsignedDocuments(userId);
+                toast.success("📩 Documents à signer envoyés par e-mail !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'envoi des documents à signer :", error);
+                toast.error("Erreur lors de l'envoi des documents.");
+            }
+        }
     };
+
+
 
     // vérifier si tous les détails sont signés
     const areAllDetailsSigned = () => {
@@ -134,30 +146,30 @@ export const AppointmentSheet = () => {
 
     const handleGeneratePdfAndSendEmail = async () => {
         if (!appointment) return;
-      
+
         const allSigned = areAllDetailsSigned();
-      
+
         if (!allSigned) {
-          toast.error("Tous les détails n'ont pas encore été signés.");
-          return;
+            toast.error("Tous les détails n'ont pas encore été signés.");
+            return;
         }
-      
+
         try {
-          console.log("📤 Envoi du résumé pour l'appointment ID :", appointment.id);
-      
-          const response = await sendMondayAppointmentSummary(
-            appointment.id,
-            "gabriel.beduneau@diamantor.fr"
-          );
-      
-          console.log("✅ Réponse backend :", response);
-          toast.success("PDF généré et envoyé par e-mail avec succès !");
+            console.log("📤 Envoi du résumé pour l'appointment ID :", appointment.id);
+
+            const response = await sendMondayAppointmentSummary(
+                appointment.id,
+                "gabriel.beduneau@diamantor.fr"
+            );
+
+            console.log("✅ Réponse backend :", response);
+            toast.success("PDF généré et envoyé par e-mail avec succès !");
         } catch (error: any) {
-          console.error("❌ Erreur frontend dans sendMondayAppointmentSummary :", error);
-          toast.error("Erreur lors de la génération du PDF ou de l'envoi de l'e-mail.");
+            console.error("❌ Erreur frontend dans sendMondayAppointmentSummary :", error);
+            toast.error("Erreur lors de la génération du PDF ou de l'envoi de l'e-mail.");
         }
-      };
-      
+    };
+
 
 
     return (

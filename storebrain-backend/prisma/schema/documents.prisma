@@ -10,7 +10,14 @@ model Document {
 }
 
 enum DocumentType {
-  SICK_LEAVE
+  CNI
   VITAL_CARD
+  MUTUAL_CARD
+  RIB
+  ADDRESS_PROOF
+  CRIMINAL_RECORD
+  RESIDENCE_PERMIT
+  SICK_LEAVE
   OTHER
 }
+

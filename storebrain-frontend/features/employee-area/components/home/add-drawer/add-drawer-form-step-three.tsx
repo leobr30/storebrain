@@ -1,197 +1,59 @@
-import { useEmployeeAreaAddFormStore } from "@/store/emloyeeAreaDrawerAddStore"
-import z from "zod"
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CustomDatePicker } from "@/components/custom-date-picker";
 import { RequiredAsterisk } from "@/components/required-asterisk";
-import { cn, REQUIRED } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-import Select from "react-select";
-import { EmployeeAreaAddStepThreeData, Job } from "@/types/employee-area-types";
-import { useEffect, useTransition } from "react";
+import { cn, REQUIRED } from "@/lib/utils";
+import { useEmployeeAreaAddFormStore } from "@/store/emloyeeAreaDrawerAddStore";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight } from "lucide-react";
+import { SubmitHandler, useForm } from "react-hook-form"
+import z from "zod"
+import { Company } from "@/types/company-types";
+import { CustomDatePicker } from "@/components/custom-date-picker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-type Props = {
-    handleBack: () => void
-    jobs: Job[],
-    handleFormSubmit: (formData: FormData) => void
-}
-
+import { CleaveInput } from "@/components/ui/cleave";
+import { EmployeeAreaAddStepThreeData } from "@/types/employee-area-types";
+import { uploadEmployeeDocuments } from "@/features/employee-area/actions";
 const stepThreeSchema = z.object({
-    entryDate: z.date({ message: REQUIRED }),
-    badgeNumber: z.string(),
-    job: z.object({ value: z.coerce.number(), label: z.string() }, { message: REQUIRED }),
-    contract: z.object({ value: z.coerce.number(), label: z.string(), type: z.string() }, { message: REQUIRED }),
-    endDate: z.date().optional(),
-    zone: z.string().min(1, { message: REQUIRED }),
-    file: z
-        .custom<File>((v) => v instanceof File, {
-            message: REQUIRED,
-        })
+    cni: z.custom<File | undefined>().optional(),
+    carteVitale: z.custom<File | undefined>().optional(),
+    carteMutuelle: z.custom<File | undefined>().optional(),
+    rib: z.custom<File | undefined>().optional(),
+    justificatifDomicile: z.custom<File | undefined>().optional(),
+    casierJudiciaire: z.custom<File | undefined>().optional(),
+    titreSejour: z.custom<File>().optional(),
 })
-    .superRefine((value, ctx) => {
-        if (value.contract?.type === 'CDD' && !value.endDate) ctx.addIssue({
-            message: REQUIRED,
-            code: z.ZodIssueCode.custom,
-            path: ['endDate'],
-        })
-    })
 
 
-const styles = {
-    option: (provided: any, state: any) => ({
-        ...provided,
-        fontSize: "14px",
-    }),
-};
-
-const ContractSelect = ({ form  }) => {
-    // const [contracts, setContracts] = useState([])
-
-    const job: Job = useWatch({
-        control: form.control,
-        name: "job"
-    })
-
-
-    const contract = useWatch({
-        control: form.control,
-        name: "contract"
-    })
-
-    // useEffect(() => {
-    //     form.reset('endDate')
-    // },[contract])
-
-    useEffect(() => {
-        if (job) {
-            form.setValue('contract', '')
-            form.setValue('endDate', undefined)
-            // form.reset('endDate')
-        }
-    }, [job])
-    // useEffect(() => {
-    //     form.reset('contract')
-    //     form.reset('endDate')
-    // }, [job,contract])
-
-
-    return (
-        <>
-            <div className="col-span-1">
-                <FormField
-                    control={form.control}
-                    name="contract"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel className="mb-2">Contrat <RequiredAsterisk/></FormLabel>
-                            <Select
-                                {...field}
-                                value={field.value}
-                                className="react-select"
-                                classNamePrefix="select"
-                                options={job ? job.contracts.map(contract => ({
-                                    value: contract.id,
-                                    label: `${contract.type} - ${contract.workingHoursPerWeek}H`,
-                                    type: contract.type
-                                })) : []}
-                                isDisabled={job === undefined}
-                                placeholder="Choisissez un contrat"
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <div className="col-span-1">
-                <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Date de fin  {contract?.type === 'CDD' && <RequiredAsterisk />} </FormLabel>
-                            <FormControl>
-                                <CustomDatePicker
-                                    placeholder="Entrez la date de fin"
-                                    minDate={new Date()}
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    readonly={contract?.type !== 'CDD'} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            {/* <div className="col-span-1">
-                    <FormField
-                        control={form.control}
-                        name="endOfProbation"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel className="mb-2">Fin de contrat</FormLabel>
-                                <DatePicker
-                                    selected={field.value}
-                                    customInput={<DatePickerInput />}
-                                    {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div> */}
-
-        </>
-
-    )
+type Props = {
+    handleNext: () => void,
+    handleBack: () => void
 }
 
-export const AddDrawerFormStepThree = ({ handleBack, jobs, handleFormSubmit }: Props) => {
-    const [isPending, startTransition] = useTransition();
+export default function AddDrawerFormStepThree({ handleNext, handleBack }: Props) {
+
     const state = useEmployeeAreaAddFormStore();
     const methods = useForm({
         defaultValues: state.stepThree,
         resolver: zodResolver(stepThreeSchema)
     });
 
-    const onSubmit = (values: EmployeeAreaAddStepThreeData) => {
-        state.setStepThreeData(values)
-        console.log('STEP1:', state.stepOne)
-        console.log('STEP2:', state.stepTwo)
-        console.log('STEP3:', state.stepThree)
-        const formData = new FormData()
-        //StepOne
-        formData.set('companyId', state.stepOne!.company!.value.toString())
-        formData.set('lastName', state.stepOne!.lastName);
-        formData.set('firstName', state.stepOne!.firstName);
-        formData.set('maidenName', state.stepOne!.maidenName ?? null)
-        formData.set('dateOfBirth', state.stepOne!.dateOfBirth!.toISOString())
-        formData.set('placeOfBirth', state.stepOne!.placeOfBirth)
-        formData.set('nationality', state.stepOne!.nationality)
-        formData.set('socialSecurityNumber',state.stepOne!.socialSecurityNumber)
-        formData.set('email', state.stepOne!.email)
-        formData.set('cellPhone', state.stepOne!.cellPhone)
-        formData.set('familySituation', state.stepOne!.familySituation)
-        formData.set('numberOfChildren', state.stepOne!.numberOfChildren.toString())
-        //StepTwo
-        formData.set('address', state.stepTwo!.address)
-        formData.set('zipCode', state.stepTwo!.zipCode.toString())
-        formData.set('city', state.stepTwo!.city)
-        //StepThree
-        formData.set('entryDate', values.entryDate!.toISOString())
-        formData.set('badgeNumber', values.badgeNumber ?? null)
-        formData.set('jobId', values.job!.value!.toString());
-        formData.set('contractId', values.contract!.value!.toString())
-        formData.set('endDate',values.endDate  ? values.endDate!.toISOString() : null)
-        formData.set('zone', values.zone)
-        formData.append('file', values.file!);
+    const onSubmit = async (values: EmployeeAreaAddStepThreeData) => {
+        state.setStepThreeData(values);
+        const formData = new FormData();
 
-        startTransition(async () => {
-            await handleFormSubmit(formData)
-        });
-    }
+        formData.append("cni", values.cni);
+        formData.append("carteVitale", values.carteVitale);
+        formData.append("carteMutuelle", values.carteMutuelle);
+        formData.append("rib", values.rib);
+        formData.append("justificatifDomicile", values.justificatifDomicile);
+        formData.append("casierJudiciaire", values.casierJudiciaire);
+        if (values.titreSejour) formData.append("titreSejour", values.titreSejour);
+
+        handleNext();
+    };
+
+
 
     return (
         <>
@@ -200,137 +62,152 @@ export const AddDrawerFormStepThree = ({ handleBack, jobs, handleFormSubmit }: P
                     onSubmit={methods.handleSubmit(onSubmit)}
                     className="space-y-8">
                     <div className="grid grid-cols-2 gap-5">
-                        <div className="col-span-2 lg:col-span-1">
-                            <FormField
-                                control={methods.control}
-                                name="entryDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Date d'entrée <RequiredAsterisk /></FormLabel>
-                                        <FormControl>
-                                            <CustomDatePicker
-                                                placeholder="Entrez la date d'entrée"
-                                                minDate={new Date()}
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2 lg:col-span-1">
-                            <FormField
-                                control={methods.control}
-                                name="badgeNumber"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Numéro de badge </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Entrez le numéro de badge"
-                                                {...field}
-                                                className={cn("", {
-                                                    "border-destructive focus:border-destructive":
-                                                        methods.formState.errors.badgeNumber,
-                                                })} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
                         <div className="col-span-2">
                             <FormField
                                 control={methods.control}
-                                name="job"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Emploi <RequiredAsterisk /></FormLabel>
-                                        <FormControl>
-                                            <Select
-                                                {...field}
-                                                classNamePrefix="select"
-                                                defaultValue={[]}
-                                                options={jobs.map(job => ({
-                                                    value: job.id, label: job.name, contracts: job.jobContracts
-                                                }))}
-                                                styles={styles}
-                                                className={cn("react-select", {
-                                                    "border-destructive focus:border-destructive":
-                                                        methods.formState.errors.job,
-                                                })}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <ContractSelect form={methods} />
-                        <div className="col-span-2 lg:col-span-1">
-                            <FormField
-                                control={methods.control}
-                                name="zone"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Zone</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                            >
-                                                <RadioGroupItem value="OR" >Or</RadioGroupItem>
-                                                <RadioGroupItem value="MODE" >Mode</RadioGroupItem>
-                                                <RadioGroupItem value="LABO" >Labo</RadioGroupItem>
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="file"
+                                name="cni"
                                 render={({ field: { ref, name, onBlur, onChange } }) => (
                                     <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">CV</FormLabel>
+                                        <FormLabel className="mb-2">CNI </FormLabel>
                                         <Input
                                             type="file"
                                             ref={ref}
                                             name={name}
                                             onBlur={onBlur}
                                             onChange={(e) => onChange(e.target.files?.[0])}
-                                            className={cn("", {
-                                                "border-destructive focus:border-destructive":
-                                                    methods.formState.errors.file,
-                                            })} />
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="carteVitale"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">Carte Vitale </FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="carteMutuelle"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">Carte Mutuelle </FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="rib"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">RIB </FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="justificatifDomicile"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">Justificatif de Domicile </FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="casierJudiciaire"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">Extrait de Casier Judiciaire </FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={methods.control}
+                                name="titreSejour"
+                                render={({ field: { ref, name, onBlur, onChange } }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel className="mb-2">Titre de Séjour (si applicable)</FormLabel>
+                                        <Input
+                                            type="file"
+                                            ref={ref}
+                                            name={name}
+                                            onBlur={onBlur}
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
                     </div>
+
                     <div className="flex justify-end space-x-3">
                         <Button color={"secondary"} onClick={handleBack} >Retour</Button>
                         <Button color="primary">
-
-                            {isPending ? <>
-                                <Loader2 className="ltr:mr-2 rtl:ml-2 h-4 w-4 animate-spin" />
-                                Enregistrement...
-                            </> :
-                                <>
-                                    Valider
-                                    <Check className="w-6 h-6 ml-2  " />
-                                </>}
-
+                            Suivant
+                            <ArrowRight className="w-6 h-6 ml-2  " />
                         </Button>
                     </div>
                 </form>
             </Form>
+
         </>
+
     )
 }

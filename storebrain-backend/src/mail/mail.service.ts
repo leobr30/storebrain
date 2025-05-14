@@ -72,7 +72,7 @@ export class MailService {
   ) {
     console.log(`Envoi de l'email de validation de formation par ${realizedBy}...`);
     await this.mailerService.sendMail({
-      to: 'leo.rigal@diamantor.Fr', // À modifier avec l'adresse de destination appropriée
+      to: 'gabriel.beduneau@diamantor.fr', // À modifier avec l'adresse de destination appropriée
       subject,
       template: './training-validate', // Utilisation d'un template
       context: { realizedBy, file },
@@ -169,4 +169,53 @@ export class MailService {
     });
     console.log(`Email de résultat de quizz envoyé avec succès à ${email}.`);
   }
+
+  async sendOmarResult(email: string, name: string, pdfBuffer: Buffer) {
+    console.log('Envoie du mail !!!!!!!!!!!!!!!!!!!!')
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Résultat OMAR de ${name}`,
+      template: './omar-result',
+      context: {
+        name,
+        year: new Date().getFullYear(),
+      },
+      attachments: [
+        {
+          filename: 'omar.pdf',
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    console.log(`Email omar envoyé à ${email}.`);
+  }
+
+  async sendMailWithAttachment({
+    to,
+    subject,
+    text,
+    attachments,
+  }: {
+    to: string;
+    subject: string;
+    text: string;
+    attachments: { filename: string; content: Buffer }[];
+  }) {
+    console.log(`📤 Envoi d'un e-mail à ${to} avec pièce jointe...`);
+
+    await this.mailerService.sendMail({
+      to,
+      from: `"Diamantor" <${process.env.EMAIL_ID}>`,
+      subject,
+      text,
+      html: `<p>${text}</p>`,
+      attachments,
+    });
+
+    console.log('✅ E-mail envoyé avec succès.');
+  }
+
+
+
 }

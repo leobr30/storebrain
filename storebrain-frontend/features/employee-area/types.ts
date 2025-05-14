@@ -12,6 +12,7 @@ export type Employee = {
     absenses: Absence[]
     vacations: Absence[]
     trainings: Training[]
+    Document: Document[]
 }
 
 type EmployeeHistory = {
@@ -197,10 +198,17 @@ export type Omar = {
 }
 
 export enum DocumentType {
-    SICK_LEAVE = "SICK_LEAVE",
+    CNI = "CNI",
     VITAL_CARD = "VITAL_CARD",
+    MUTUAL_CARD = "MUTUAL_CARD",
+    RIB = "RIB",
+    ADDRESS_PROOF = "ADDRESS_PROOF",
+    CRIMINAL_RECORD = "CRIMINAL_RECORD",
+    RESIDENCE_PERMIT = "RESIDENCE_PERMIT",
+    SICK_LEAVE = "SICK_LEAVE",
     OTHER = "OTHER",
 }
+
 
 export interface Document {
     id: number;
@@ -213,8 +221,15 @@ export interface Document {
 }
 
 export const documentTypeLabels: Record<DocumentType, string> = {
-    [DocumentType.SICK_LEAVE]: "Arrêt maladie",
+    [DocumentType.CNI]: "Carte d'identité",
     [DocumentType.VITAL_CARD]: "Carte Vitale",
+    [DocumentType.MUTUAL_CARD]: "Carte Mutuelle",
+    [DocumentType.RIB]: "RIB",
+    [DocumentType.ADDRESS_PROOF]: "Justificatif de domicile",
+    [DocumentType.CRIMINAL_RECORD]: "Extrait de casier judiciaire",
+    [DocumentType.RESIDENCE_PERMIT]: "Titre de séjour",
+    [DocumentType.SICK_LEAVE]: "Arrêt maladie",
     [DocumentType.OTHER]: "Autre",
 };
+
 

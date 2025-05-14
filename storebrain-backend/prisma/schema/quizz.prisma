@@ -10,6 +10,7 @@ model Quizz {
   createdBy         User                @relation("CreatedQuizz", fields: [createdById], references: [id], onDelete: Cascade)
   assignedToId      Int
   assignedTo        User                @relation("AssignedQuizz", fields: [assignedToId], references: [id], onDelete: Cascade)
+  dateSignature DateTime?
   JobOnboardingStep JobOnboardingStep[]
 }
 

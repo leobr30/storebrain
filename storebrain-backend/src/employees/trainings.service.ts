@@ -8,11 +8,15 @@ import { SaveTrainingDto } from "./dto/save-training.dto";
 import { randomUUID } from "crypto";
 import { EmployeesTrainingClosedEvent } from "./events/employees-training-closed.event";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { PdfService } from "src/pdf/pdf.service";
+import { MailService } from "src/mail/mail.service";
 
 @Injectable()
 export class TrainingsService {
   constructor(private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
+    private readonly mailService: MailService,
+    private readonly pdfService: PdfService,
   ) { }
 
   async getTrainingModels() {
@@ -114,12 +118,25 @@ export class TrainingsService {
     return trainingSubjectFile;
   }
 
-  async closeTraining(
-    trainingId: number,
-    currentUser: CurrentUserType,
-    dto: SaveTrainingDto,
-  ) {
-    const training = await this.prisma.training.update({
+  async closeTraining(trainingId: number, currentUser: CurrentUserType, dto: SaveTrainingDto) {
+    const training = await this.prisma.training.findUnique({
+      where: { id: trainingId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        subjects: true,
+      },
+    });
+
+    if (!training) throw new NotFoundException('Formation introuvable');
+
+    // 🔄 Mise à jour de la formation
+    await this.prisma.training.update({
       where: { id: trainingId },
       data: {
         comment: dto.comment,
@@ -127,51 +144,74 @@ export class TrainingsService {
         exercise: dto.exercise,
         validateAt: new Date(),
         realizedById: currentUser.sub,
-        status: Status.COMPLETED,
+        status: 'COMPLETED',
       },
     });
 
-    await this.prisma.userJobOnboarding.update({
+    // 🔄 Mise à jour des sujets
+    for (const subject of dto.subjects) {
+      await this.prisma.trainingSubject.update({
+        where: { id: subject.subjectId },
+        data: { state: subject.assessment },
+      });
+    }
+
+    // 🔄 Mise à jour de l'intégration
+    await this.prisma.userJobOnboarding.updateMany({
       where: {
-        id: training.userJobOnboardingId,
+        training: {
+          some: {
+            id: trainingId,
+          },
+        },
       },
       data: {
-        status: Status.COMPLETED,
+        status: 'COMPLETED',
       },
     });
 
-    await Promise.all(
-      dto.subjects.map(async (subject) => {
-        await this.prisma.trainingSubject.update({
-          where: { id: subject.subjectId },
-          data: {
-            state: subject.assessment,
-          },
-        });
-      }),
-    );
-
-    const userHistory = await this.prisma.userHistory.create({
+    // 🧾 Historique
+    await this.prisma.userHistory.create({
       data: {
         title: 'Formation',
-        text: `a réalisé la formation ${training.name}`,
-        type: 'TRAINING',
-        idUrl: training.id.toString(),
-        user: {
-          connect: {
-            id: training.userId
-          }
-        },
-        createdBy: {
-          connect: {
-            id: currentUser.sub
-          }
-        }
-      }
+        text: `a validé la formation ${training.name}`,
+        type: 'ACTION',
+        userId: training.user.id,
+        createdById: currentUser.sub,
+      },
     });
-    console.log('EMIT EVENT', training.id, userHistory.id);
-    this.eventEmitter.emit('employees.training.closed', new EmployeesTrainingClosedEvent(training.id, userHistory.id));
+
+    // 📄 Génération du PDF avec vérification du dossier
+    const filePath = `./upload/employees/${training.user.id}/training/${training.id}/training-${Date.now()}.pdf`;
+    const dir = path.dirname(filePath);
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    await this.pdfService.createTrainingPdf(training.id, filePath);
+
+    // 📩 Envoi du mail avec le PDF
+    await this.mailService.sendTrainingMail(
+      currentUser.name ?? "Formateur",
+      `Validation de la formation : ${training.name}`,
+      {
+        fileName: `formation-${training.id}.pdf`,
+        mimeType: 'application/pdf',
+        filePath,
+      },
+    );
+
+    // ✅ Event
+    this.eventEmitter.emit('employees.training.closed', {
+      trainingId,
+      userId: training.user.id,
+    });
+
+    return { message: 'Formation validée et envoyée par mail avec succès.' };
   }
+
+
 
   async saveTraining(
     trainingId: number,

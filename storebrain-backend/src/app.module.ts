@@ -27,6 +27,7 @@ import { EmployeeResponsesController } from './forms/forms.controller';
 import { FormsModule } from './forms/forms.module';
 import { DocumentsModule } from './documents/documents.module';
 import { QuizzModule } from './quizz/quizz.module';
+import { YousignService } from './yousign/yousign.service';
 
 
 @Module({
@@ -64,8 +65,8 @@ import { QuizzModule } from './quizz/quizz.module';
     ClosingDayModule,    
   ],
   controllers: [FormsController, EmployeeResponsesController],
-  providers: [SavService, PrismaService],
-  exports: [PrismaService]
+  providers: [SavService, PrismaService, YousignService],
+  exports: [PrismaService, YousignService]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

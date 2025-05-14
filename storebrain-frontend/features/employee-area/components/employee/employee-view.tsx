@@ -6,7 +6,7 @@ import { EmployeeActions } from "./employee-actions";
 import { EmployeeInformation } from "./employee-information";
 import { EmployeeProfile } from "./employee-profile";
 import { EmployeeTabs } from "./employee-tabs";
-import { getJobOnboardingIdForEmployee } from "../../actions"; // Importez la fonction pour récupérer jobOnboardingId
+import { DocumentType } from "../../types";
 
 type EmployeeViewProps = {
     employee: Employee;
@@ -15,6 +15,28 @@ type EmployeeViewProps = {
 export const EmployeeView = async ({ employee }: EmployeeViewProps) => {
     // Récupérer jobOnboardingId depuis la base de données
     //const jobOnboardingId = await getJobOnboardingIdForEmployee(employee.id);
+
+    const requiredDocuments: DocumentType[] = [
+        DocumentType.CNI,
+        DocumentType.VITAL_CARD,
+        DocumentType.MUTUAL_CARD,
+        DocumentType.RIB,
+        DocumentType.ADDRESS_PROOF,
+        DocumentType.CRIMINAL_RECORD,
+    ];
+
+    const hasAllDocuments = requiredDocuments.every((type) =>
+        employee.Document?.some((doc) => doc.type === type)
+    );
+
+    const missingDocuments = requiredDocuments.filter((type) =>
+        !employee.Document?.some((doc) => doc.type === type)
+    );
+
+
+    console.log("📄 Documents de l'employé :", employee.Document);
+
+
 
     return (
         <>
@@ -26,7 +48,13 @@ export const EmployeeView = async ({ employee }: EmployeeViewProps) => {
                     <EmployeeInformation employee={employee} />
                 </div>
                 <div className="col-span-12 lg:col-span-8">
-                    <EmployeeActions id={employee.id} status={employee.status} />
+                    <EmployeeActions
+                        id={employee.id}
+                        status={employee.status}
+                        hasAllDocuments={hasAllDocuments}
+                        missingDocuments={missingDocuments}
+                    />
+
                     {/* Passer jobOnboardingId à EmployeeTabs */}
                     <EmployeeTabs employee={employee} /* jobOnboardingId={jobOnboardingId} */ /> {/* ✅ On supprime jobOnboardingId */}
                 </div>

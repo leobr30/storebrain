@@ -46,7 +46,7 @@ type EmployeesProps = {
     handleChangeRemainingDays: (id: number, value: number) => void;
     appointmentId: number;
     handleCreateOmar: (userId: number, appointmentDetailId?: number) => void;
-    handleSuccesLogin: (id: number) => void;
+    handleSuccesLogin: (id: number, userId: number) => void;
     onGeneratePdfAndSendEmail: (appointment: MondayAppointment, details: MondayAppointmentDetail[]) => Promise<void>;
 };
 
@@ -231,11 +231,11 @@ export const Employees = ({
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {!detail.signedAt && detail.omar?.status === "IN_PROGRESS" ? (
+                                        {!detail.signedAt && detail.omar ? (
                                             <LoginDialog
                                                 title={"Signature requise pour " + detail.fullname}
                                                 userId={detail.userId!}
-                                                onSuccess={() => handleSuccesLogin(detail.id)}
+                                                onSuccess={() => handleSuccesLogin(detail.id, detail.userId!)}
                                                 withTrigger={
                                                     <Button variant={"ghost"}>
                                                         Signature Requise

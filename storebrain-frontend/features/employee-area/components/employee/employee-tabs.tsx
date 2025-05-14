@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import EmployeeFormation from "./employee-formation";
 import { Employee } from "../../types";
 import EmployeeDocuments from "./documents";
+import EmployeeOmar from "./omar";
 
 type EmployeeTabsProps = {
   employee: Employee;
@@ -48,6 +49,9 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <TabsTrigger value="document" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
            before:left-1/2 before:-bottom-[11px] before:h-[2px]
              before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Documents</TabsTrigger>
+        <TabsTrigger value="omar" className="apitalize px-0  data-[state=active]:shadow-none  data-[state=active]:bg-transparent data-[state=active]:text-primary transition duration-150 before:transition-all before:duration-150 relative before:absolute
+           before:left-1/2 before:-bottom-[11px] before:h-[2px]
+             before:-translate-x-1/2 before:w-0 data-[state=active]:before:bg-primary data-[state=active]:before:w-full">Omar</TabsTrigger>
       </TabsList>
 
       <TabsContent value="history" className="mt-2.5">
@@ -65,6 +69,9 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
       </TabsContent>
       <TabsContent value="document" className="mt-2.5">
         <EmployeeDocuments />
+      </TabsContent>
+      <TabsContent value="omar" className="mt-2.5">
+        <EmployeeOmar />
       </TabsContent>
 
     </Tabs>

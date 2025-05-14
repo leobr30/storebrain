@@ -37,17 +37,18 @@ const formSchema = z.object({
 })
 
 type LoginDialogProps = {
-    title: string,
-    userId: number,
-    open?: boolean,
-    setOpen?: (open: boolean) => void,
-    onSuccess: () => void
-    withTrigger?: ReactNode
+  title: string,
+  userId: number,
+  open?: boolean,
+  setOpen?: (open: boolean) => void,
+  onSuccess: () => void
+  withTrigger?: ReactNode
 }
 
-export default function LoginDialog( {title, userId, open, setOpen, onSuccess, withTrigger}: LoginDialogProps ) {
+export default function LoginDialog({ title, userId, open, setOpen, onSuccess, withTrigger }: LoginDialogProps) {
   const [error, setError] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(open)
+  const [dialogOpen, setDialogOpen] = useState<boolean>(open ?? false)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,16 +60,19 @@ export default function LoginDialog( {title, userId, open, setOpen, onSuccess, w
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(false)
     try {
-         await checkCredentials(userId, values)    
-         onSuccess()
+      await checkCredentials(userId, values)
+      onSuccess()
     } catch (error) {
-        setError(true)
+      setError(true)
     }
     // setOpen(false)
   }
 
-  useEffect(() => setDialogOpen(open),[open])
-  useEffect(() => setOpen?.(dialogOpen),[dialogOpen])
+  useEffect(() => {
+    setDialogOpen(open ?? false)
+  }, [open])
+
+  useEffect(() => setOpen?.(dialogOpen ?? false), [dialogOpen])
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -81,7 +85,7 @@ export default function LoginDialog( {title, userId, open, setOpen, onSuccess, w
             Entrez vos identifiants pour signer.
           </DialogDescription>
         </DialogHeader>
-        {error && <Alert variant={"soft"} color="destructive">Identifiant ou mot de passe incorrect</Alert>}   
+        {error && <Alert variant={"soft"} color="destructive">Identifiant ou mot de passe incorrect</Alert>}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -92,7 +96,7 @@ export default function LoginDialog( {title, userId, open, setOpen, onSuccess, w
                   <FormLabel>Code vendeur</FormLabel>
                   <FormControl>
                     <Input placeholder="Entrez votre nom d'utilisateur" {...field} />
-                  </FormControl>                  
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -105,7 +109,7 @@ export default function LoginDialog( {title, userId, open, setOpen, onSuccess, w
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="Entrez votre mot de passe" {...field} />
-                  </FormControl>                  
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

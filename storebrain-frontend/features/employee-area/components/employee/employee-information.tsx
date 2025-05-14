@@ -7,6 +7,7 @@ import { useState } from "react";
 import { updateEmployeeInformation } from "@/features/employee-area/components/employee/employee-information-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
 
 type EmployeeInformationProps = {
     employee: Employee;
@@ -38,7 +39,7 @@ export const EmployeeInformation = ({ employee }: EmployeeInformationProps) => {
         const result = await updateEmployeeInformation(employee.id, formData);
 
         if (result.success) {
-            alert("Mise à jour réussie !");
+            toast.success("Mise à jour réussie !");
 
 
             setEmployeeData((prev) => ({

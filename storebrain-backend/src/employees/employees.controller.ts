@@ -17,6 +17,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   ParseIntPipe,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CheckPolicies } from 'src/casl/policy.decorator';
 import { PoliciesGuard } from 'src/casl/policy.guard';
@@ -30,7 +31,7 @@ import { EmployeesService } from './employees.service';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import { CurrentUserType } from 'src/auth/dto/current-user.dto';
 import { ActivateEmployeeDto } from './dto/activate-employee.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { StartEmployeeIntegrationPolicyHandler } from './policies/start-integration.policy';
 import { StartTrainingPolicyHandler } from './policies/start-training.policy';
@@ -62,6 +63,12 @@ export class EmployeesController {
     return await this.employeesService.getEmployees(company); // ✅ Return the result
   }
 
+  @Get(':id/document-status')
+  async getDocumentStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.employeesService.getEmployeeDocumentStatus(id);
+  }
+
+
   @Get('employee/:id')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new ReadEmployeesPolicyHandler())
@@ -69,29 +76,91 @@ export class EmployeesController {
     return await this.employeesService.getEmployee(id); // ✅ Return the result
   }
 
+  @Post('upload-documents/:userId')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'cni', maxCount: 1 },
+      { name: 'carteVitale', maxCount: 1 },
+      { name: 'carteMutuelle', maxCount: 1 },
+      { name: 'rib', maxCount: 1 },
+      { name: 'justificatifDomicile', maxCount: 1 },
+      { name: 'casierJudiciaire', maxCount: 1 },
+      { name: 'titreSejour', maxCount: 1 },
+    ])
+  )
+  async uploadEmployeeDocuments(
+    @Param('userId') userId: string,
+    @UploadedFiles() files: {
+      cni?: Express.Multer.File[],
+      carteVitale?: Express.Multer.File[],
+      carteMutuelle?: Express.Multer.File[],
+      rib?: Express.Multer.File[],
+      justificatifDomicile?: Express.Multer.File[],
+      casierJudiciaire?: Express.Multer.File[],
+      titreSejour?: Express.Multer.File[],
+    }
+  ) {
+    console.log("📦 Fichiers reçus :", Object.entries(files).map(([k, v]) => [k, v?.[0]?.originalname]));
+
+    return this.employeesService.saveDocuments(userId, files);
+  }
+
+
   @Post()
   @UseInterceptors(
-    FileInterceptor('file', {
+    FileFieldsInterceptor([
+      { name: 'file', maxCount: 1 },
+      { name: 'cni', maxCount: 1 },
+      { name: 'carteVitale', maxCount: 1 },
+      { name: 'carteMutuelle', maxCount: 1 },
+      { name: 'rib', maxCount: 1 },
+      { name: 'justificatifDomicile', maxCount: 1 },
+      { name: 'casierJudiciaire', maxCount: 1 },
+      { name: 'titreSejour', maxCount: 1 },
+    ], {
       storage: diskStorage({
         destination: 'upload/tmp',
         filename: (req, file, cb) => {
           cb(null, Date.now() + '-' + file.originalname);
         },
       }),
-    }),
+    })
   )
+
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new CreateEmployeesPolicyHandler())
   async createEmployee(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: {
+      file?: Express.Multer.File[],
+      cni?: Express.Multer.File[],
+      carteVitale?: Express.Multer.File[],
+      carteMutuelle?: Express.Multer.File[],
+      rib?: Express.Multer.File[],
+      justificatifDomicile?: Express.Multer.File[],
+      casierJudiciaire?: Express.Multer.File[],
+      titreSejour?: Express.Multer.File[],
+    },
     @Body() dto: CreateEmployeeDto,
     @CurrentUser() user: CurrentUserType,
   ) {
+    const file = files.file?.[0];
+    if (!file) throw new BadRequestException("Le fichier principal est requis.");
+
+    // Création de l'employé
     const result = await this.employeesService.createEmployee(dto, file, {
       sub: user.sub,
       name: user.name,
     });
-    return { message: "Employee created successfully", data: result }; // ✅ Return a JSON response
+
+    // Sauvegarde des autres documents (CNI, RIB, etc.)
+    await this.employeesService.saveDocuments(result.id.toString(), files);
+
+    return {
+      message: "Employee created successfully",
+      userId: result.id,
+    };
+
+    // ✅ Return a JSON response
   }
 
   @Post(':id/activate')
@@ -252,6 +321,14 @@ export class EmployeesController {
     return { message: "Omar saved successfully", data: result }; // ✅ Return a JSON response
   }
 
+  @Get('omar')
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies(new ReadEmployeesPolicyHandler())
+  async getAllOmars() {
+    return await this.employeesService.getAllOmars();
+  }
+
+
   @Get('omar/:id')
   @UseGuards(PoliciesGuard)
   async getOmar(@Param('id') id: number) {
@@ -312,7 +389,7 @@ export class EmployeesController {
     if (isNaN(numericId)) throw new BadRequestException("ID invalide");
 
     const result = await this.employeesService.updateEmployee(numericId, updateData);
-    return { message: "Employee updated successfully", data: result }; // ✅ Return a JSON response
+    return { message: "Employee updated successfully", data: result };
   }
 
   @Post(':id/vacations')
@@ -366,4 +443,10 @@ export class EmployeesController {
   async getOnboardingSteps(@Param('id', ParseIntPipe) id: number) {
     return this.employeesService.getOnboardingSteps(id);
   }
+
+  @Post(':userId/send-unsigned-documents')
+  async sendUnsignedDocuments(@Param('userId') userId: string) {
+    return await this.pdfService.sendUnsignedDocumentsByEmail(userId, "gabriel.beduneau@diamantor.fr");
+  }
+
 }

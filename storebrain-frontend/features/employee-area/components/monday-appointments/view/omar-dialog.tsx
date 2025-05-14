@@ -27,7 +27,9 @@ const omarFormSchema = z.object({
   action: z.string().min(1, "Champ requis"),
   dueDate: z.date({ message: REQUIRED }),
   nextAppointment: z.date({ message: REQUIRED }),
-})
+  result: z.string().optional(),
+});
+
 
 type OmarFormValues = z.infer<typeof omarFormSchema>
 
@@ -43,17 +45,24 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [omar, setOmar] = useState<Omar | null>(null)
   const form = useForm<OmarFormValues>({
-    resolver: zodResolver(omarFormSchema),
+    resolver: zodResolver(
+      omar?.status === "IN_PROGRESS"
+        ? omarFormSchema.extend({
+          result: z.string().min(1, "Champ requis"),
+        })
+        : omarFormSchema
+    ),
     defaultValues: {
       observation: "",
       objective: "",
       tool: "",
       action: "",
-      // result: "",
+      result: "",
       dueDate: addDays(new Date(), 5),
       nextAppointment: undefined,
     },
-  })
+  });
+
 
   useEffect(() => {
     if (omarId) {
@@ -72,7 +81,7 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
       omarData.dueDate = omarData.dueDate ? new Date(omarData.dueDate) : undefined
       omarData.nextAppointment = omarData.nextAppointment ? new Date(omarData.nextAppointment) : undefined
       setOmar(omarData)
-      form.reset(omarData)
+      form.reset({ ...omarData, result: omarData.result ?? "" })
     } catch (error) {
       toast.error("Erreur lors du chargement de l'OMAR")
       handleClose()
@@ -91,6 +100,7 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
           observation: form.getValues("observation"),
           dueDate: form.getValues("dueDate"),
           nextAppointment: form.getValues("nextAppointment"),
+          result: form.getValues("result"),
         })
         if (onOmarValidate) {
           onOmarValidate(omar!)
@@ -125,6 +135,30 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
     }
   }
 
+  const handleValidateResult = async () => {
+    if (!omarId) return;
+
+    try {
+      const updatedOmar = await validateOmar(omarId, {
+        objective: form.getValues("objective"),
+        tool: form.getValues("tool"),
+        action: form.getValues("action"),
+        observation: form.getValues("observation"),
+        dueDate: form.getValues("dueDate"),
+        nextAppointment: form.getValues("nextAppointment"),
+        result: form.getValues("result"),
+      });
+
+      toast.success("Résultat validé avec succès");
+      if (onOmarValidate) onOmarValidate(updatedOmar);
+      handleClose();
+    } catch (error) {
+      console.error("Erreur lors de la validation du résultat :", error);
+      toast.error("Erreur lors de la validation du résultat");
+    }
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose} >
       <DialogContent size="5xl" className="p-0">
@@ -144,7 +178,7 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
           <>
 
             <ScrollArea className="max-h-[80vh]">
-              <div className="p-5">
+              <div className="max-h-[80vh] overflow-auto p-5">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-3 gap-4">
@@ -238,21 +272,63 @@ export const OmarDialog = ({ onOmarValidate }: OmarDialogProps) => {
                           )}
                         />
                       </div>
-                      {/* <div className="col-span-1">
-                      <FormField
-                        control={form.control}
-                        name={'result'}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Résultat</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder={`Entrez les résultats`} {...field} rows={10} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div> */}
+                      {omar?.status === "IN_PROGRESS" && (
+                        <>
+                          <div className="col-span-3">
+                            <FormField
+                              control={form.control}
+                              name={'result'}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Résultat</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Entrez les résultats"
+                                      {...field}
+                                      rows={6}
+                                      className="max-h-48 overflow-y-auto"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="col-span-3 flex justify-start mt-2">
+                            <Button type="button" onClick={handleValidateResult}>
+                              Valider le résultat
+                            </Button>
+                          </div>
+
+                        </>
+                      )}
+
+                      {omar?.status === "COMPLETED" && (
+                        <div className="col-span-3">
+                          <FormField
+                            control={form.control}
+                            name={'result'}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Résultat renseigné</FormLabel>
+                                <FormControl>
+                                  <Textarea
+                                    placeholder="Résultat renseigné"
+                                    {...field}
+                                    rows={6}
+                                    readOnly
+                                    className="max-h-48 overflow-y-auto bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
+
                     </div>
                     {omar?.status === "DRAFT" && <DialogFooter>
                       <Button type="button" variant={'soft'} onClick={() => handleSaveOmar()}>Enregistrer</Button>

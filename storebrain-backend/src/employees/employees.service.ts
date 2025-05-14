@@ -35,6 +35,7 @@ import { AbsenceUpdatedEvent } from './events/absence-updated.event';
 import { User } from '@prisma/client';
 import { MailService } from 'src/mail/mail.service';
 import { UserJobOnboarding } from '@prisma/client';
+import { DocumentType } from '@prisma/client';
 
 
 
@@ -191,6 +192,7 @@ export class EmployeesService {
         id,
       },
       include: {
+        Document: true,
         job: {
           select: {
             name: true,
@@ -294,6 +296,90 @@ export class EmployeesService {
       },
     });
   }
+
+  async saveDocuments(userId: string, files: Record<string, Express.Multer.File[]>) {
+    console.log("📄 Sauvegarde des documents...");
+
+    const uploads = [];
+
+    const parsedUserId = Number(userId);
+    if (isNaN(parsedUserId)) {
+      throw new BadRequestException('userId invalide');
+    }
+
+    const keyToDocumentType: Record<string, DocumentType> = {
+      cni: DocumentType.CNI,
+      carteVitale: DocumentType.VITAL_CARD,
+      carteMutuelle: DocumentType.MUTUAL_CARD,
+      rib: DocumentType.RIB,
+      justificatifDomicile: DocumentType.ADDRESS_PROOF,
+      casierJudiciaire: DocumentType.CRIMINAL_RECORD,
+      titreSejour: DocumentType.RESIDENCE_PERMIT,
+    };
+
+    console.log("🧾 Traitement des fichiers dans saveDocuments() :", Object.keys(files));
+
+    for (const [key, fileArray] of Object.entries(files)) {
+      if (!fileArray || fileArray.length === 0) {
+        console.warn(`⚠️ Aucun fichier reçu pour la clé "${key}"`);
+        continue;
+      }
+
+      const documentType = keyToDocumentType[key];
+      if (!documentType) {
+        console.warn(`❌ Clé de document non reconnue : "${key}"`);
+        continue;
+      }
+
+      const file = fileArray[0];
+
+      try {
+        const saved = await this.prisma.document.create({
+          data: {
+            type: documentType,
+            filePath: `uploads/${file.filename}`,
+            fileName: file.originalname,
+            mimeType: file.mimetype,
+            userId: parsedUserId,
+          },
+        });
+
+        console.log(`✅ Document enregistré : [${documentType}] ${file.originalname}`);
+        uploads.push(saved);
+      } catch (error) {
+        console.error(`❌ Erreur lors de l’enregistrement du document [${documentType}]:`, error);
+      }
+    }
+
+    console.log("📦 Documents sauvegardés :", uploads.length);
+    return uploads;
+  }
+
+
+  async getEmployeeDocumentStatus(userId: number) {
+    const requiredDocs: DocumentType[] = [
+      DocumentType.CNI,
+      DocumentType.VITAL_CARD,
+      DocumentType.MUTUAL_CARD,
+      DocumentType.RIB,
+      DocumentType.ADDRESS_PROOF,
+      DocumentType.CRIMINAL_RECORD,
+    ];
+
+    const documents = await this.prisma.document.findMany({
+      where: { userId },
+      select: { type: true },
+    });
+
+    const existingTypes = documents.map(d => d.type);
+    const missingDocuments = requiredDocs.filter(type => !existingTypes.includes(type));
+
+    return {
+      hasAllDocuments: missingDocuments.length === 0,
+      missingDocuments,
+    };
+  }
+
 
 
   async activateEmployee(
@@ -879,10 +965,30 @@ export class EmployeesService {
   }
 
   async validateOmar(id: number, dto: ValidateOmarDto, currentUser: CurrentUserType) {
+
+    console.log('Dans validateOmar TEST')
+    const status = dto.result ? 'COMPLETED' : 'IN_PROGRESS';
+
+    // 🔍 Récupérer les infos nécessaires pour envoyer le mail
+    const existingOmar = await this.prisma.omar.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!existingOmar) throw new NotFoundException('OMAR non trouvé');
+
+    // ✅ Mise à jour du OMAR
     const omar = await this.prisma.omar.update({
       where: { id },
       data: {
-        status: 'IN_PROGRESS',
+        status,
         createdById: currentUser.sub,
         observation: dto.observation,
         objective: dto.objective,
@@ -890,21 +996,55 @@ export class EmployeesService {
         action: dto.action,
         dueDate: dto.dueDate,
         nextAppointment: dto.nextAppointment,
+        result: dto.result,
       },
     });
 
+    // ✅ Ajout dans l'historique
     await this.prisma.userHistory.create({
       data: {
         title: 'OMAR',
-        text: 'a validé l\'OMAR',
+        text: `a validé l'OMAR`,
         type: 'OMAR',
         idUrl: omar.id.toString(),
         userId: currentUser.sub,
         createdById: currentUser.sub,
       },
     });
+
+    // ✅ Génération et envoi du PDF si COMPLETED et si email + name sont présents
+    const userEmail = "gabriel.beduneau@diamantor.fr"
+    const userName = existingOmar.user?.name;
+
+    console.log("🔍 dto.result =", dto.result);
+    console.log("🔍 status =", status);
+    console.log("🔍 userEmail =", userEmail);
+    console.log("🔍 userName =", userName);
+
+
+    if (status === 'COMPLETED' && userEmail && userName) {
+      console.log("📨 Envoi du mail à", userEmail, "pour", userName);
+
+      console.log("📄 Génération PDF...");
+      const pdfBuffer = await this.pdfService.generateOmarPdf(id);
+      console.log("📨 Envoi du mail à", userEmail, "pour", userName);
+      try {
+        await this.mailService.sendOmarResult(userEmail, userName, pdfBuffer);
+
+      }
+      catch (err) {
+        console.log("❌ Erreur lors de l'envoi du mail OMAR :", err);
+
+      }
+
+    }
+
+
+
     return omar;
   }
+
+
 
   async getUserByOnerpId(onerpId: number) {
     const user = await this.prisma.user.findFirst({
@@ -1230,6 +1370,22 @@ export class EmployeesService {
 
     return stepsWithQuizzDetails;
   }
+
+  async getAllOmars() {
+    return this.prisma.omar.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
 
 
 

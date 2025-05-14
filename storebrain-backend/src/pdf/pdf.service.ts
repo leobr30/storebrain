@@ -9,12 +9,22 @@ import PDFDocument from 'pdfkit';
 import PdfPrinter from 'pdfmake';
 import path from 'path';
 import dayjs from 'dayjs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { mkdirSync, existsSync, readFileSync, rmSync } from 'fs';
+import { randomUUID } from 'crypto';
+import { PDFDocument as PDFLibDocument } from 'pdf-lib';
+import { MailService } from 'src/mail/mail.service';
+import { YousignService } from 'src/yousign/yousign.service';
 
 
 @Injectable()
 export class PdfService {
 
-  constructor(private readonly prismaService: PrismaService) { }
+  constructor(private readonly prismaService: PrismaService,
+    private readonly mailService: MailService,
+    private readonly yousignService: YousignService,
+  ) { }
 
 
   private readonly fonts = {
@@ -97,6 +107,88 @@ export class PdfService {
       }
     });
   }
+
+  async generateOmarPdf(omarId: number): Promise<Buffer> {
+    const omar = await this.prismaService.omar.findUnique({
+      where: { id: omarId },
+      include: {
+        user: true,
+        createdBy: true,
+      },
+    });
+
+    if (!omar) throw new NotFoundException('OMAR non trouvé');
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => { });
+
+    // 💠 Header stylisé
+    doc
+      .rect(0, 0, doc.page.width, 80)
+      .fill('#1f2937')
+      .fillColor('#ffffff')
+      .fontSize(26)
+      .font('Helvetica-Bold')
+      .text(`OMAR de ${omar.user.name}`, 50, 30, { align: 'center' });
+
+    doc.moveDown(2);
+
+    // 🧾 Détails du créateur et de la date
+    doc
+      .fillColor('#111827')
+      .fontSize(12)
+      .font('Helvetica')
+      .text(` Créé par : ${omar.createdBy?.name ?? 'Non renseigné'}`)
+      .text(` Date de création : ${omar.createdAt.toLocaleDateString()}`);
+
+    doc.moveDown(1.5);
+
+    // 🧩 Section utility
+    const drawSection = (title: string, value: string | null) => {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(13)
+        .fillColor('#1f2937')
+        .text(` ${title}`, { underline: false });
+
+      doc
+        .font('Helvetica')
+        .fontSize(12)
+        .fillColor('#374151')
+        .text(value?.trim() || 'Non renseigné', {
+          indent: 20,
+          lineGap: 4,
+        });
+
+      doc.moveDown(1);
+    };
+
+    // 📌 Contenu structuré
+    drawSection('Objectif', omar.objective);
+    drawSection('Moyens', omar.tool);
+    drawSection('Actions', omar.action);
+    drawSection('Constat - Évaluation', omar.observation);
+    drawSection('Résultat', omar.result);
+    drawSection('Prochain rendez-vous', omar.nextAppointment?.toLocaleDateString() || null);
+    drawSection('Échéance', omar.dueDate?.toLocaleDateString() || null);
+
+    // 📎 Pied de page
+    doc
+      .moveDown(2)
+      .fontSize(10)
+      .fillColor('#9ca3af')
+      .text('Document généré automatiquement par le système Diamantor.', {
+        align: 'center',
+      });
+
+    doc.end();
+    await new Promise(resolve => doc.on('end', resolve));
+
+    return Buffer.concat(buffers);
+  }
+
 
 
   async createEmployeeCreatedPdf(dto: CreateEmployeePdfDto, filePath: string) {
@@ -642,11 +734,8 @@ export class PdfService {
     return;
   }
 
-  async generateQuizzPdf(
-    quizzTitle: string,
-    employeeName: string,
-    answers: { question: QuizzQuestion; answer: string }[],
-  ): Promise<Buffer> {
+  async generateQuizzPdf(quizzTitle: string, employeeName: string, answers: { question: QuizzQuestion; answer: string }[]): Promise<Buffer> {
+
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
@@ -749,4 +838,206 @@ export class PdfService {
     await new Promise((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
   }
+
+
+  async mergePdfBuffers(buffers: Buffer[]): Promise<Buffer> {
+    const mergedPdf = await PDFLibDocument.create();
+
+    for (const pdfBuffer of buffers) {
+      const pdf = await PDFLibDocument.load(pdfBuffer);
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+    }
+
+    const finalBuffer = await mergedPdf.save();
+    return Buffer.from(finalBuffer);
+  }
+
+
+
+  async generateUnsignedDocumentsPdf(userId: string): Promise<Buffer> {
+    const parsedUserId = parseInt(userId);
+    const tempDir = join(tmpdir(), `unsigned-documents-${randomUUID()}`);
+    if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
+
+    const pdfBuffers: Buffer[] = [];
+
+    // 🔹 Formations
+    const formations = await this.prismaService.training.findMany({
+      where: { userId: parsedUserId, dateSignature: null },
+    });
+
+    for (const formation of formations) {
+      const filePath = join(tempDir, `training-${formation.id}.pdf`);
+      await this.createTrainingPdf(formation.id, filePath);
+
+      // ⚠️ Attendre que le fichier soit réellement écrit
+      let retries = 0;
+      while (!existsSync(filePath) && retries < 10) {
+        await new Promise((res) => setTimeout(res, 100));
+        retries++;
+      }
+
+      if (!existsSync(filePath)) {
+        console.error(`❌ Le fichier PDF ${filePath} n'existe toujours pas après tentative.`);
+        continue; // ou throw new Error(...) si tu préfères échouer
+      }
+
+      const buffer = readFileSync(filePath);
+      pdfBuffers.push(buffer);
+
+    }
+
+    // 🔹 Quizz
+    const quizz = await this.prismaService.quizz.findMany({
+      where: { assignedToId: parsedUserId, dateSignature: null },
+    });
+
+    for (const quiz of quizz) {
+      const answers = await this.prismaService.quizzAnswer.findMany({
+        where: { id: quiz.id, userId: parsedUserId },
+        include: { question: true },
+      });
+
+      const formattedAnswers = answers.map((a) => ({
+        question: a.question,
+        answer: a.text || '',
+      }));
+
+      const employee = await this.prismaService.user.findUnique({
+        where: { id: parsedUserId },
+      });
+
+      const buffer = await this.generateQuizzPdf(
+        quiz.title,
+        employee?.name || 'Employé',
+        formattedAnswers,
+      );
+      pdfBuffers.push(buffer);
+    }
+
+    // 🔹 Documents (via EmployeeResponse)
+    const responses = await this.prismaService.employeeResponse.findMany({
+      where: {
+        userId: parsedUserId,
+        form: {
+          dateSignature: null,
+        },
+      },
+      include: {
+        user: true,
+        form: true,
+      },
+    });
+
+    for (const response of responses) {
+      const filePath = join(tempDir, `form-${response.formId}.pdf`);
+
+      const responseData = {
+        user: response.user,
+        responses: response.responses, // JSON structure
+      };
+
+      await this.generateEmployeeCreatedPdf(responseData, filePath);
+      const buffer = readFileSync(filePath);
+      pdfBuffers.push(buffer);
+    }
+
+
+
+    // 🔹 Omars
+    const omars = await this.prismaService.omar.findMany({
+      where: { userId: parsedUserId, dateSignature: null },
+    });
+
+    for (const omar of omars) {
+      const buffer = await this.generateOmarPdf(omar.id);
+      pdfBuffers.push(buffer);
+    }
+
+    // 🔹 Fusion des PDF
+    const mergedPdf = await this.mergePdfBuffers(pdfBuffers);
+
+    // Nettoyage temporaire
+    rmSync(tempDir, { recursive: true, force: true });
+
+    return mergedPdf;
+  }
+
+
+  async sendUnsignedDocumentsByEmail(userId: string, email: string) {
+    try {
+      const mergedPdf = await this.generateUnsignedDocumentsPdf(userId);
+
+      // ✅ Envoi par e-mail
+      await this.mailService.sendMailWithAttachment({
+        to: email,
+        subject: '📄 Documents à signer',
+        text: 'Veuillez trouver ci-joint les documents à signer.',
+        attachments: [
+          {
+            filename: 'documents-a-signer.pdf',
+            content: mergedPdf,
+          },
+        ],
+      });
+
+      // ✅ Envoi à Yousign
+      await this.yousignService.sendToSignature(userId, mergedPdf);
+
+      // ✅ Mise à jour des champs de signature
+      const now = new Date();
+      const parsedUserId = parseInt(userId);
+
+      await Promise.all([
+        this.prismaService.training.updateMany({
+          where: { userId: parsedUserId, dateSignature: null },
+          data: { dateSignature: now },
+        }),
+        this.prismaService.quizz.updateMany({
+          where: { assignedToId: parsedUserId, dateSignature: null },
+          data: { dateSignature: now },
+        }),
+        this.prismaService.omar.updateMany({
+          where: { userId: parsedUserId, dateSignature: null },
+          data: { dateSignature: now },
+        }),
+      ]);
+
+      // ✅ Mise à jour des Form liés aux EmployeeResponses
+      const responses = await this.prismaService.employeeResponse.findMany({
+        where: {
+          userId: parsedUserId,
+          form: { dateSignature: null },
+        },
+        select: { formId: true },
+      });
+
+      const uniqueFormIds = [...new Set(responses.map(r => r.formId))];
+
+      if (uniqueFormIds.length > 0) {
+        await this.prismaService.form.updateMany({
+          where: {
+            id: { in: uniqueFormIds },
+          },
+          data: {
+            dateSignature: now,
+          },
+        });
+      }
+
+      return { success: true, message: 'Documents envoyés par e-mail et à Yousign.' };
+    } catch (error) {
+      console.error("❌ Erreur dans sendUnsignedDocumentsByEmail :", error);
+      throw new HttpException("Erreur lors de l'envoi des documents", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+
+
+
+
+
+
 }

@@ -8,11 +8,16 @@ import { redirect } from "next/navigation"
 
 //EMPLOYEE
 
-export const addEmployee = async (formData: FormData) => {
+export const addEmployee = async (formData: FormData): Promise<{ data: { userId: number } }> => {
+    const res = await fetchWithAuth('employees', { method: 'POST', body: formData }, true);
+    revalidatePath('/en/employee-area/home');
 
-    await fetchWithAuth('employees', { method: 'POST', body: formData }, true)
-    revalidatePath('/en/employee-area/home')
-}
+    // transforme en format attendu
+    return { data: { userId: res.userId } };
+};
+
+
+
 
 export const fetchEmployees = async (companyId?: string): Promise<Employee[]> => {
     return await fetchWithAuth(`employees?${companyId ? `company=${companyId}` : ''}`)
@@ -171,6 +176,13 @@ export const getOmar = async (omarId: string) => {
     return await fetchWithAuth(`employees/omar/${omarId}`)
 }
 
+export const getAllOmars = async () => {
+    return await fetchWithAuth('employees/omar');
+};
+
+
+
+
 export const saveOmar = async (omarId: number, data: { objective: string, tool: string, action: string, observation: string, dueDate: Date | undefined, nextAppointment: Date | undefined }) => {
     await fetchWithAuth(`employees/omar/${omarId}/save`, {
         method: 'PUT',
@@ -179,7 +191,7 @@ export const saveOmar = async (omarId: number, data: { objective: string, tool: 
     revalidatePath('/en/employee-area/home')
 }
 
-export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date }) => {
+export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date, result?: string; }) => {
     const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) })
     revalidatePath('/en/employee-area/home')
     return response;
@@ -349,6 +361,29 @@ export const getQuizzResponse = async (responseId: string) => {
         return null;
     }
 };
+
+export const uploadEmployeeDocuments = async (userId: number, formData: FormData) => {
+    await fetchWithAuth(`employees/upload-documents/${userId}`, {
+        method: 'POST',
+        body: formData,
+    }, true);
+};
+
+export const getEmployeeDocumentStatus = async (userId: number): Promise<{
+    hasAllDocuments: boolean;
+    missingDocuments: DocumentType[];
+}> => {
+    return await fetchWithAuth(`employees/${userId}/document-status`);
+};
+
+export const sendUnsignedDocuments = async (userId: number) => {
+    return await fetchWithAuth(`employees/${userId}/send-unsigned-documents`, {
+        method: 'POST',
+    });
+};
+
+
+
 
 
 

@@ -7,7 +7,7 @@ import EmployeeQuizz from './employee-quizz';
 import { X } from 'lucide-react';
 import { EmployeeJobOnboarding } from '../../types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getQuizzAnswersByUserId, getQuizzById, submitQuizzAnswers } from '../../actions';
+import { getQuizzById, submitQuizzAnswers } from '../../actions';
 import { useSession } from 'next-auth/react';
 
 interface EmployeeQuizzWrapperProps {

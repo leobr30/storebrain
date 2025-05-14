@@ -19,15 +19,27 @@ export type EmployeeAreaAddStepTwoData = {
     city: string;    
 }
 
-export type EmployeeAreaAddStepThreeData = {
+export type EmployeeAreaAddStepFourData = {
     entryDate: Date | undefined,
     badgeNumber: string
-    job:{value:number,label:string} | undefined
+    job:{value:number,label:string, contracts: JobContract[]} | undefined
     contract:{value:number,label:string} | undefined
     endDate: Date | undefined
     zone:string
     file: File | undefined
 }
+
+export type EmployeeAreaAddStepThreeData = {
+    cni: File | undefined
+    carteVitale: File | undefined
+    carteMutuelle: File | undefined
+    rib: File | undefined
+    justificatifDomicile: File | undefined
+    casierJudiciaire: File | undefined
+    titreSejour: File | undefined
+}
+
+
 
 export type Job = {
     id: number;

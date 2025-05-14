@@ -125,7 +125,7 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
 
     const handleLoginSuccess = async () => {
 
-        await closeTraining(parseInt(trainingId!), {
+        await closeTraining(userId, parseInt(trainingId!), {
             comment: form.getValues('comment'),
             tool: form.getValues('tool'),
             exercise: form.getValues('exercise'),
@@ -143,7 +143,7 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
     }
 
     const handleSaveTraining = async () => {
-        await saveTraining(parseInt(trainingId!), {
+        await saveTraining(userId, parseInt(trainingId!), {
             comment: form.getValues('comment'),
             tool: form.getValues('tool'),
             exercise: form.getValues('exercise'),
@@ -353,7 +353,8 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                         <Button color="secondary" >Annuler</Button>
                     </SheetClose>
                     {training?.status === 'PENDING' && <Button variant={'soft'} onClick={handleSaveTraining}>Enregister</Button>}
-                    {training?.status === 'PENDING' && <Button onClick={form.handleSubmit(onSubmit)}>Validation</Button>}
+                    {training?.status === 'PENDING' && <Button onClick={() => setLoginDialogOpen(true)}>Validation</Button>
+                    }
                 </SheetFooter>
                 <LoginDialog title={`Signature requise de ${training?.user.name}`} userId={userId} open={loginDialogOpen} setOpen={setLoginDialogOpen} onSuccess={handleLoginSuccess} />
                 <AttachmentsDialog trainingId={parseInt(trainingId!)} status={training?.status} userId={userId} selectedSubject={selectedSubject} addAttachment={addAttachment} onClose={handleAttachmentsDialogClose} onDownload={handleDownloadAttachment} onDelete={handleFileDelete} onUpdateFileName={handleUpdateFileName} />

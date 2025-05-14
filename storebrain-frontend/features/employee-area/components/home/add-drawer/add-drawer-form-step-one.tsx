@@ -30,13 +30,6 @@ const stepOneSchema = z.object({
     cellPhone: z.string().min(1, REQUIRED),
     familySituation: z.string({ message: REQUIRED }).min(1, REQUIRED),
     numberOfChildren: z.coerce.number({ message: REQUIRED }),
-    cni: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    carteVitale: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    carteMutuelle: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    rib: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    justificatifDomicile: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    casierJudiciaire: z.custom<File>((v) => v instanceof File, { message: REQUIRED }),
-    titreSejour: z.custom<File>().optional(),
 })
 
 
@@ -54,7 +47,10 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
     });
 
     const onSubmit = (values: EmployeeAreaAddStepOneData) => {
-        state.setStepOneData(values)
+        state.setStepOneData({
+            ...values,
+            dateOfBirth: new Date(values.dateOfBirth), // Convertir en Date
+        });
         handleNext()
     }
 
@@ -309,139 +305,6 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
                                                         methods.formState.errors.numberOfChildren,
                                                 })} />
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="cni"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">CNI <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="carteVitale"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">Carte Vitale <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="carteMutuelle"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">Carte Mutuelle <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="rib"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">RIB <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="justificatifDomicile"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">Justificatif de Domicile <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="casierJudiciaire"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">Extrait de Casier Judiciaire <RequiredAsterisk /></FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <FormField
-                                control={methods.control}
-                                name="titreSejour"
-                                render={({ field: { ref, name, onBlur, onChange } }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-2">Titre de Séjour (si applicable)</FormLabel>
-                                        <Input
-                                            type="file"
-                                            ref={ref}
-                                            name={name}
-                                            onBlur={onBlur}
-                                            onChange={(e) => onChange(e.target.files?.[0])}
-                                        />
                                         <FormMessage />
                                     </FormItem>
                                 )}

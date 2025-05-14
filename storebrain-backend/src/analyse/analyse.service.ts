@@ -181,7 +181,7 @@ export class AnalyseService {
     );
     const productsData: ProductData[] = [];
     this.logger.debug(`Load products`);
-    const products = await this.oneRPService.getProducts({ rayon: 'OR' });
+    const products = await this.oneRPService.getProducts({ rayon: 'ARGENT' });
     this.logger.debug(`${products.length} products founds....`);
     await Promise.all(
       products.map(async (product) => {

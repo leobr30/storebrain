@@ -24,12 +24,34 @@ export class MailService {
   }
 
   async sendStoreShipmentAlertMail(magasin: number, storeShipments: MailStoreShipment[]) {
+    let cc = ['stephane.rigal@diamantor.fr','leo.rigal@diamantor.fr'];
+    cc.push(magasin !== 116 ? 'sylvia.malfondet@diamantor.fr' : '');
+    let to = '';
+    if(magasin === 17) {
+      to = 'responsables.nimes@diamantor.fr';
+    } else if(magasin === 19) {
+      to = 'responsables.narbonne@diamantor.fr';
+    } else if(magasin === 20) {
+      to = 'responsables.valence@diamantor.fr';
+    } else if(magasin === 21) {
+      to = 'responsables.avignon@diamantor.fr';
+    } else if(magasin === 22) {
+      to = 'responsables.mandelieu@diamantor.fr';
+    } else if(magasin === 116) {
+      to = 'sylvia.malfondet@diamantor.fr';
+      
+    }
     await this.mailerService.sendMail({
-      to: 'leo.rigal@diamantor.Fr',
-      //cc: ['stephane.rigal@diamantor.fr','sandrine.teule@diamantor.fr'],
-      subject: `Livraisons non posées M${magasin}`,
+      to: to,
+      cc: cc,
+      subject: magasin === 116 ? `Livraisons non expediées SAS` : `Livraisons non posées M${magasin}`,
       template: './store-shipment-alert',
-      context: { magasin, storeShipments, totalStoreShipments: storeShipments.length, totalQuantity: storeShipments.reduce((acc, curr) => acc + curr.quantity, 0) },
+      context: { magasin, 
+        storeShipments, 
+        totalStoreShipments: storeShipments.length, 
+        totalQuantity: storeShipments.reduce((acc, curr) => acc + curr.quantity, 0),
+        message: magasin === 116 ? 'Ci-joint la liste des livraisons non expediées.' : 'Ci-joint la liste des livraisons non posées merci de les faire passer dans la GED ce jour.'
+      },
     });
   }
 

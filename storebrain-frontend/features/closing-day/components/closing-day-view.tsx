@@ -14,7 +14,7 @@ const ClosingDayView = ({ closingDay }: { closingDay: ClosingDay }) => {
    
 
     const LivraisonFournisseur = () => {
-        const nbRowSpan = [...new Set(closingDay.onerpData.livraisonData.filter(item => item.qtt_lf > 0).map(item => item.type))].length + 2;
+        const nbRowSpan = [...new Set(closingDay.livraisonData.filter(item => item.qtt_lf > 0).map(item => item.type))].length + 2;
         return (
             <>
                 <TableRow>

@@ -31,6 +31,16 @@ export class ClosingDayService {
                 startRemainingLabeling: 0,
                 endRemainingLabeling: 0,
                 realizedLabeling: 0,
+                onerpData: {livraisonData, transfertData, demandeTransfertData, commandeFournisseurData},
+                savData: {
+                    atelier_devis: savDevisData.length > 0 ? savDevisData[0].atelier_devis : 0 ,
+                    attente_devis: savDevisData.length > 0 ? savDevisData[0].attente_devis : 0,
+                    attente_reponse: savDevisData.length > 0 ? savDevisData[0].attente_reponse : 0,
+                    savReceptionAtelierData: savReceptionAtelierData,
+                    savReceptionMagasinData: savReceptionMagasinData,
+                    savEnvoiMagasinData: savEnvoiMagasinData,
+                },
+                receptionData: receptionData,
             },
             include: {
                 comments: {
@@ -48,16 +58,6 @@ export class ClosingDayService {
         
         return {
             closingDay: closingDay,
-            onerpData: {livraisonData, transfertData, demandeTransfertData, commandeFournisseurData},
-            savData: {
-                atelier_devis: savDevisData.length > 0 ? savDevisData[0].atelier_devis : 0 ,
-                attente_devis: savDevisData.length > 0 ? savDevisData[0].attente_devis : 0,
-                attente_reponse: savDevisData.length > 0 ? savDevisData[0].attente_reponse : 0,
-                savReceptionAtelierData: savReceptionAtelierData,
-                savReceptionMagasinData: savReceptionMagasinData,
-                savEnvoiMagasinData: savEnvoiMagasinData,
-            },
-            receptionData: receptionData,
         }
     }
 

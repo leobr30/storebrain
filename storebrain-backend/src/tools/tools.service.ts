@@ -558,18 +558,21 @@ export class ToolsService {
     } else if (onerpType === 'fairbelle-pictures') {
       const pictures = this.readOnerpFairbellePictures(file);
       csvFilePath = 'upload/tmp/fairbelle-pictures.zip';
+    } else if (onerpType === 'create-robbez') {
+      items = await this.readOneRPRobbezFile(file);
+      csvFilePath = 'upload/tmp/create-robbez.csv';
     }
 
-    if(onerpType === 'additif-coque' || onerpType === 'creation-fairbelle') {
-    // Convertir les données en CSV avec Papa Parse
-    const csv = Papa.unparse(items, {
-      delimiter: ';',
-      header: true
-    });
+    if (onerpType === 'additif-coque' || onerpType === 'creation-fairbelle' || onerpType === 'create-robbez') {
+      // Convertir les données en CSV avec Papa Parse
+      const csv = Papa.unparse(items, {
+        delimiter: ';',
+        header: true
+      });
 
-    // Écrire le CSV dans un fichier
-    writeFileSync(csvFilePath, csv, 'utf8');
-  }
+      // Écrire le CSV dans un fichier
+      writeFileSync(csvFilePath, csv, 'utf8');
+    }
   }
 
   private async readOnerpAdditifCoqueFile(file: Express.Multer.File) {
@@ -612,108 +615,108 @@ export class ToolsService {
       'ET'
     ]
     const rayonFilters = [
-      {value: 'ARGENT', onerp: 'ARGENT'}, 
-      {value: 'PL-OR', onerp: 'PLAQUE_OR'},
-      {value: 'PL OR', onerp: 'PLAQUE_OR'},
-      {value:'ACIER', onerp: 'ACIER'},
-      {value:'CUIR', onerp: 'FANTAISIE'},
-      {value:'BRACELET DIVERS', onerp: 'FANTAISIE'},
+      { value: 'ARGENT', onerp: 'ARGENT' },
+      { value: 'PL-OR', onerp: 'PLAQUE_OR' },
+      { value: 'PL OR', onerp: 'PLAQUE_OR' },
+      { value: 'ACIER', onerp: 'ACIER' },
+      { value: 'CUIR', onerp: 'FANTAISIE' },
+      { value: 'BRACELET DIVERS', onerp: 'FANTAISIE' },
     ]
-   const matiereFilters = [
-    {value: 'ARGENT', onerp: '58'}, 
-    {value: 'PL-OR', onerp: '59'},
-    {value: 'PL OR', onerp: '59'},
-    {value: 'ACIER', onerp: '60'},  
-    {value: 'CUIR', onerp: '62'},
-  ]
+    const matiereFilters = [
+      { value: 'ARGENT', onerp: '58' },
+      { value: 'PL-OR', onerp: '59' },
+      { value: 'PL OR', onerp: '59' },
+      { value: 'ACIER', onerp: '60' },
+      { value: 'CUIR', onerp: '62' },
+    ]
 
-  const matiereMotCleFilters = [
-    {value: '3MIC', motCles: '855'},
-    {value: 'RHODIE', motCles: '301'},
-    {value: 'LAQUE', motCles: '421'},
-    {value: 'BICOLORE', motCles: '49'},
-    {value: 'BIC', motCles: '49'},
-    {value: 'NACRE', motCles: '241'},
-    {value: 'PVD', motCles: '1525'},
-    {value: 'CARBONE', motCles: '137'},
-    {value: 'MATE', motCles: '1138'},
-  ]
+    const matiereMotCleFilters = [
+      { value: '3MIC', motCles: '855' },
+      { value: 'RHODIE', motCles: '301' },
+      { value: 'LAQUE', motCles: '421' },
+      { value: 'BICOLORE', motCles: '49' },
+      { value: 'BIC', motCles: '49' },
+      { value: 'NACRE', motCles: '241' },
+      { value: 'PVD', motCles: '1525' },
+      { value: 'CARBONE', motCles: '137' },
+      { value: 'MATE', motCles: '1138' },
+    ]
 
-  const familleFilters = [
-    {value: "BAGUE D'OREILLE", onerp: '55'},
-    {value: "BAGUE D OREILLE", onerp: '55'},
-    {value: 'CHAINE CHEVILLE', onerp: '21'},
-    {value: 'COLLIER', onerp: '46'},
-    {value: 'CORDON', onerp: '46'},
-    {value: 'SAUTOIR', onerp: '46'},
-    {value: 'BAGUE', onerp: '26'},    
-    {value: 'BRACELET', onerp: '44'},
-    {value: 'PENDENTIF', onerp: '49'},
-    {value: 'CHAINE', onerp: '48'},
-    {value: 'CREOLES', onerp: '56'},
-    {value: 'CREOLE', onerp: '56'},
-    {value: 'JONC', onerp: '125'},
-    {value: 'B.O', onerp: '55'},
-    {value: 'BO', onerp: '55'},
-    {value: 'IDENTITE', onerp: '45'},
-    {value: 'MOUSQUETON', onerp: '88'},
-    {value: 'MOUSQUETONS', onerp: '88'},
-    {value: 'PAIRE DE BRELOQUES', onerp: '88'},
-    {value: 'FERMOIR', onerp: '88'},
-    {value: 'RALLONGE', onerp: '88'},
-    
-  ]
+    const familleFilters = [
+      { value: "BAGUE D'OREILLE", onerp: '55' },
+      { value: "BAGUE D OREILLE", onerp: '55' },
+      { value: 'CHAINE CHEVILLE', onerp: '21' },
+      { value: 'COLLIER', onerp: '46' },
+      { value: 'CORDON', onerp: '46' },
+      { value: 'SAUTOIR', onerp: '46' },
+      { value: 'BAGUE', onerp: '26' },
+      { value: 'BRACELET', onerp: '44' },
+      { value: 'PENDENTIF', onerp: '49' },
+      { value: 'CHAINE', onerp: '48' },
+      { value: 'CREOLES', onerp: '56' },
+      { value: 'CREOLE', onerp: '56' },
+      { value: 'JONC', onerp: '125' },
+      { value: 'B.O', onerp: '55' },
+      { value: 'BO', onerp: '55' },
+      { value: 'IDENTITE', onerp: '45' },
+      { value: 'MOUSQUETON', onerp: '88' },
+      { value: 'MOUSQUETONS', onerp: '88' },
+      { value: 'PAIRE DE BRELOQUES', onerp: '88' },
+      { value: 'FERMOIR', onerp: '88' },
+      { value: 'RALLONGE', onerp: '88' },
 
-  const familleMotClesFilters = [
-    {value:'COQUILLAGE', onerp: '168'},
-    {value:'VERSEAU', onerp: '604'},
-    {value:'POISSON', onerp: '297'},
-    {value:'POISSONS', onerp: '297'},
-    {value:'BELIER', onerp: '598'},
-    {value:'TAUREAU', onerp: '380'},
-    {value:'GEMEAUX', onerp: '599'},
-    {value:'CANCER', onerp: '600'},
-    {value:'LION', onerp: '537'},
-    {value:'VIERGE', onerp: '65'},
-    {value:'SCORPION', onerp: '540'},
-    {value:'CAPRICORNE', onerp: '603'},
-    {value:'BALANCE', onerp: '601'},
-    {value:'SAGITTAIRE', onerp: '602'},
-    
-  ]
-  const pierreFilters = [
-    {value: 'OZ', onerp: '28'},
-    {value: 'CRISTAL', onerp: '28'},
-    {value: 'CERAMIQUE', onerp: '28'},
-    {value: 'PS', onerp: '37'},
-    {value: 'PV', onerp: '37'},
-    {value: 'IMITATION PIERRE', onerp: '37'},
-    {value: 'AGATE', onerp: '38'},
-    {value: 'AMAZONITE', onerp: '153'},
-    {value: 'AVENTURINE', onerp: '156'},
-    {value: 'AMETHYSTE', onerp: '35'},
-    {value: 'LABRADORITE', onerp: '132'},
-    {value: 'PERLE IMITATION', onerp: '39'},
-    {value: 'IMITATIONPERLE', onerp: '39'},
-    {value: 'IMITATION PERLE', onerp: '39'},
-    {value: 'PERLES IMITATION', onerp: '39'},
-    {value: 'MALACHITE', onerp: '173'},
-    {value: 'PERLE DE CULTURE', onerp: '39'},
-    {value: 'PERLES DE CULTURE', onerp: '39'},
-    {value: 'OEIL DE TIGRE', onerp: '129'},
-    {value: 'PIERRE DE LUNE', onerp: '174'},
-    {value: 'RHODONITE', onerp: '167'},
-    {value: 'QUARTZITE', onerp: '155'},
-    {value: 'QUARTZ', onerp: '155'},
-    {value: 'GRENAT', onerp: '33'},
-    {value: 'TOURMALINE', onerp: '166'},
-    {value: 'ONYX', onerp: '157'},
-    {value: 'PERIDOT', onerp: '175'},
-    {value: 'JASPE', onerp: '159'},
-  
-    
+    ]
 
-  ]
+    const familleMotClesFilters = [
+      { value: 'COQUILLAGE', onerp: '168' },
+      { value: 'VERSEAU', onerp: '604' },
+      { value: 'POISSON', onerp: '297' },
+      { value: 'POISSONS', onerp: '297' },
+      { value: 'BELIER', onerp: '598' },
+      { value: 'TAUREAU', onerp: '380' },
+      { value: 'GEMEAUX', onerp: '599' },
+      { value: 'CANCER', onerp: '600' },
+      { value: 'LION', onerp: '537' },
+      { value: 'VIERGE', onerp: '65' },
+      { value: 'SCORPION', onerp: '540' },
+      { value: 'CAPRICORNE', onerp: '603' },
+      { value: 'BALANCE', onerp: '601' },
+      { value: 'SAGITTAIRE', onerp: '602' },
+
+    ]
+    const pierreFilters = [
+      { value: 'OZ', onerp: '28' },
+      { value: 'CRISTAL', onerp: '28' },
+      { value: 'CERAMIQUE', onerp: '28' },
+      { value: 'PS', onerp: '37' },
+      { value: 'PV', onerp: '37' },
+      { value: 'IMITATION PIERRE', onerp: '37' },
+      { value: 'AGATE', onerp: '38' },
+      { value: 'AMAZONITE', onerp: '153' },
+      { value: 'AVENTURINE', onerp: '156' },
+      { value: 'AMETHYSTE', onerp: '35' },
+      { value: 'LABRADORITE', onerp: '132' },
+      { value: 'PERLE IMITATION', onerp: '39' },
+      { value: 'IMITATIONPERLE', onerp: '39' },
+      { value: 'IMITATION PERLE', onerp: '39' },
+      { value: 'PERLES IMITATION', onerp: '39' },
+      { value: 'MALACHITE', onerp: '173' },
+      { value: 'PERLE DE CULTURE', onerp: '39' },
+      { value: 'PERLES DE CULTURE', onerp: '39' },
+      { value: 'OEIL DE TIGRE', onerp: '129' },
+      { value: 'PIERRE DE LUNE', onerp: '174' },
+      { value: 'RHODONITE', onerp: '167' },
+      { value: 'QUARTZITE', onerp: '155' },
+      { value: 'QUARTZ', onerp: '155' },
+      { value: 'GRENAT', onerp: '33' },
+      { value: 'TOURMALINE', onerp: '166' },
+      { value: 'ONYX', onerp: '157' },
+      { value: 'PERIDOT', onerp: '175' },
+      { value: 'JASPE', onerp: '159' },
+
+
+
+    ]
     const items: OneRPProductModel[] = [];
     const csv = Papa.parse(file.buffer.toString(),
       {
@@ -729,163 +732,163 @@ export class ToolsService {
         },
       });
 
-      const fournisseurId = 46;
-      const referencesResult = await this.onerpService.getReferenceByFournisseurId(fournisseurId);
-      const references = referencesResult.map(row => row.reference);    csv.data
-    .filter((item: OnerpAdditifCoqueFile) =>   !references.includes(item.reference.toString()) && !item.designation.includes('PRESENTOIR') )
-    .forEach((item: OnerpAdditifCoqueFile) => { 
-      if(items.length > 1999 || items.find(findItem => findItem.reference.toString() === item.reference.toString())) return;
-      let reference = item.reference;
-      let rayon = null;
-      let matiere = null;
-      let matiereMotCles: string[] = [];
-      let famille = null;
-      let familleMotCles: string[] = [];
-      let pierre = null;
-      let pierreMotCles: string[] = [];
-      let taille = null;
-      let taillMin = null;
-      let taillMax = null;
-      let increment = null;
-      let poids: number | null = item.poids ;
-      let prixAchat = item.prixAchat;
-      const facon = 'P'
-      const remise = 0;
-      let coursMatiere: number | null = 0;
+    const fournisseurId = 46;
+    const referencesResult = await this.onerpService.getReferenceByFournisseurId(fournisseurId);
+    const references = referencesResult.map(row => row.reference); csv.data
+      .filter((item: OnerpAdditifCoqueFile) => !references.includes(item.reference.toString()) && !item.designation.includes('Lot'))
+      .forEach((item: OnerpAdditifCoqueFile) => {
+        if (items.length > 1999 || items.find(findItem => findItem.reference.toString() === item.reference.toString())) return;
+        let reference = item.reference;
+        let rayon = null;
+        let matiere = null;
+        let matiereMotCles: string[] = [];
+        let famille = null;
+        let familleMotCles: string[] = [];
+        let pierre = null;
+        let pierreMotCles: string[] = [];
+        let taille = null;
+        let taillMin = null;
+        let taillMax = null;
+        let increment = null;
+        let poids: number | null = item.poids;
+        let prixAchat = item.prixAchat;
+        const facon = 'P'
+        const remise = 0;
+        let coursMatiere: number | null = 0;
 
-      if (item.designation) {
-        
-        //RAYON
-        rayonFilters.forEach(rayonFilter=> {
-          if (item.designation.includes(rayonFilter.value)) {
-            rayon = rayonFilter.onerp;
-          }
-        })
-        if(!rayon) { rayon='FANTAISIE'}
-        //MATIERE
-        matiereFilters.forEach(matiereFilter=> {
-          if (item.designation.includes(matiereFilter.value)) {
-            matiere = matiereFilter.onerp;
-            item.designation = item.designation.replace( new RegExp(`\\b${matiereFilter.value}\\b`, 'i'), '').trim();
-          }
-        })
-        matiereMotCleFilters.forEach(matiereMotCleFilter=> {
-          if (item.designation.includes(matiereMotCleFilter.value)) {
-            matiereMotCles.push(matiereMotCleFilter.motCles);
-            item.designation = item.designation.replace( new RegExp(`\\b${matiereMotCleFilter.value}\\b`, 'i'), '').trim();
-          }
-        })
-        //FAMILLE
-        familleFilters.forEach(familleFilter=> {
-          if (item.designation.includes(familleFilter.value)) {
-            famille = familleFilter.onerp;
-            item.designation = item.designation.replace( new RegExp(`\\b${familleFilter.value}\\b`, 'i'), '').trim();
-          }
-        })
-        familleMotClesFilters.forEach(familleMotClesFilter=> {
-          if (item.designation.includes(familleMotClesFilter.value)) {
-            familleMotCles.push(familleMotClesFilter.onerp);
-            item.designation = item.designation.replace( new RegExp(`\\b${familleMotClesFilter.value}\\b`, 'i'), '').trim();
-          }
-        })
-        cleanKeywords.forEach(cleanKeyword=> {
-          if (item.designation.includes(cleanKeyword)) {
-            item.designation = item.designation.replace( new RegExp(`\\b${cleanKeyword}\\b`, 'i'), '').trim();
-          }
-        })
+        if (item.designation) {
 
-        //PIERRE
-        pierreFilters.forEach(pierreFilter=> {
-          if (item.designation.includes(pierreFilter.value)) {
-            pierre = pierreFilter.onerp;
-            item.designation = item.designation.replace( new RegExp(`\\b${pierreFilter.value}\\b`, 'i'), '').trim();
-          }
-        })
-
-        //CLEAN LOT DE NOMBRE
-        item.designation = item.designation.replace(/LOT DE \d+/g, '').trim();
-
-
-         //TAILLE
-         if (famille === "26") {
-          taille = 54;
-          taillMin = 50;
-          taillMax = 60;
-          increment = 2;
-        } else if (famille === "44" || famille === "46" || famille === "125" || famille === "48" || famille === "21" || famille === "45") {
-          taille = parseInt(item.reference.toString().slice(-2));
-          taillMin = taille;
-          taillMax = taille;
-          increment = 2;
-        }
-        
-        //CLEAN POIDS FANTAISIE
-        if(rayon === 'FANTAISIE') {
-          poids = null;
-          coursMatiere = null;
-          if(!matiere) {matiere = '70'}
-        } else if(rayon === 'PLAQUE_OR') {
-          coursMatiere = null;
-        } else if(rayon === 'ACIER') {
-          coursMatiere = null;
-        }
-
-        if(!rayon) {
-          // console.log('RAYON MANQUANT ', reference,' ', item.designation);
-        } else if(rayon !== 'FANTAISIE' && !matiere) {
-          // console.log('MATIERE MANQUANT ', reference,' ', item.designation);
-        } else if(!famille) {
-          // console.log('FAMILLE MANQUANT ', reference,' ', item.designation);
-        } else if(item.designation.length > 0) {
-          console.log('MANQUANT ', reference,' ', item.designation);
-        }
-        else {
-          items.push({
-            marque: null,
-            reference: reference.toString().replaceAll('-', ''),
-            rayon: rayon!,
-            famille: famille!,
-            taille: taille,
-            taillMin: taillMin,
-            taillMax: taillMax,
-            increment: increment,
-            familleMotCles: matiereMotCles.join(','),
-            matiere: matiere!,
-            poids: poids ? poids.toString().replace(',', '.') : null,
-            matiereCours: coursMatiere,
-            matiereMotCles: matiereMotCles.join(','),
-            pierre: pierre!,
-            poidsPierre: null,
-            pierreMotCles: pierreMotCles.join(','),
-            composant: null,
-            poidsComposant: null,
-            coursComposant: null,
-            composantMotCles: null,
-            prixFacon: prixAchat.toString().replace(',', '.'),
-            remise: remise,
-            facon: facon,
-            prixAchat: prixAchat.toString().replace(',', '.'),
-            coefficient: 6,
-            min: null,
-            max: null,
-            pvp: null,
-            pvpFixe: null,
-            pvpMin: null,
-            pvpMax: null,
-            commentaire: item.designation,
-            complete: 'N',
-            catalogue: 'N',
-            produit: null,
-            magasins: null,
-            stockMini: null,
-            stockMax: null,
-            referenceInterne: null,
-            tailles: null,
+          //RAYON
+          rayonFilters.forEach(rayonFilter => {
+            if (item.designation.includes(rayonFilter.value)) {
+              rayon = rayonFilter.onerp;
+            }
           })
+          if (!rayon) { rayon = 'FANTAISIE' }
+          //MATIERE
+          matiereFilters.forEach(matiereFilter => {
+            if (item.designation.includes(matiereFilter.value)) {
+              matiere = matiereFilter.onerp;
+              item.designation = item.designation.replace(new RegExp(`\\b${matiereFilter.value}\\b`, 'i'), '').trim();
+            }
+          })
+          matiereMotCleFilters.forEach(matiereMotCleFilter => {
+            if (item.designation.includes(matiereMotCleFilter.value)) {
+              matiereMotCles.push(matiereMotCleFilter.motCles);
+              item.designation = item.designation.replace(new RegExp(`\\b${matiereMotCleFilter.value}\\b`, 'i'), '').trim();
+            }
+          })
+          //FAMILLE
+          familleFilters.forEach(familleFilter => {
+            if (item.designation.includes(familleFilter.value)) {
+              famille = familleFilter.onerp;
+              item.designation = item.designation.replace(new RegExp(`\\b${familleFilter.value}\\b`, 'i'), '').trim();
+            }
+          })
+          familleMotClesFilters.forEach(familleMotClesFilter => {
+            if (item.designation.includes(familleMotClesFilter.value)) {
+              familleMotCles.push(familleMotClesFilter.onerp);
+              item.designation = item.designation.replace(new RegExp(`\\b${familleMotClesFilter.value}\\b`, 'i'), '').trim();
+            }
+          })
+          cleanKeywords.forEach(cleanKeyword => {
+            if (item.designation.includes(cleanKeyword)) {
+              item.designation = item.designation.replace(new RegExp(`\\b${cleanKeyword}\\b`, 'i'), '').trim();
+            }
+          })
+
+          //PIERRE
+          pierreFilters.forEach(pierreFilter => {
+            if (item.designation.includes(pierreFilter.value)) {
+              pierre = pierreFilter.onerp;
+              item.designation = item.designation.replace(new RegExp(`\\b${pierreFilter.value}\\b`, 'i'), '').trim();
+            }
+          })
+
+          //CLEAN LOT DE NOMBRE
+          item.designation = item.designation.replace(/LOT DE \d+/g, '').trim();
+
+
+          //TAILLE
+          if (famille === "26") {
+            taille = 54;
+            taillMin = 50;
+            taillMax = 60;
+            increment = 2;
+          } else if (famille === "44" || famille === "46" || famille === "125" || famille === "48" || famille === "21" || famille === "45") {
+            taille = parseInt(item.reference.toString().slice(-2));
+            taillMin = taille;
+            taillMax = taille;
+            increment = 2;
+          }
+
+          //CLEAN POIDS FANTAISIE
+          if (rayon === 'FANTAISIE') {
+            poids = null;
+            coursMatiere = null;
+            if (!matiere) { matiere = '70' }
+          } else if (rayon === 'PLAQUE_OR') {
+            coursMatiere = null;
+          } else if (rayon === 'ACIER') {
+            coursMatiere = null;
+          }
+
+          if (!rayon) {
+            // console.log('RAYON MANQUANT ', reference,' ', item.designation);
+          } else if (rayon !== 'FANTAISIE' && !matiere) {
+            // console.log('MATIERE MANQUANT ', reference,' ', item.designation);
+          } else if (!famille) {
+            // console.log('FAMILLE MANQUANT ', reference,' ', item.designation);
+          } else if (item.designation.length > 0) {
+            console.log('MANQUANT ', reference, ' ', item.designation);
+          }
+          else {
+            items.push({
+              marque: null,
+              reference: reference.toString().replaceAll('-', ''),
+              rayon: rayon!,
+              famille: famille!,
+              taille: taille,
+              taillMin: taillMin,
+              taillMax: taillMax,
+              increment: increment,
+              familleMotCles: matiereMotCles.join(','),
+              matiere: matiere!,
+              poids: poids ? poids.toString().replace(',', '.') : null,
+              matiereCours: coursMatiere,
+              matiereMotCles: matiereMotCles.join(','),
+              pierre: pierre!,
+              poidsPierre: null,
+              pierreMotCles: pierreMotCles.join(','),
+              composant: null,
+              poidsComposant: null,
+              coursComposant: null,
+              composantMotCles: null,
+              prixFacon: prixAchat.toString().replace(',', '.'),
+              remise: remise,
+              facon: facon,
+              prixAchat: prixAchat.toString().replace(',', '.'),
+              coefficient: 6,
+              min: null,
+              max: null,
+              pvp: null,
+              pvpFixe: null,
+              pvpMin: null,
+              pvpMax: null,
+              commentaire: item.designation,
+              complete: 'N',
+              catalogue: 'N',
+              produit: null,
+              magasins: null,
+              stockMini: null,
+              stockMax: null,
+              referenceInterne: null,
+              tailles: null,
+            })
+          }
+
         }
-        
-      }
-    })
+      })
     return items;
   }
 
@@ -918,132 +921,132 @@ export class ToolsService {
           return header;
         },
       });
-      const familleFilter = [
-        {value: 'FANTAISIE', motCles: '76'},
-        {value: 'FANT', motCles: '76'},
-        {value: 'RUBAN', motCles: '704'},
-        {value: 'PLAT', motCles: '885'},
-        {value: 'CONFORT', motCles: '1662'},
-        {value: '1/2 JONC', motCles: '429'},
-        {value: '1/2 BOMBE', motCles: '423'},
-        {value: 'BOMBE', motCles: '1001'},
-        {value: 'ENTRELACEE', motCles: '747'},
-        {value: 'PRENOMS POLIE', motCles: '1666'},
-        {value:'LEGERE', motCles: '1667'},
-        {value:'MOBILE', motCles: '768'},
-        {value:'TOURNANTE', motCles: '768'},
-      ]
-      const matierFilter = [
-        {value: 'MATE', motCles: '1138'},
-        {value: 'BROSSEE', motCles: '940'},
-        {value: 'BROSSE', motCles: '940'},
-        {value:'SABLE', motCles: '1663'},
-        {value:'MARTELEE', motCles: '170'},
-        {value:'GIVRE', motCles: '1664'},
-        {value:'DIAMANTEE', motCles: '745'},
-        {value:'DIAMANTE', motCles: '745'},
-        {value:'Pyrite', motCles: '745'},
-        {value:'RHODIEES', motCles: '301'},
-        {value:'MARTELE', motCles: '170'},
-        {value:'POLIE', motCles: '500'},
-      ]
-      const pierreFilter = [
-        {value: 'SERTI GRAIN', motCles: '1265'},
-        {value:'SERTI PAVE', motCles: '202'},
-        {value:'PRINCESSE', motCles: '121'},
-        {value:'NOIR', motCles: '134'},
-      ]
-      csv.data.forEach((item: OnerpCreationFairbelleFile) => {
-        const famille = '25';
-        let familleMotCles: string[] = [];
-        item.libelle = item.libelle
-        .replace('ALLIANCE','')
-        .replace('ALL','')
-        .replace('SERIE 135 -','')
-        .replace('SERIE 130 -','')
-        .replace('STANDARD','')
-        .replace('SERIE 111 -','')
-        .replace('SERIE 110 -','')
-        .replace('PD 950','')
-        .replace('PT','')
-        .replace('DTS','')
-        .replace('DT','')
-        .replace('MECA','')
-        .replace('DEUX ORS','')
-        .replace('2ORS','')
-        .replace('TROIS ORS','')
-        .replace('T/C','')
-        .replace('TC','')
-        .replace('SERIE 210','')
-        .replace('SERIE 216','')
-        .replace('DT','')
-        .replace('DIAMANTS','')
-        .replace('PRESTIGE','')
+    const familleFilter = [
+      { value: 'FANTAISIE', motCles: '76' },
+      { value: 'FANT', motCles: '76' },
+      { value: 'RUBAN', motCles: '704' },
+      { value: 'PLAT', motCles: '885' },
+      { value: 'CONFORT', motCles: '1662' },
+      { value: '1/2 JONC', motCles: '429' },
+      { value: '1/2 BOMBE', motCles: '423' },
+      { value: 'BOMBE', motCles: '1001' },
+      { value: 'ENTRELACEE', motCles: '747' },
+      { value: 'PRENOMS POLIE', motCles: '1666' },
+      { value: 'LEGERE', motCles: '1667' },
+      { value: 'MOBILE', motCles: '768' },
+      { value: 'TOURNANTE', motCles: '768' },
+    ]
+    const matierFilter = [
+      { value: 'MATE', motCles: '1138' },
+      { value: 'BROSSEE', motCles: '940' },
+      { value: 'BROSSE', motCles: '940' },
+      { value: 'SABLE', motCles: '1663' },
+      { value: 'MARTELEE', motCles: '170' },
+      { value: 'GIVRE', motCles: '1664' },
+      { value: 'DIAMANTEE', motCles: '745' },
+      { value: 'DIAMANTE', motCles: '745' },
+      { value: 'Pyrite', motCles: '745' },
+      { value: 'RHODIEES', motCles: '301' },
+      { value: 'MARTELE', motCles: '170' },
+      { value: 'POLIE', motCles: '500' },
+    ]
+    const pierreFilter = [
+      { value: 'SERTI GRAIN', motCles: '1265' },
+      { value: 'SERTI PAVE', motCles: '202' },
+      { value: 'PRINCESSE', motCles: '121' },
+      { value: 'NOIR', motCles: '134' },
+    ]
+    csv.data.forEach((item: OnerpCreationFairbelleFile) => {
+      const famille = '25';
+      let familleMotCles: string[] = [];
+      item.libelle = item.libelle
+        .replace('ALLIANCE', '')
+        .replace('ALL', '')
+        .replace('SERIE 135 -', '')
+        .replace('SERIE 130 -', '')
+        .replace('STANDARD', '')
+        .replace('SERIE 111 -', '')
+        .replace('SERIE 110 -', '')
+        .replace('PD 950', '')
+        .replace('PT', '')
+        .replace('DTS', '')
+        .replace('DT', '')
+        .replace('MECA', '')
+        .replace('DEUX ORS', '')
+        .replace('2ORS', '')
+        .replace('TROIS ORS', '')
+        .replace('T/C', '')
+        .replace('TC', '')
+        .replace('SERIE 210', '')
+        .replace('SERIE 216', '')
+        .replace('DT', '')
+        .replace('DIAMANTS', '')
+        .replace('PRESTIGE', '')
         .trim();
-        familleFilter.forEach(famille => {
-          if(item.libelle.includes(famille.value)) {
-            familleMotCles.push(famille.motCles);
-            item.libelle = item.libelle.replace(famille.value,'').trim();
-          }
-        })
-        let matiere = '';
-        let matiereMotCles = [];
-        matierFilter.forEach(matiere => {
-          if(item.libelle.includes(matiere.value)) {
-            matiereMotCles.push(matiere.motCles);
-            item.libelle = item.libelle.replace(matiere.value,'').trim();
-          }
-        })
-        let pierre = '';
-        let quantityPierre = '';
-        let carat = null;
-        let pierreMotCles: string[] = [];
-        if(item.nb_pierre) {
-          quantityPierre = item.nb_pierre.toString();
-          item.libelle = item.libelle.replace(quantityPierre ,'').trim();
-          carat = item.carat_total;
-          pierre = '27';
-          if(item.qualite_pierre === 'HSI') {
-            pierreMotCles.push('124');
-          }
+      familleFilter.forEach(famille => {
+        if (item.libelle.includes(famille.value)) {
+          familleMotCles.push(famille.motCles);
+          item.libelle = item.libelle.replace(famille.value, '').trim();
         }
-        pierreFilter.forEach(pierre => {
-          if(item.libelle.includes(pierre.value)) {
-            pierreMotCles.push(pierre.motCles);
-            item.libelle = item.libelle.replace(pierre.value,'').trim();
-          }
-        })
-        item.libelle = item.libelle
-        .replace('OR','')
-        .replace('SERTI','')
+      })
+      let matiere = '';
+      let matiereMotCles = [];
+      matierFilter.forEach(matiere => {
+        if (item.libelle.includes(matiere.value)) {
+          matiereMotCles.push(matiere.motCles);
+          item.libelle = item.libelle.replace(matiere.value, '').trim();
+        }
+      })
+      let pierre = '';
+      let quantityPierre = '';
+      let carat = null;
+      let pierreMotCles: string[] = [];
+      if (item.nb_pierre) {
+        quantityPierre = item.nb_pierre.toString();
+        item.libelle = item.libelle.replace(quantityPierre, '').trim();
+        carat = item.carat_total;
+        pierre = '27';
+        if (item.qualite_pierre === 'HSI') {
+          pierreMotCles.push('124');
+        }
+      }
+      pierreFilter.forEach(pierre => {
+        if (item.libelle.includes(pierre.value)) {
+          pierreMotCles.push(pierre.motCles);
+          item.libelle = item.libelle.replace(pierre.value, '').trim();
+        }
+      })
+      item.libelle = item.libelle
+        .replace('OR', '')
+        .replace('SERTI', '')
         .trim();
-        if(item.libelle ) {
-          console.log('MANQUANT',item.reference_18, item.libelle);
-        } else if(item.nb_pierre && pierre.length === 0) {
-          console.log("PIERRE", item.reference_18, item.libelle);
-        }
-        else {
-          if (item.reference_18 && !items.find(w => w.reference === item.reference_18)) {
-            switch(item.alliage) {
-              case 'OR BLANC':
-              case 'DEUX ORS':
-              case 'TROIS ORS':
-                matiere = '200';
-                break;
-              case 'OR JAUNE':
-                matiere = '24';
-                break;
-              case 'OR ROSE':
-                matiere = '24';
-                matiereMotCles.push('120');
-                break;
-            }
-            if(matiere.length === 0) {
-              console.log(item.alliage);
-            } 
-            else {
-              //CREATE 18K          
-            console.log("18K",item.reference_18);
+      if (item.libelle) {
+        console.log('MANQUANT', item.reference_18, item.libelle);
+      } else if (item.nb_pierre && pierre.length === 0) {
+        console.log("PIERRE", item.reference_18, item.libelle);
+      }
+      else {
+        if (item.reference_18 && !items.find(w => w.reference === item.reference_18)) {
+          switch (item.alliage) {
+            case 'OR BLANC':
+            case 'DEUX ORS':
+            case 'TROIS ORS':
+              matiere = '200';
+              break;
+            case 'OR JAUNE':
+              matiere = '24';
+              break;
+            case 'OR ROSE':
+              matiere = '24';
+              matiereMotCles.push('120');
+              break;
+          }
+          if (matiere.length === 0) {
+            console.log(item.alliage);
+          }
+          else {
+            //CREATE 18K          
+            console.log("18K", item.reference_18);
             items.push({
               marque: null,
               reference: item.reference_18,
@@ -1054,7 +1057,7 @@ export class ToolsService {
               taillMax: 75,
               increment: 1,
               familleMotCles: familleMotCles.join(','),
-              matiere:  matiere,
+              matiere: matiere,
               poids: item.poids_18.toString().replace(',', '.'),
               matiereCours: 56,
               matiereMotCles: matiereMotCles.join(','),
@@ -1086,29 +1089,29 @@ export class ToolsService {
               referenceInterne: null,
               tailles: null,
             });
-            }
-          } 
-          if (item.reference_9 && !items.find(w => w.reference === item.reference_9)) {
-            switch(item.alliage) {
-              case 'OR BLANC':
-              case 'DEUX ORS':
-              case 'TROIS ORS':
-                matiere = '201';
-                break;
-              case 'OR JAUNE':
-                matiere = '23';
-                break;
-              case 'OR ROSE':
-                matiere = '23';
-                matiereMotCles.push('120');
-                break;
-            }
-            if(matiere.length === 0) {
-              console.log(item.alliage);
-            } 
-            else {
-              //CREATE 9K          
-            console.log("9K",item.reference_9);
+          }
+        }
+        if (item.reference_9 && !items.find(w => w.reference === item.reference_9)) {
+          switch (item.alliage) {
+            case 'OR BLANC':
+            case 'DEUX ORS':
+            case 'TROIS ORS':
+              matiere = '201';
+              break;
+            case 'OR JAUNE':
+              matiere = '23';
+              break;
+            case 'OR ROSE':
+              matiere = '23';
+              matiereMotCles.push('120');
+              break;
+          }
+          if (matiere.length === 0) {
+            console.log(item.alliage);
+          }
+          else {
+            //CREATE 9K          
+            console.log("9K", item.reference_9);
             items.push({
               marque: null,
               reference: item.reference_9,
@@ -1119,7 +1122,7 @@ export class ToolsService {
               taillMax: 75,
               increment: 1,
               familleMotCles: familleMotCles.join(','),
-              matiere:  matiere,
+              matiere: matiere,
               poids: item.poids_9.toString().replace(',', '.'),
               matiereCours: 56,
               matiereMotCles: matiereMotCles.join(','),
@@ -1151,21 +1154,21 @@ export class ToolsService {
               referenceInterne: null,
               tailles: null,
             });
-            }
-          } 
-          if (item.reference_pt && !items.find(w => w.reference === item.reference_pt)) {
-            switch(item.alliage) {
-              case 'PT 950':
-              case 'PLATINE':
-                matiere = '199';
-                break;
-            }
-            if(matiere.length === 0) {
-              console.log("MANQUANT PT",item.reference_pt, item.alliage);
-            } 
-            else {
-              //CREATE PT          
-            console.log("PT",item.reference_pt,item.poids_pt);
+          }
+        }
+        if (item.reference_pt && !items.find(w => w.reference === item.reference_pt)) {
+          switch (item.alliage) {
+            case 'PT 950':
+            case 'PLATINE':
+              matiere = '199';
+              break;
+          }
+          if (matiere.length === 0) {
+            console.log("MANQUANT PT", item.reference_pt, item.alliage);
+          }
+          else {
+            //CREATE PT          
+            console.log("PT", item.reference_pt, item.poids_pt);
             items.push({
               marque: null,
               reference: item.reference_pt,
@@ -1176,7 +1179,7 @@ export class ToolsService {
               taillMax: 75,
               increment: 1,
               familleMotCles: familleMotCles.join(','),
-              matiere:  matiere,
+              matiere: matiere,
               poids: item.poids_pt.toString().replace(',', '.'),
               matiereCours: 56,
               matiereMotCles: matiereMotCles.join(','),
@@ -1208,20 +1211,20 @@ export class ToolsService {
               referenceInterne: null,
               tailles: null,
             });
-            }
-          } 
-          if (item.reference_pd && !items.find(w => w.reference === item.reference_pd)) {
-            switch(item.alliage) {
-              case 'PD 950':
-                matiere = '43';
-                break;
-            }
-            if(matiere.length === 0) {
-              console.log("PD",item.reference_pd, item.alliage);
-            } 
-            else {
-              //CREATE PD          
-            console.log("PD",item.reference_pd);
+          }
+        }
+        if (item.reference_pd && !items.find(w => w.reference === item.reference_pd)) {
+          switch (item.alliage) {
+            case 'PD 950':
+              matiere = '43';
+              break;
+          }
+          if (matiere.length === 0) {
+            console.log("PD", item.reference_pd, item.alliage);
+          }
+          else {
+            //CREATE PD          
+            console.log("PD", item.reference_pd);
             items.push({
               marque: null,
               reference: item.reference_pd,
@@ -1232,7 +1235,7 @@ export class ToolsService {
               taillMax: 75,
               increment: 1,
               familleMotCles: familleMotCles.join(','),
-              matiere:  matiere,
+              matiere: matiere,
               poids: item.poids_pd.toString().replace(',', '.'),
               matiereCours: 56,
               matiereMotCles: matiereMotCles.join(','),
@@ -1264,21 +1267,21 @@ export class ToolsService {
               referenceInterne: null,
               tailles: null,
             });
-            }
-          } 
-
+          }
         }
-      
 
-      })
-      return items;
+      }
+
+
+    })
+    return items;
   }
 
   private async readOnerpFairbellePictures(file: Express.Multer.File) {
     try {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(file.buffer);
-      
+
       const worksheet = workbook.getWorksheet(1);
       if (!worksheet) {
         throw new Error('Worksheet not found');
@@ -1290,7 +1293,7 @@ export class ToolsService {
       let currentArchive = archiver('zip', { zlib: { level: 9 } });
       let currentZipPath = `upload/tmp/fairbelle-pictures_${zipIndex}.zip`;
       currentArchive.pipe(createWriteStream(currentZipPath));
-      
+
       let currentMappingRows = [
         ['reference', 'filename'] // En-têtes CSV
       ];
@@ -1300,12 +1303,12 @@ export class ToolsService {
         let found = false;
         const imageId = parseInt(image.imageId);
         const imageData = workbook.getImage(imageId);
-                if (imageData) {
-                            const rowIndex = image.range.br.nativeRow + 1;
-          const reference_18 = worksheet.getCell(rowIndex, 2).value || null; 
-          const reference_9 = worksheet.getCell(rowIndex, 3).value || null;  
-          const reference_pt = worksheet.getCell(rowIndex, 4).value || null; 
-          const reference_pd = worksheet.getCell(rowIndex, 5).value || null; 
+        if (imageData) {
+          const rowIndex = image.range.br.nativeRow + 1;
+          const reference_18 = worksheet.getCell(rowIndex, 2).value || null;
+          const reference_9 = worksheet.getCell(rowIndex, 3).value || null;
+          const reference_pt = worksheet.getCell(rowIndex, 4).value || null;
+          const reference_pd = worksheet.getCell(rowIndex, 5).value || null;
 
           console.log(`Row ${rowIndex}:`, { reference_18, reference_9, reference_pt, reference_pd });
 
@@ -1317,7 +1320,7 @@ export class ToolsService {
               header: true
             });
             currentArchive.append(Buffer.from(csvContent), { name: 'mapping.csv' });
-            
+
             await currentArchive.finalize();
 
             zipIndex++;
@@ -1325,12 +1328,12 @@ export class ToolsService {
             currentArchive = archiver('zip', { zlib: { level: 9 } });
             currentZipPath = `upload/tmp/fairbelle-pictures_${zipIndex}.zip`;
             currentArchive.pipe(createWriteStream(currentZipPath));
-            
+
             currentMappingRows = [
               ['reference', 'filename']
             ];
           }
-          const imageName = imageId.toString() + '.' + imageData.extension ;
+          const imageName = imageId.toString() + '.' + imageData.extension;
           if (reference_18 && !currentMappingRows.find(w => w[0] === reference_18.toString()) && imageData.buffer) {
             currentMappingRows.push([reference_18.toString(), imageName]);
             currentMappingRows.push([reference_18.toString() + '_SIMILI', imageName]);
@@ -1371,7 +1374,356 @@ export class ToolsService {
       throw error;
     }
   }
+
+  private async readOneRPRobbezFile(file: Express.Multer.File) {
+    const cleanFilters = [
+      '2.5mm',
+      '3.8mm',
+      '1.7mm',
+      '1.8mm',
+      '4.5mm',
+      '4mm',
+      "3mm",
+      "3.5mm",
+      '5mm',
+      '8mm',
+      '6mm',
+      '2mm',
+      'Girard',
+      'Or375',      
+      '�',
+      'pe',
+      'vrt',
+      'rou',
+      'p-lune',
+      'calcd',
+      'ouvert',
+      'or750jrh',
+      'rose',
+      'motif',
+      'lq',
+      'bool'
+    ]
+    const rayonFilters = [
+      {value: 'Au375', onerp: 'OR'},
+      {value: 'Au750', onerp: 'OR'},
+      {value: 'Ag925 - Argent 925', onerp: 'ARGENT'},
+      {value: 'PAU - Plaqu� or', onerp: 'PLAQUE_OR'},
+      {value: 'Steel - Acier', onerp: 'ACIER'},
+      {value: 'Other - Divers', onerp: 'FANTASIE'},
+    ]
+    const matiereFilters = [
+      {value: 'Ag925 - Argent 925', onerp: '58'},
+      {value: 'Au375', onerp: '23'},
+      {value: 'Au750', onerp: '24'},
+      {value: 'PAU - Plaqu� or', onerp: '59'},
+      {value: 'Steel - Acier', onerp: '60'},
+      {value: 'Other - Divers', onerp: '70'},
+    ]
+    const matiereMotClesFilters = [
+      {value:'or750jrh',onerp:'99,'},
+      {value:'or375j',onerp:'99'},
+      {value:'or750j',onerp:'99'},
+      {value:'or375b',onerp:'94'},
+      {value:'or750b',onerp:'94'},
+      {value:'gris',onerp:'94'},
+      {value:'or750r',onerp:'120'},
+      {value:'or750br',onerp:'94,120'},
+      {value:'or375jb',onerp:'99,94'},
+      {value:'or750jb',onerp:'99,94'},
+      {value:'rh',onerp:'301'},
+      {value:'jaune',onerp:'99'},
+      {value:'biseaut',onerp:'882'},
+      {value:'bomb�e',onerp:'1001'},
+      {value:'nacr',onerp:'241'},
+      
+    ]
+    const familleFilters = [
+     {value:'all.demi',onerp:'25'},
+     {value:'All',onerp:'25'},
+     {value:'All. ',onerp:'25'},
+     {value:'Alliance',onerp:'25'},
+     {value:'Coll.',onerp:'46'},
+     {value:'Coll.sautoir',onerp:'46'},
+     {value:'Coll. péridot',onerp:'46'},
+     {value:'Coll. p�ridot',onerp:'46'},
+     {value:'Coll. ',onerp:'46'},
+     {value:'Collier',onerp:'46'},
+     {value:'Coll',onerp:'46'},     
+     {value:'Brac. ',onerp:'44'},
+     {value:'Brac',onerp:'44'},
+     {value:'solit',onerp:'32'},
+     {value:'Solit',onerp:'32'},
+     {value:'Bag. ',onerp:'26'},     
+     {value:'Bague',onerp:'26'},     
+     {value:'Bag',onerp:'26'},     
+     {value:'Bag. p�ridot',onerp:'26'},     
+     {value:'Bo. p�ridot',onerp:'55'},     
+     {value:'Bo.1/2cr�o',onerp:'55'},     
+     {value:'Bo.demi-cr�o',onerp:'55'},     
+     {value:'Bo.cr�o',onerp:'55'},     
+     {value:'Bo.pend',onerp:'55'},     
+     {value:'Bo.clou',onerp:'55'},     
+     {value:'Bo.pdt',onerp:'55'},     
+     {value:'Bo.dorm',onerp:'55'},     
+     {value:'Bo.créo',onerp:'55'},     
+     {value:'Bo',onerp:'55'},     
+     {value:'M�daille',onerp:'49'},   
+     {value:'Pend.croix',onerp:'183'},     
+     {value:'Pend. croix',onerp:'183'},     
+     {value:'Pend. lettr',onerp:'50'},     
+     {value:'Pend.zodiaque',onerp:'192'}, 
+     {value:'Pend',onerp:'49'},     
+     {value:'Jonc',onerp:'125'},     
+     {value:'Cr�oles',onerp:'56'},     
+     {value:'Maille',onerp:'48'},     
+     {value:'Ch',onerp:'48'},     
+     {value:'Chevali�re',onerp:'41'},     
+     {value:'Gourm.b�b',onerp:'45'},     
+     {value:'Gourm.bébé',onerp:'45'},     
+     {value:'Cheville',onerp:'21'},     
+     {value:'Piercing de nez',onerp:'194'},     
+          
+    ]
+    const familleMotClesFilters = [
+      {value:'fantaisie',onerp:'76'},
+      {value:'Fantaisie',onerp:'76'},
+      {value:'Fantaise',onerp:'76'},
+      {value:'confort',onerp:'1662'},
+      {value:'confo',onerp:'1662'},
+      {value:'conf',onerp:'1662'},
+      {value:'classique',onerp:'1662'},
+      {value:'demi-jonc',onerp:'429'},
+      {value:'ruban',onerp:'704'},      
+      {value:'forcat',onerp:'58'},      
+      {value:'ange',onerp:'67'},      
+      {value:'vierge',onerp:'65'},      
+      {value:'St.Christophe',onerp:'1000'},      
+      {value:'Colombe',onerp:'838'},      
+    ]
+
+    const pierreFilters = [
+      {value:'tourm',onerp:'166'},      
+      {value:'tour',onerp:'166'},      
+      {value:'oz',onerp:'28'},      
+      {value:'pe.cult.tah',onerp:'196'},      
+      {value:'pe.cult.dou',onerp:'39'},      
+      {value:'EM.073',onerp:'30'},      
+      {value:'em0.36',onerp:'30'},      
+      {value:'em.0.43c',onerp:'30'},      
+      {value:'em',onerp:'30'},            
+      {value:'ru',onerp:'31'},           
+      {value:'ru7x5',onerp:'31'},      
+      {value:'sa.rose',onerp:'186'},      
+      {value:'sa',onerp:'29'},      
+      {value:'aigue-marine',onerp:'34'},      
+      {value:'malachite',onerp:'173'},      
+      {value:'agat',onerp:'38'},      
+      {value:'cornaline',onerp:'150'},      
+      {value:'grenat',onerp:'33'},      
+      {value:'topa.bl.trait�e',onerp:'36'},      
+      {value:'topa.london.trait�e',onerp:'36'},      
+      {value:'top.bl.traitée',onerp:'36'},      
+      {value:'am',onerp:'35'},      
+      {value:'citrine',onerp:'142'},
+      {value:'cit',onerp:'142'},                  
+      {value:'di',onerp:'27'},
+      {value:'.synt',onerp:'128'},
+    ]
+    const pierreMotClesFilters = [      
+      {value:'GH-SI',onerp:'123'},
+      {value:'GH-P1P2',onerp:'1695'},
+      {value:'GH-P1',onerp:'1338'},
+      {value:'G-SI',onerp:'123'},
+      {value:'F-',onerp:'138'},
+      {value:'VS',onerp:'129'},
+    ]
+    const items: OneRPProductModel[] = [];
+    const csv = Papa.parse(file.buffer.toString(),
+      {
+        delimiter: ';',
+        transform: (value, field) => {
+          // Si la valeur contient une virgule, la remplacer par un point pour la conversion en nombre
+          return typeof value === 'string' && value.includes(',') ? parseFloat(value.replace(',', '.')) : value;
+        },
+        header: true, dynamicTyping: true, transformHeader(header, index) {
+          switch (index) {
+            case 0: return 'reference';
+            case 1: return 'designation';
+            case 2: return 'poids';
+            case 3: return 'matiere';
+            case 4: return 'mesureMin';
+            case 5: return 'mesureMax';
+            case 6: return 'mesureStandard';
+            case 7: return 'unite';
+            case 8: return 'tarif';
+            case 9: return 'caratDiamant';
+          }
+          return header;
+        },
+      });
+
+    const fournisseurId = 3;
+    const referencesResult = await this.onerpService.getReferenceByFournisseurId(fournisseurId);
+    const references = referencesResult.map(row => row.reference);
+    csv.data
+      .filter((item: OneRPRobbezFile) => !references.includes(item.reference.toString()) && ['Au375','Au750'].includes(item.matiere))
+      .forEach((item: OneRPRobbezFile) => {
+        
+        if (typeof item.designation !== 'string' || items.length > 1999 || items.find(findItem => findItem.reference.toString() === item.reference.toString())) return;
+        //CLEAN FOR REGEX        
+          item.designation = item.designation.replace('+', ' ').trim();        
+        
+          
+
+        let reference = item.reference
+        let rayon = null;
+        rayonFilters.forEach(rayonFilter => {
+          
+          if (new RegExp(`\\b${rayonFilter.value}\\b`, 'i').test(item.matiere)) {
+            rayon = rayonFilter.onerp;
+          }
+        })
+        //Matiere
+        let matiere = null;
+        matiereFilters.forEach(matiereFilter => {
+          if (new RegExp(`\\b${matiereFilter.value}\\b`, 'i').test(item.matiere)) {
+            matiere = matiereFilter.onerp;
+            item.designation = this.cleanDesignation(item.designation, matiereFilter.value);
+          }
+        })
+        //MATIERE MOT CLES
+        let matiereMotCles: string[] = [];
+        matiereMotClesFilters.forEach(matiereMotClesFilter => {
+          if (new RegExp(`\\b${matiereMotClesFilter.value}\\b`, 'i').test(item.designation)) {
+            matiereMotCles.push(matiereMotClesFilter.onerp);
+            item.designation = this.cleanDesignation(item.designation, matiereMotClesFilter.value);
+          }
+        })
+        //FAMILLE
+        let famille = null;
+        familleFilters.forEach(familleFilter => {         
+          if (new RegExp(`\\b${familleFilter.value}\\b`).test(item.designation)) {
+            
+            famille = familleFilter.onerp;
+            item.designation = this.cleanDesignation(item.designation, familleFilter.value);
+          }
+        })
+        //FAMILLE MOT CLES
+        let familleMotCles: string[] = [];
+        familleMotClesFilters.forEach(familleMotClesFilter => {
+          if (new RegExp(`\\b${familleMotClesFilter.value}\\b`, 'i').test(item.designation)) {            
+            familleMotCles.push(familleMotClesFilter.onerp);
+            item.designation = this.cleanDesignation(item.designation, familleMotClesFilter.value);
+          }
+        })
+        //PIERRE
+        let pierre = '';
+        pierreFilters.forEach(pierreFilter => {
+          if (new RegExp(`\\b${pierreFilter.value}\\b`, 'i').test(item.designation)) {
+            pierre = pierreFilter.onerp;
+            item.designation = this.cleanDesignation(item.designation, pierreFilter.value);
+          }
+        })
+        //PIERRE MOT CLES
+        let pierreMotCles: string[] = [];
+        pierreMotClesFilters.forEach(pierreMotClesFilter => {
+          if (new RegExp(`\\b${pierreMotClesFilter.value}\\b`, 'i').test(item.designation)) {
+            pierreMotCles.push(pierreMotClesFilter.onerp);
+            item.designation = this.cleanDesignation(item.designation, pierreMotClesFilter.value);
+          }
+        })
+        //CLEAN
+        cleanFilters.forEach(cleanFilter => {
+          item.designation = this.cleanDesignation(item.designation, cleanFilter);
+        })
+        
+        if(item.caratDiamant > 0) {          
+          let caratConvert = item.caratDiamant.toString();
+          if (caratConvert.length === 3) {
+            caratConvert =  caratConvert + '0';
+          } else if(caratConvert.length === 5) {
+            caratConvert = item.caratDiamant.toFixed(2).toString();
+          }
+          item.designation = item.designation.replace(new RegExp(`\\b\\.?${caratConvert}\\s*ct\\b`, 'gi'), '').trim();
+        }
+
+        item.designation = item.designation.replace(/\./g, '').trim();
+
+        let tailleStandard = null; 
+        if(item.mesureStandard !== 0) {
+          tailleStandard = item.mesureStandard;
+        } else if(famille === '46') {
+          tailleStandard = 42;
+        } else if(famille === '44') {
+          tailleStandard = 18
+        } else if(famille === '125') {
+          tailleStandard = 58
+        } else if(famille === '21') {
+          tailleStandard = 25
+        }
+        
+        if(!rayon) {
+          console.log('Rayon not found',item.matiere);
+        } else if(!matiere) {
+          console.log('Matiere not found',item.matiere);          
+        } else if(!famille) {
+          console.log('Famille not found',item.reference,item.designation);
+        }         
+        else {
+          items.push({
+            marque: null,
+            reference: item.reference,
+            rayon: rayon,
+            famille: famille,
+            taille: tailleStandard,
+            taillMin: item.mesureMin === 0 ? null : item.mesureMin,
+            taillMax: item.mesureMax === 0 ? null : item.mesureMax,
+            increment: item.mesureStandard === 0 ? null : 1,
+            familleMotCles: familleMotCles.join(','),
+            matiere: matiere,
+            poids: item.poids,
+            matiereCours: 97.5,
+            matiereMotCles: matiereMotCles.join(','),
+            pierre: pierre,
+            poidsPierre: item.caratDiamant === 0 ? null : item.caratDiamant.toString(),
+            pierreMotCles: pierreMotCles.join(','),
+            composant: null,
+            poidsComposant: null,
+            coursComposant: null,
+            composantMotCles: null,
+            prixFacon: item.tarif,
+            remise: 0,
+            facon: item.unite,
+            prixAchat: 0,
+            coefficient: matiere === '24' ? 5.5 : 6,
+            min: null,
+            max: null,
+            pvp: null,
+            pvpFixe: null,
+            pvpMin: null,
+            pvpMax: null,
+            commentaire: null,
+            complete: 'N',
+            catalogue: 'N',
+            produit: null,
+            magasins: null,
+            stockMini: null,
+            stockMax: null,
+            referenceInterne: null,
+            tailles: null,
+          });
+        }
+      });
+    return items;
+  }
+
+  private cleanDesignation(designation: string, filter: string)  {
+    return designation.replace(new RegExp(`\\b${filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'), '').trim();
+  }
 }
+
+
 
 interface SenderStoreItem {
   reference: string;
@@ -1414,6 +1766,19 @@ interface OnerpAdditifCoqueFile {
   designation: string;
   poids: number;
   prixAchat: number;
+}
+
+interface OneRPRobbezFile {
+  reference: string;
+  designation: string;
+  poids: number;
+  matiere: string;
+  mesureMin: number;
+  mesureMax: number;
+  mesureStandard: number;
+  unite: string;
+  tarif: string;
+  caratDiamant: number;
 }
 
 interface OnerpCreationFairbelleFile {

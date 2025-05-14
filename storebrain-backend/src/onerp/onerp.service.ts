@@ -11,7 +11,7 @@ import { onerpDb } from 'src/providers/database/onerp.database';
 @Injectable()
 export class OnerpService {
    
-	getProducts = async ({ rayon }: { rayon: string }) => {
+	getProducts = async ({ rayon }: { rayon: string[] }) => {
 		return await onerpDb<Product[]>`select
 	p.id,
 	p.image,
@@ -42,7 +42,7 @@ left join produitcomposant pcs on
 left join composant cs on
 	cs.id = pcs.composant_id
 where
-	rayon = ${rayon};
+	rayon = ANY(${rayon});
 	`;
 	};
 
@@ -2444,6 +2444,7 @@ group by
 	async getCurrentStoreShipments() {
 		return await onerpDb<StoreShipmentTracking[]>`select
 	lm."date",
+	lm."datecreation",
 	lm.numero as bon,
 	m.numero as magasin,
 	case
@@ -2453,7 +2454,8 @@ group by
 	em."date" as "date_expedition",
 	rm."date" as "date_reception",
 	lm.ged,
-	sum(case when p.rayon in ('OR', 'ARGENT', 'MONTRE', 'ACIER', 'PLAQUE_OR', 'FANTAISIE', 'GEMME') then lml.quantite else 0 end)::INTEGER as produit_quantite
+	sum(case when p.rayon in ('OR', 'ARGENT', 'MONTRE', 'ACIER', 'PLAQUE_OR', 'FANTAISIE', 'GEMME') then lml.quantite else 0 end)::INTEGER as produit_quantite,
+	t."type" as "transfert_type"
 from
 	livraisonmagasin lm
 join livraisonmagasinligne lml on
@@ -2469,24 +2471,27 @@ join magasin m on
 left join expeditionmagasinligne eml on
 	eml.livraisonmagasin_id = lm.id 
 left join expeditionmagasin em on
-	em.id = eml.expedition_id and em.statut = 'CONFIRME'
+	em.id = eml.expedition_id and em.statut != 'SAISI'
 left join receptionmagasinligne rml on
 	rml.livraisonmagasin_id = lm.id
 left join receptionmagasin rm on
 	rm.id = rml.reception_id
+	left join transfert t on t.id = lm.transfert_id
 where
 	lm."date" > '2024-12-01'
 	and lm."type" in ('LIVRAISON_FOURNISSEUR', 'TRANSFERT')
 	and lm.cloturer_ged is false
 group by
 	lm."date",
+	lm."datecreation",
 	lm.numero ,
 	m.numero ,
 	em."date",
 	rm."date",
 	lm.magasina_id,
 	lm.magasinb_id,
-	lm.ged;`;
+	lm.ged,
+	t."type";`;
 	}
 
 	async getStoreShipment(bon: string) {
@@ -2599,5 +2604,27 @@ order by
 	concat(u.prenom,
 	' ',
 	u.nom)`;
+	}
+
+	async getProductForTracking() {
+		return await onerpDb`select p.id,
+pf.fournisseur_id ,
+pf.reference,
+cf.groupe,
+cf.libelle as famille,
+sum(amm.stock) stock_total,
+sum(case when amm.magasin_id = 1 then amm.stock else 0 end) stock_sas
+from produit p 
+join article a on a.produit_id = p.id
+join articlemagasinmouvement amm on amm.article_id = a.id
+join produitfournisseur pf on pf.produit_id = p.id and a.fournisseur_id = pf.fournisseur_id and pf.actif = true 
+join produitcomposant pcf on pcf.id  = p.famille_id
+join composant cf on cf.id = pcf.composant_id
+where p.actif = true
+group by p.id,
+pf.fournisseur_id,
+pf.reference,
+cf.groupe,
+cf.libelle;`;
 	}
 }

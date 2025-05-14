@@ -42,7 +42,7 @@ export const StatusBadge = ({status,text}:{status:Status,text?:string}) => {
         color={"success"}
         className=" capitalize"
     >
-        Completé {text ? `- ${text}` : ''}
+        Complété {text ? `- ${text}` : ''}
     </Badge>)
     if(status === 'DRAFT') return (<Badge
         variant="soft"

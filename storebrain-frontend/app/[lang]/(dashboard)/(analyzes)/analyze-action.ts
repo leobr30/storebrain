@@ -16,6 +16,5 @@ export const getAnalyze1 = async(supplierId: string | null) => {
         startDate:addYears(new Date(), -1) ,
         endDate:new Date(),
     })
-    console.log(body)
     return await fetchWithAuth('analyze/analyze1',{method:'POST', body:body})
 }

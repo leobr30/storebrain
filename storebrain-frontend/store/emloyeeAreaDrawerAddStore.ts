@@ -1,23 +1,28 @@
-import { EmployeeAreaAddStepOneData, EmployeeAreaAddStepThreeData, EmployeeAreaAddStepTwoData } from '@/types/employee-area-types'
-import { create } from 'zustand'
+import { EmployeeAreaAddStepFourData, EmployeeAreaAddStepOneData, EmployeeAreaAddStepThreeData, EmployeeAreaAddStepTwoData } from '@/types/employee-area-types'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface EmployeeAreaAddFormState {
-    stepOne: EmployeeAreaAddStepOneData | undefined,
-    stepTwo: EmployeeAreaAddStepTwoData | undefined,
-    stepThree: EmployeeAreaAddStepThreeData | undefined
-    resetState: () => void
-    setStepOneData: (stepOneData: EmployeeAreaAddStepOneData) => void
-    setStepTwoData: (stepTwoData: EmployeeAreaAddStepTwoData) => void
-    setStepThreeData: (stepTwoData: EmployeeAreaAddStepThreeData) => void
+    createdUserId?: number;
+    stepOne: EmployeeAreaAddStepOneData | undefined;
+    stepTwo: EmployeeAreaAddStepTwoData | undefined;
+    stepThree: EmployeeAreaAddStepThreeData | undefined;
+    stepFour: EmployeeAreaAddStepFourData | undefined;
+    resetState: () => void;
+    setStepOneData: (stepOneData: EmployeeAreaAddStepOneData) => void;
+    setStepTwoData: (stepTwoData: EmployeeAreaAddStepTwoData) => void;
+    setStepThreeData: (stepThreeData: EmployeeAreaAddStepThreeData) => void;
+    setStepFourData: (stepFourData: EmployeeAreaAddStepFourData) => void;
+    setCreatedUserId: (id: number) => void;
 }
 
-const defaultState: { stepOne: EmployeeAreaAddStepOneData, stepTwo: EmployeeAreaAddStepTwoData, stepThree: EmployeeAreaAddStepThreeData } = {
+const defaultState: { stepOne: EmployeeAreaAddStepOneData, stepTwo: EmployeeAreaAddStepTwoData, stepThree: EmployeeAreaAddStepThreeData, stepFour: EmployeeAreaAddStepFourData } = {
     stepOne: {
         company: undefined,
         lastName: '',
         firstName: '',
         maidenName: '',
-        dateOfBirth: undefined,
+        dateOfBirth: undefined, // or null
         placeOfBirth: '',
         nationality: '',
         socialSecurityNumber: '',
@@ -26,12 +31,21 @@ const defaultState: { stepOne: EmployeeAreaAddStepOneData, stepTwo: EmployeeArea
         familySituation: '',
         numberOfChildren: ''
     },
-    stepTwo:{
-        address:'',
+    stepTwo: {
+        address: '',
         zipCode: '',
-        city:''
-    },    
+        city: ''
+    },
     stepThree: {
+        cni: undefined,
+        carteVitale: undefined,
+        carteMutuelle: undefined,
+        rib: undefined,
+        justificatifDomicile: undefined,
+        casierJudiciaire: undefined,
+        titreSejour: undefined
+    },
+    stepFour: {
         entryDate: undefined,
         badgeNumber: '',
         job: undefined,
@@ -41,20 +55,24 @@ const defaultState: { stepOne: EmployeeAreaAddStepOneData, stepTwo: EmployeeArea
         file: undefined
     }
 }
+export const useEmployeeAreaAddFormStore = create<EmployeeAreaAddFormState>()(persist(
+    (set) => ({
+        ...defaultState,
+        setStepOneData: (stepOneData) => set((state) => ({ stepOne: { ...state.stepOne, ...stepOneData } })),
+        setStepTwoData: (stepTwoData) => set((state) => ({ stepTwo: { ...state.stepTwo, ...stepTwoData } })),
+        setStepThreeData: (stepThreeData) => set((state) => ({ stepThree: { ...state.stepThree, ...stepThreeData } })),
+        setStepFourData: (stepFourData) => set((state) => ({ stepFour: { ...state.stepFour, ...stepFourData } })),
+        resetState: () => set(() => defaultState),
+        setCreatedUserId: (id: number) => set({ createdUserId: id }),
+    }),
+    {
+        name: "employee-area-add-form",
+    }
+));
 
-export const useEmployeeAreaAddFormStore = create<EmployeeAreaAddFormState>((set) => ({
-    stepOne: defaultState.stepOne,
-    stepTwo: defaultState.stepTwo,
-    stepThree: defaultState.stepThree,
-    setStepOneData: (stepOneData: EmployeeAreaAddStepOneData) => set((state) => ({ stepOne: { ...state.stepOne, ...stepOneData } })),
-    setStepTwoData: (stepTwoData: EmployeeAreaAddStepTwoData) => set((state) => ({ stepTwo: { ...state.stepTwo, ...stepTwoData } })),
-    setStepThreeData: (stepThreeData: EmployeeAreaAddStepThreeData) => set((state) => ({ stepThree: { ...state.stepThree, ...stepThreeData } })),
-    resetState: () => set(() => (defaultState))
-}))
 
 
-
-const tempState: { stepOne: EmployeeAreaAddStepOneData, stepTwo:EmployeeAreaAddStepTwoData } = {
+const tempState: { stepOne: EmployeeAreaAddStepOneData, stepTwo: EmployeeAreaAddStepTwoData } = {
     stepOne: {
         company: undefined,
         lastName: 'Hudson',

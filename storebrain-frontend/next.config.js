@@ -9,12 +9,20 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_URL_INTERNAL: process.env.NEXTAUTH_URL_INTERNAL,
+    AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
+    AUTH_SECRET: process.env.AUTH_SECRET,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    API_URL: process.env.API_URL,
+  },
   webpack(config) {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.(".svg")
     );
-    
+
     config.module.rules.push(
       // Reapply the existing rule, but only for svg imports ending in ?url
       {
@@ -55,10 +63,10 @@ const nextConfig = {
         hostname: "avatars.githubusercontent.com",
       },
       {
-        protocol:'http',
-        hostname:'192.168.1.104',
-        pathname:'/produit/**'
-    }
+        protocol: 'http',
+        hostname: '192.168.1.104',
+        pathname: '/produit/**'
+      }
     ],
   },
 };

@@ -7,7 +7,8 @@ import { ColumnFiltersState, flexRender, getCoreRowModel, getFilteredRowModel, g
 import { Search } from "lucide-react"
 import { useMemo, useState } from "react"
 
-type TableWithHeaderProps = {
+// ✅ Ajout de la nouvelle prop pour gérer les changements d'onglets dynamiquement
+interface TableWithHeaderProps {
     tabs?: { text: string, value: string }[],
     columns: any[],
     data: any[],
@@ -19,9 +20,23 @@ type TableWithHeaderProps = {
     defaultSorting?: SortingState,
     fullHeight?: boolean,
     dense?: boolean,
+    onTabChange?: (value: string) => void // ✅ Nouvelle prop
 }
 
-export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilterName, fixedHeader, withFooter, updateData, defaultSorting, fullHeight, dense }: TableWithHeaderProps) => {
+export const TableWithHeader = ({
+    tabs,
+    columns,
+    data,
+    columnFilterName,
+    tabFilterName,
+    fixedHeader,
+    withFooter,
+    updateData,
+    defaultSorting,
+    fullHeight,
+    dense,
+    onTabChange // ✅ Destructure ici aussi
+}: TableWithHeaderProps) => {
 
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [sorting, setSorting] = useState<SortingState>(defaultSorting || [])
@@ -39,7 +54,6 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
         meta: {
             updateData: updateData
         },
-        
         onColumnFiltersChange: setColumnFilters,
         onSortingChange: setSorting,
     })
@@ -50,7 +64,12 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
                 {tabs && <Tabs
                     className="pb-2.5"
                     defaultValue={""}
-                    onValueChange={value => table.getColumn('status')?.setFilterValue(value)} >
+                    // ✅ Appelle à la fois le filtre de colonne et le onTabChange personnalisé
+                    onValueChange={(value) => {
+                        table.getColumn('status')?.setFilterValue(value);
+                        if (onTabChange) onTabChange(value);
+                    }}
+                >
                     <TabsList>
                         {tabs.map((tab) => <TabsTrigger key={tab.value} value={tab.value}>{tab.text}</TabsTrigger>)}
                     </TabsList>
@@ -81,9 +100,6 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
                                     return (
                                         <TableHead key={header.id} colSpan={header.colSpan}
                                             className={cn("bg-default-100", dense && "h-10 p-2.5", header.column.columnDef.meta?.headerClassName ?? "")}
-                                        // className={cn("font-medium sticky top-0 bg-default-100  text-center text-default-900",
-                                        //     "border border-default-300",
-                                        // )}
                                         >
                                             {header.isPlaceholder
                                                 ? null
@@ -98,7 +114,7 @@ export const TableWithHeader = ({ tabs, columns, data, columnFilterName, tabFilt
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {data && data.length > 0 && table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}

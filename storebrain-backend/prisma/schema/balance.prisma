@@ -1,32 +1,31 @@
-
 model Balance {
-    id Int @id @default(autoincrement())
-    date DateTime @default(now())
-    senderStoreIds Int[]
-    receiverStoreIds Int[]
-    rows BalanceRow[]
-    status Status @default(IN_PROGRESS)
+  id               Int          @id @default(autoincrement())
+  date             DateTime     @default(now())
+  senderStoreIds   Int[]
+  receiverStoreIds Int[]
+  rows             BalanceRow[]
+  status           Status       @default(IN_PROGRESS)
 }
 
 model BalanceRow {
-    id Int @id @default(autoincrement())
-    image String?
-    reference String
-    stock Int    
-    remaining Int
-    status Status @default(PENDING)
-    balanceId Int
-    balance Balance @relation(references: [id], fields: [balanceId], onDelete: Cascade)
-    details BalanceRowDetail[]
+  id        Int                @id @default(autoincrement())
+  image     String?
+  reference String
+  stock     Int
+  remaining Int
+  status    Status             @default(PENDING)
+  balanceId Int
+  balance   Balance            @relation(references: [id], fields: [balanceId], onDelete: Cascade)
+  details   BalanceRowDetail[]
 }
 
 model BalanceRowDetail {
-    id Int @id @default(autoincrement())
-    receiverStoreId Int
-    stock Int
-    quantity Int
-    totalSales Int
-    lastLifeSpan Int?
-    balanceRowId Int    
-    balanceRow BalanceRow @relation(references: [id], fields: [balanceRowId], onDelete: Cascade)
+  id              Int        @id @default(autoincrement())
+  receiverStoreId Int
+  stock           Int
+  quantity        Int
+  totalSales      Int
+  lastLifeSpan    Int?
+  balanceRowId    Int
+  balanceRow      BalanceRow @relation(references: [id], fields: [balanceRowId], onDelete: Cascade)
 }

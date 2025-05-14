@@ -1,60 +1,62 @@
 model Training {
-    id                  Int               @id @default(autoincrement())
-    date                DateTime          @default(now()) @db.Date
-    status              Status            @default(PENDING)
-    name                String
-    subjects            TrainingSubject[]
-    comment             String
-    tool                String
-    exercise            String
-    userId              Int
-    user                User              @relation(references: [id], fields: [userId], onDelete: Cascade, name: "Trainings")
-    realizedById        Int
-    realizedBy          User              @relation(references: [id], fields: [realizedById], onDelete: Cascade, name: "RealizedTrainings")
-    userJobOnboardingId Int               @unique
-    userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
-    validateAt          DateTime?
+  id                  Int               @id @default(autoincrement())
+  name                String
+  comment             String
+  tool                String
+  exercise            String
+  date                DateTime?
+  status              Status            @default(DRAFT)
+  validateAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt // Ajout de @default(now())
+  userId              Int
+  user                User              @relation(fields: [userId], references: [id], name: "Trainings")
+  realizedById        Int?
+  realizedBy          User?             @relation("RealizedTrainings", fields: [realizedById], references: [id])
+  subjects            TrainingSubject[]
+  userJobOnboardingId Int
+  userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
+  dateSignature DateTime?
 }
 
 model TrainingSubject {
-    id         Int                   @id @default(autoincrement())
-    name       String
-    state      State                 @default(NOT_ACQUIRED)
-    trainingId Int
-    training   Training              @relation(references: [id], fields: [trainingId], onDelete: Cascade)
-    files      TrainingSubjectFile[]
+  id         Int                   @id @default(autoincrement())
+  name       String
+  state      State                 @default(NOT_ACQUIRED)
+  trainingId Int
+  training   Training              @relation(references: [id], fields: [trainingId], onDelete: Cascade)
+  files      TrainingSubjectFile[]
 }
 
 model TrainingSubjectFile {
-    id                Int             @id @default(autoincrement())
-    fileName          String
-    filePath          String
-    trainingSubjectId Int
-    trainingSubject   TrainingSubject @relation(references: [id], fields: [trainingSubjectId], onDelete: Cascade)
-    createdAt         DateTime        @default(now())
-    updatedAt         DateTime        @updatedAt
+  id                Int             @id @default(autoincrement())
+  fileName          String
+  filePath          String
+  trainingSubjectId Int
+  trainingSubject   TrainingSubject @relation(references: [id], fields: [trainingSubjectId], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 enum State {
-    ACQUIRED
-    IN_PROGRESS
-    NOT_ACQUIRED
+  ACQUIRED
+  IN_PROGRESS
+  NOT_ACQUIRED
 }
 
 model TrainingModel {
-    id       Int                        @id @default(autoincrement())
-    name     String
-    subjects TrainingModelSubject[]
-    tool     String
-    exercise String
-    numberOAppointmentsRequired Int @default(2)
-    jobOnboardingSteps JobOnboardingStep[]
+  id                          Int                    @id @default(autoincrement())
+  name                        String
+  subjects                    TrainingModelSubject[]
+  tool                        String
+  exercise                    String
+  numberOAppointmentsRequired Int                    @default(2)
+  jobOnboardingSteps          JobOnboardingStep[]
 }
 
 model TrainingModelSubject {
-    id Int @id @default(autoincrement())
-    name String
-    trainingModelId Int
-    trainingModel TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
+  id              Int           @id @default(autoincrement())
+  name            String
+  trainingModelId Int
+  trainingModel   TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
 }
-

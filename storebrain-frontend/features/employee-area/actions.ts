@@ -8,11 +8,16 @@ import { redirect } from "next/navigation"
 
 //EMPLOYEE
 
-export const addEmployee = async (formData: FormData) => {
+export const addEmployee = async (formData: FormData): Promise<{ data: { userId: number } }> => {
+    const res = await fetchWithAuth('employees', { method: 'POST', body: formData }, true);
+    revalidatePath('/en/employee-area/home');
 
-    await fetchWithAuth('employees', { method: 'POST', body: formData }, true)
-    revalidatePath('/en/employee-area/home')
-}
+    // transforme en format attendu
+    return { data: { userId: res.userId } };
+};
+
+
+
 
 export const fetchEmployees = async (companyId?: string): Promise<Employee[]> => {
     return await fetchWithAuth(`employees?${companyId ? `company=${companyId}` : ''}`)
@@ -34,11 +39,25 @@ export const startEmployeeJobOnboarding = async (id: number) => {
     revalidatePath('/en/employee-area/home')
 }
 
-export const createTrainingWithOnboarding = async (employeeId: number, employeeOnboordingId: number) => {
-    const response = await fetchWithAuth(`employees/${employeeId}/start-training/${employeeOnboordingId}`, { method: 'POST' })
+
+export const createTraining = async (employeeId: number, employeeOnboordingId: number, trainingModelId: number | undefined, name: string, subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]) => { // ✅ Ajout du paramètre subjects
+    const response = await fetchWithAuth(`employees/${employeeId}/start-training/${employeeOnboordingId}`, {
+        method: 'POST',
+        body: JSON.stringify({ trainingModelId, name, subjects })
+    })
     revalidatePath('/en/employee-area/home')
     return response;
 }
+
+export const refreshSteps = async (employeeId: number) => {
+    return await fetchWithAuth(`employees/${employeeId}/onboarding`);
+};
+
+export const refreshResponses = async (employeeId: number) => {
+    return await fetchWithAuth(`employees/${employeeId}/responses`);
+};
+
+
 
 //TRAINING
 
@@ -46,9 +65,13 @@ export const getTraining = async (trainingId: number) => {
     return await fetchWithAuth(`trainings/${trainingId}`)
 }
 
-export const createTrainingAttachment = async (userId: number, trainingId: number, trainingSubjectId: number, data: FormData) => {
+export const createTrainingAttachment = async (trainingId: number, trainingSubjectId: number, data: FormData) => {
     return await fetchWithAuth(`trainings/${trainingId}/${trainingSubjectId}/add-attachment`, { method: 'POST', body: data }, true)
 }
+
+export const getTrainingModels = async () => {
+    return await fetchWithAuth(`trainings/training-models`);
+};
 
 
 export const saveTraining = async (userId: number, trainingId: number, data: any) => {
@@ -66,12 +89,18 @@ export const deleteTrainingAttachment = async (trainingId: number, attachmentId:
 }
 
 export const downloadTrainingAttachment = async (trainingId: number, attachmentId: number) => {
-    const response =await fetchFile(`trainings/${trainingId}/download-attachment/${attachmentId}`)
+    const response = await fetchFile(`trainings/${trainingId}/download-attachment/${attachmentId}`)
     const header = response.headers.get('Content-Disposition');
     const parts = header!.split(';');
     const filename = parts[1].split('=')[1].replaceAll("\"", "");
-    const blob = await response.blob()    
+    const blob = await response.blob()
 }
+
+export async function getTrainingsForCurrentUser(userId: number) {
+    const response = await fetchWithAuth(`trainings/user/${userId}`);
+    return response;
+}
+
 
 
 //ABSENCE
@@ -101,7 +130,8 @@ export const createAppointment = async (data: { date: Date, companyId: number })
         body: JSON.stringify(data)
     })
     revalidatePath('/en/employee-area/home')
-    return response;
+    const appointment = await response
+    return appointment.data;
 }
 
 export const getAppointment = async (appointmentId: number) => {
@@ -123,14 +153,35 @@ export const signMondayAppointmentDetail = async (appointmentDetailId: number) =
 //OMAR
 
 export const createOmar = async (userId: number, appointmentDetailId?: number) => {
-    const response = await fetchWithAuth(`employees/${userId}/omar?appointmentDetailId=${appointmentDetailId}`, { method: 'POST' })
-    revalidatePath('/en/employee-area/home')
-    return response;
-}
+    const response = await fetchWithAuth(
+        `employees/${userId}/omar?appointmentDetailId=${appointmentDetailId}`,
+        { method: 'POST' }
+    );
+
+    const omar = response?.data;
+
+    console.log("✅ OMAR extrait :", omar);
+
+    if (!omar || !omar.id) {
+        console.error("❌ OMAR manquant ou invalide :", omar);
+        throw new Error("L'objet OMAR retourné est invalide.");
+    }
+
+    revalidatePath('/en/employee-area/home');
+    return omar;
+};
+
 
 export const getOmar = async (omarId: string) => {
     return await fetchWithAuth(`employees/omar/${omarId}`)
 }
+
+export const getAllOmars = async () => {
+    return await fetchWithAuth('employees/omar');
+};
+
+
+
 
 export const saveOmar = async (omarId: number, data: { objective: string, tool: string, action: string, observation: string, dueDate: Date | undefined, nextAppointment: Date | undefined }) => {
     await fetchWithAuth(`employees/omar/${omarId}/save`, {
@@ -140,11 +191,199 @@ export const saveOmar = async (omarId: number, data: { objective: string, tool: 
     revalidatePath('/en/employee-area/home')
 }
 
-export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date }) => {
+export const validateOmar = async (omarId: string, data: { objective: string; tool: string; action: string; observation: string; dueDate: Date, nextAppointment: Date, result?: string; }) => {
     const response = await fetchWithAuth(`employees/omar/${omarId}/validate`, { method: 'PUT', body: JSON.stringify(data) })
     revalidatePath('/en/employee-area/home')
     return response;
 }
+
+export const updateMondayAppointmentDetail = async (
+    onerpId: number,
+    value: string
+) => {
+    await fetchWithAuth(`employees/appointments/details/${onerpId}/update-remaining-days`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remainingDays: value }),
+    });
+}
+
+// RDV
+
+export const sendMondayAppointmentSummary = async (appointmentId: number, email: string) => {
+    try {
+        const res = await fetchWithAuth(`employees/${appointmentId}/send-summary`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+
+
+        return res;
+    } catch (error) {
+        console.error("❌ Erreur dans sendMondayAppointmentSummary :", error);
+        throw new Error('Erreur lors de l’envoi du résumé');
+    }
+};
+
+// Documents
+
+export const uploadDocument = async (formData: FormData) => {
+    await fetchWithAuth('documents/upload', {
+        method: 'POST',
+        body: formData,
+    }, true);
+    revalidatePath('/en/employee-area/documents');
+};
+
+export const getDocumentsForUser = async (userId: number) => {
+    const url = `documents/${userId}`;
+    console.log("Fetching documents from:", url);
+    try {
+        const response = await fetchWithAuth(url);
+        return response;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des documents:", error);
+        if (error instanceof Error) {
+            console.error("Error message:", error.message);
+        }
+        throw error;
+    }
+};
+
+export const deleteDocument = async (documentId: number) => {
+    await fetchWithAuth(`documents/${documentId}`, {
+        method: 'DELETE',
+    });
+    revalidatePath('/en/employee-area/documents');
+};
+
+
+export const downloadDocument = async (documentId: number) => {
+    const response = await fetchFile(`documents/download/${documentId}`);
+    const header = response.headers.get('Content-Disposition');
+    const parts = header!.split(';');
+    const filename = parts[1].split('=')[1].replaceAll("\"", "");
+    const blob = await response.blob();
+
+    return { blob, filename };
+};
+
+// QUIZZ
+
+// Récupérer un quizz complet
+export const getQuizzById = async (quizzId: number) => {
+    return await fetchWithAuth(`quizz/${quizzId}`);
+};
+
+// Soumettre les réponses à un quizz
+export const submitQuizzAnswers = async (quizzId: number, data: {
+    userId: number;
+    answers: {
+        questionId: number;
+        answer: string;
+    }[];
+}) => {
+    const response = await fetchWithAuth(`quizz/${quizzId}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    return await response;
+};
+
+export const getAssignedQuizz = async (quizzId: number, userId: number) => {
+    return await fetchWithAuth(`quizz/${quizzId}`);
+};
+
+export const getQuizzWithResponse = async (responseId: string) => {
+    try {
+        const response = await fetchWithAuth(`quizz/response/${responseId}`, {
+            method: "GET",
+        });
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur dans getQuizzWithResponse :", error);
+        throw error;
+    }
+};
+
+export const markQuizzAsCompleted = async (
+    employeeId: number,
+    stepId: number,
+    responseId: string
+) => {
+    try {
+        console.log(
+            `🔄 Mise à jour du statut du quizz pour Employee ID: ${employeeId}, Step ID: ${stepId}`
+        );
+        const response = await fetchWithAuth(
+            `employees/${employeeId}/onboarding/${stepId}/complete`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({ responseId }),
+            }
+        );
+
+        if (!response) throw new Error("Réponse vide de l'API");
+        console.log("✅ Statut mis à jour :", response);
+        return response;
+    } catch (error) {
+        console.error(
+            "❌ Erreur lors de la mise à jour du statut du quizz :",
+            error
+        );
+        throw error;
+    }
+};
+
+export const getQuizzAnswersByUserId = async (quizzId: number, userId: string) => {
+    try {
+        const response = await fetchWithAuth(`quizz/${quizzId}/answers/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching quizz answers:', error);
+        return null;
+    }
+};
+
+export const getQuizzResponse = async (responseId: string) => {
+    try {
+        const response = await fetchWithAuth(`quizz/response/${responseId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching quizz answers:', error);
+        return null;
+    }
+};
+
+export const uploadEmployeeDocuments = async (userId: number, formData: FormData) => {
+    await fetchWithAuth(`employees/upload-documents/${userId}`, {
+        method: 'POST',
+        body: formData,
+    }, true);
+};
+
+export const getEmployeeDocumentStatus = async (userId: number): Promise<{
+    hasAllDocuments: boolean;
+    missingDocuments: DocumentType[];
+}> => {
+    return await fetchWithAuth(`employees/${userId}/document-status`);
+};
+
+export const sendUnsignedDocuments = async (userId: number) => {
+    return await fetchWithAuth(`employees/${userId}/send-unsigned-documents`, {
+        method: 'POST',
+    });
+};
+
+
+
 
 
 

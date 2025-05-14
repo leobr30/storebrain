@@ -15,21 +15,21 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CleaveInput } from "@/components/ui/cleave";
 import { EmployeeAreaAddStepOneData } from "@/types/employee-area-types";
 const stepOneSchema = z.object({
-    company:  z.object({
+    company: z.object({
         value: z.number(),
         label: z.string(),
-      },{message:REQUIRED}),
+    }, { message: REQUIRED }),
     lastName: z.string().min(1, REQUIRED),
     firstName: z.string().min(1, REQUIRED),
     maidenName: z.string(),
     dateOfBirth: z.date({ message: REQUIRED }),
     placeOfBirth: z.string().min(1, REQUIRED),
-    nationality: z.string().min(1,{message:REQUIRED}),
+    nationality: z.string().min(1, { message: REQUIRED }),
     socialSecurityNumber: z.string().min(1, REQUIRED),
     email: z.string().email({ message: 'Email invalid.' }).min(1, REQUIRED),
     cellPhone: z.string().min(1, REQUIRED),
     familySituation: z.string({ message: REQUIRED }).min(1, REQUIRED),
-    numberOfChildren: z.coerce.number({message:REQUIRED}),
+    numberOfChildren: z.coerce.number({ message: REQUIRED }),
 })
 
 
@@ -47,10 +47,13 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
     });
 
     const onSubmit = (values: EmployeeAreaAddStepOneData) => {
-        state.setStepOneData(values)
+        state.setStepOneData({
+            ...values,
+            dateOfBirth: new Date(values.dateOfBirth), // Convertir en Date
+        });
         handleNext()
     }
-    
+
     return (
         <>
             <Form {...methods}>
@@ -205,26 +208,26 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
                             />
                         </div>
                         <div className="col-span-2">
-                        <FormField
-                            control={methods.control}
-                            name="socialSecurityNumber"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Numéro de Sécurité sociale <RequiredAsterisk/></FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Entrez le numéro de Sécurité sociale "
-                                            {...field}
-                                            className={cn("", {
-                                                "border-destructive focus:border-destructive":
-                                                    methods.formState.errors.socialSecurityNumber,
-                                            })} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                            <FormField
+                                control={methods.control}
+                                name="socialSecurityNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Numéro de Sécurité sociale <RequiredAsterisk /></FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Entrez le numéro de Sécurité sociale "
+                                                {...field}
+                                                className={cn("", {
+                                                    "border-destructive focus:border-destructive":
+                                                        methods.formState.errors.socialSecurityNumber,
+                                                })} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <div className="col-span-2 lg:col-span-1">
                             <FormField
                                 control={methods.control}
@@ -255,9 +258,9 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
                                         <FormLabel>Numéro de téléphone <RequiredAsterisk /></FormLabel>
                                         <FormControl>
                                             <CleaveInput
-                                            {...field}
-                                           placeholder="Entrez le numéro de téléphone"
-                                           options={{phone: true, phoneRegionCode: 'FR'}}></CleaveInput>
+                                                {...field}
+                                                placeholder="Entrez le numéro de téléphone"
+                                                options={{ phone: true, phoneRegionCode: 'FR' }}></CleaveInput>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -265,49 +268,50 @@ export default function AddDrawerFormStepOne({ companies, handleNext }: Props) {
                             />
                         </div>
                         <div className="col-span-2 lg:col-span-1">
-                        <FormField
-                            control={methods.control}
-                            name="familySituation"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Situation familiale <RequiredAsterisk/></FormLabel>
-                                    <FormControl>
-                                        <RadioGroup
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        >
-                                            <RadioGroupItem value="SINGLE" >Célibataire</RadioGroupItem>
-                                            <RadioGroupItem value="MARRIED" >Marié(e)</RadioGroupItem>
-                                        </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                            <FormField
+                                control={methods.control}
+                                name="familySituation"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Situation familiale <RequiredAsterisk /></FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                            >
+                                                <RadioGroupItem value="SINGLE" >Célibataire</RadioGroupItem>
+                                                <RadioGroupItem value="MARRIED" >Marié(e)</RadioGroupItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2 lg:col-span-1">
+                            <FormField
+                                control={methods.control}
+                                name="numberOfChildren"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nombre d'enfants <RequiredAsterisk /></FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type='text'
+                                                placeholder="Entrez le nombre d'enfants"
+                                                {...field}
+                                                className={cn("", {
+                                                    "border-destructive focus:border-destructive":
+                                                        methods.formState.errors.numberOfChildren,
+                                                })} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </div>
-                    <div className="col-span-2 lg:col-span-1">
-                        <FormField
-                            control={methods.control}
-                            name="numberOfChildren"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nombre d'enfants <RequiredAsterisk/></FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type='text'
-                                            placeholder="Entrez le nombre d'enfants"
-                                            {...field}
-                                            className={cn("", {
-                                                "border-destructive focus:border-destructive":
-                                                    methods.formState.errors.numberOfChildren,
-                                            })} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    </div>
+
                     <div className="flex justify-end space-x-3">
                         <Button color={"secondary"} >Annuler</Button>
                         <Button color="primary">

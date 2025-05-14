@@ -15,6 +15,7 @@ export const EmployeesStats = ({
         icon: React.ReactNode;
         color?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'destructive' | 'default' | 'dark'
     }
+    
 
     const stats: StatItem[] = [
         {

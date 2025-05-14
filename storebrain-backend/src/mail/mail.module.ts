@@ -23,15 +23,13 @@ import { join } from 'path';
           from: 'Diamantor no-reply@diamantor.fr>', // outgoing email ID
         },
         template: {
-          dir: join(__dirname, 'templates'),
+          dir: join(process.cwd(), 'src', 'templates'),
           adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
+          options: { strict: true },
         },
       }),
     }),
   ],
   exports: [MailService]
 })
-export class MailModule {}
+export class MailModule { }

@@ -20,4 +20,6 @@ export class ValidateOmarDto {
     @IsDate()
     @Type(() => Date)    
     nextAppointment: Date;
+    @IsString()
+    result: string
 }

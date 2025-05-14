@@ -1,124 +1,139 @@
 model User {
-  id  Int @id @default(autoincrement())
-  username String? @unique
-  email String?
-  name String?
-  lastName String @default("")
-  firstName String @default("")
-  entryDate DateTime @db.Date @default(now())
-  badgeNumber String?
-  password String?
-  refreshToken String? 
-  roles Role[]
-  status Status @default(PENDING)
-  job Job? @relation(fields: [jobId], references: [id])
-  jobId Int?
-  contract JobContract? @relation(fields: [contractId], references: [id])
-  contractId Int?
-  information UserInformation?
-  companies UsersOnCompanies[]
-  zone String?
-  onerpId Int?
-  documents UserDocument[] 
-  histories UserHistory[] @relation("Histories")
-  createdHistories UserHistory[] @relation("CreatedHistories")  
-  jobOnboardings UserJobOnboarding[]
-  trainings Training[] @relation("Trainings")
-  realizedTrainings Training[] @relation("RealizedTrainings")
-  absences UserAbsence[]
-  createdAbsences UserAbsence[] @relation("CreatedAbsences")
-  omars Omar[]
-  createdOmars Omar[] @relation("CreatedOmars")
+  id                       Int                       @id @default(autoincrement())
+  username                 String?                   @unique
+  email                    String?
+  name                     String?
+  lastName                 String                    @default("")
+  firstName                String                    @default("")
+  entryDate                DateTime                  @default(now()) @db.Date
+  badgeNumber              String?
+  password                 String?
+  refreshToken             String?
+  roles                    Role[]
+  status                   Status                    @default(PENDING)
+  job                      Job?                      @relation(fields: [jobId], references: [id])
+  jobId                    Int?
+  contract                 JobContract?              @relation(fields: [contractId], references: [id])
+  contractId               Int?
+  information              UserInformation?
+  companies                UsersOnCompanies[]
+  zone                     String?
+  onerpId                  Int?
+  documents                UserDocument[]
+  histories                UserHistory[]             @relation("Histories")
+  createdHistories         UserHistory[]             @relation("CreatedHistories")
+  jobOnboardings           UserJobOnboarding[]
+  trainings                Training[]                @relation("Trainings") // Corrected relation name
+  realizedTrainings        Training[]                @relation("RealizedTrainings") // Corrected relation name
+  absences                 UserAbsence[]
+  createdAbsences          UserAbsence[]             @relation("CreatedAbsences")
+  vacations                UserAbsence[]             @relation("UserVacations")
+  omars                    Omar[]                    @relation("UserOmars")
+  createdOmars             Omar[]                    @relation("UserCreatedOmars")
+  assignedQuizz            Quizz[]                   @relation("AssignedQuizz")
+  createdQuizz             Quizz[]                   @relation("CreatedQuizz")
+  quizzAnswers             QuizzAnswer[]
   mondayAppointmentDetails MondayAppointmentDetail[]
-  closingDayComments ClosingDayComment[]
+  closingDayComments       ClosingDayComment[]
+
+  employeeResponses EmployeeResponse[]
+  formHistories     FormHistory[]
+  Document          Document[]
 }
 
 model UserInformation {
-  id Int @id @default(autoincrement())
-  maidenName String?
-  dateOfBirth DateTime @db.Date
-  placeOfBirth String
+  id                   Int      @id @default(autoincrement())
+  maidenName           String?
+  dateOfBirth          DateTime @db.Date
+  placeOfBirth         String
   socialSecurityNumber String
-  nationality String
-  email String
-  cellPhone String
-  numberOfChildren Int
-  familySituation String
-  address String
-  zipCode Int
-  city String
-  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
-  userId Int @unique  
+  nationality          String
+  email                String
+  cellPhone            String
+  numberOfChildren     Int
+  familySituation      String
+  address              String
+  zipCode              Int
+  city                 String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               Int      @unique
 }
 
 model UserDocument {
-  id Int @id @default(autoincrement())
-  fileName String
-  mimeType String
-  filePath String
-  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
-  userId Int 
-  history UserHistory @relation(fields: [historyId],references: [id], onDelete: Cascade)
-  historyId Int 
+  id        Int         @id @default(autoincrement())
+  fileName  String
+  mimeType  String
+  filePath  String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  history   UserHistory @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  historyId Int
 }
 
 model UserHistory {
-  id Int @id @default(autoincrement())
-  title String
-  text String
-  user User @relation(name: "Histories", fields: [userId],references: [id], onDelete: Cascade)
-  userId Int
-  createdBy User @relation(name: "CreatedHistories",fields: [createdById],references: [id], onDelete: Cascade)
+  id          Int            @id @default(autoincrement())
+  title       String
+  text        String
+  user        User           @relation(name: "Histories", fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  createdBy   User           @relation(name: "CreatedHistories", fields: [createdById], references: [id], onDelete: Cascade)
   createdById Int
-  documents UserDocument[]
-  type HistoryType @default(ACTION)
-  idUrl String?
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  documents   UserDocument[]
+  type        HistoryType    @default(ACTION)
+  idUrl       String?
+  createdAt   DateTime       @default(now()) @db.Timestamptz(6)
 }
-
-
 
 model UsersOnCompanies {
-  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
-  userId Int
-  company Company @relation(fields: [companyId],references: [id],onDelete: Cascade)
-  companyId  Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
   isDefault Boolean
-  @@id([userId,companyId])
+
+  @@id([userId, companyId])
 }
 
-
 model UserJobOnboarding {
-  id Int @id @default(autoincrement())
-  appointmentNumber Int
-  date DateTime @db.Date
+  id                  Int               @id @default(autoincrement())
+  appointmentNumber   Int
+  date                DateTime          @db.Date
   jobOnboardingStepId Int
-  jobOnboardingStep JobOnboardingStep @relation(fields: [jobOnboardingStepId], references: [id], onDelete: Cascade )
-  userId Int 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status Status    
-  training Training?
+  jobOnboardingStep   JobOnboardingStep @relation(fields: [jobOnboardingStepId], references: [id], onDelete: Cascade)
+  userId              Int
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              Status
+  training            Training[]
+  responseId          String?
+
+  formId String? // ✅ nouvelle clé étrangère
+  form   Form?   @relation(fields: [formId], references: [id]) // ✅ lien relationnel
+
+
 }
 
 model UserAbsence {
-  id Int @id @default(autoincrement())
-  startAt DateTime
-  endAt DateTime?
-  sicknessStartDate DateTime?
-  sicknessEndDate DateTime?
+  id                 Int             @id @default(autoincrement())
+  startAt            DateTime
+  endAt              DateTime?
+  sicknessStartDate  DateTime?
+  sicknessEndDate    DateTime?
   familyRelationShip String?
-  timeOfAccident DateTime?
-  placeOfAccident String?
-  circumstances String?
-  injuries String?
-  schedule DateTime?
-  type UserAbsenceType
-  userId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  
-  createdById Int
-  createdBy User @relation("CreatedAbsences",fields: [createdById], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  status Status @default(IN_PROGRESS)
+  timeOfAccident     DateTime?
+  placeOfAccident    String?
+  circumstances      String?
+  injuries           String?
+  schedule           DateTime?
+  type               UserAbsenceType
+  userId             Int
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdById        Int
+  createdBy          User            @relation("CreatedAbsences", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
+  status             Status          @default(IN_PROGRESS)
+
+  vacationUserId Int?
+  vacationUser   User? @relation(name: "UserVacations", fields: [vacationUserId], references: [id])
 }
 
 enum UserAbsenceType {
@@ -129,6 +144,7 @@ enum UserAbsenceType {
   DEATH
   TRANSPORT_ACCIDENT
   ACCIDENT_AT_WORK
+  VACATION
 }
 
 enum HistoryType {
@@ -138,4 +154,3 @@ enum HistoryType {
   MONDAY_APPOINTMENT
   ACTION
 }
-

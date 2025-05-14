@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { JobsService } from 'src/jobs/jobs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import fs from 'fs';
@@ -8,6 +8,7 @@ import {
   JobNotFoundException,
   UserNotFoundException,
 } from './employees.errors';
+import { QuizzService } from 'src/quizz/quizz.service';
 import { CompaniesService } from 'src/companies/companies.service';
 import { CompanyNotFoundException } from 'src/companies/companies.errors';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -26,27 +27,37 @@ import { SaveTrainingDto } from './dto/save-training.dto';
 import { LoginDto } from 'src/auth/dto/auth.dto';
 import { UpdateAbsenceDto } from './dto/create-absence.dto';
 import { CreateAppointmentDto } from './dto/create-monday-appointment.dto';
-import { OnedocService } from 'src/onedoc/onedoc.service'; 
+import { OnedocService } from 'src/onedoc/onedoc.service';
 import { OnerpService } from 'src/onerp/onerp.service';
 import { OmarDto } from './dto/save-omar.dto';
 import { ValidateOmarDto } from './dto/validate-omar.dto';
 import { AbsenceUpdatedEvent } from './events/absence-updated.event';
+import { User } from '@prisma/client';
+import { MailService } from 'src/mail/mail.service';
+import { UserJobOnboarding } from '@prisma/client';
+import { DocumentType } from '@prisma/client';
+
+
+
 
 @Injectable()
 export class EmployeesService {
   constructor(
-    private prisma: PrismaService,
+    private readonly mailService: MailService,
+    private readonly pdfService: PdfService,
+    private prisma: PrismaService, private quizzService: QuizzService,
     private jobsService: JobsService,
     private companiesService: CompaniesService,
-    private eventEmitter: EventEmitter2,    
+    private eventEmitter: EventEmitter2,
     private integrationsService: IntegrationsService,
     private onedocService: OnedocService,
     private onerpService: OnerpService,
-  ) {}
+  ) { }
 
   async getEmployees(companyId?: number) {
     return this.prisma.user.findMany({
       select: {
+        username: true,
         id: true,
         name: true,
         zone: true,
@@ -71,10 +82,10 @@ export class EmployeesService {
       where: {
         companies: companyId
           ? {
-              some: {
-                companyId: companyId,
-              },
-            }
+            some: {
+              companyId: companyId,
+            },
+          }
           : undefined,
       },
     });
@@ -181,6 +192,7 @@ export class EmployeesService {
         id,
       },
       include: {
+        Document: true,
         job: {
           select: {
             name: true,
@@ -203,17 +215,21 @@ export class EmployeesService {
             documents: true,
           },
         },
-        jobOnboardings: {
+        jobOnboardings: { // ✅ Ajout de jobOnboardings dans l'include
           select: {
             id: true,
             date: true,
             status: true,
             appointmentNumber: true,
+            responseId: true,
             jobOnboardingStep: {
               include: {
                 trainingModel: true,
                 jobOnboardingResultReview: true,
                 jobOnboardingDocuments: true,
+                jobOnboardingQuizz: true,
+                jobOnboarding: true,
+
               }
             },
             training: {
@@ -231,6 +247,7 @@ export class EmployeesService {
           },
         },
         absences: {
+          where: { type: { not: UserAbsenceType.VACATION } },
           select: {
             id: true,
             startAt: true,
@@ -245,9 +262,125 @@ export class EmployeesService {
             },
           },
         },
+        vacations: {
+          where: { type: UserAbsenceType.VACATION },
+          select: {
+            id: true,
+            startAt: true,
+            endAt: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            createdBy: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        trainings: {
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            userId: true,
+            realizedById: true,
+            name: true,
+            realizedBy: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        }
       },
     });
   }
+
+  async saveDocuments(userId: string, files: Record<string, Express.Multer.File[]>) {
+    console.log("📄 Sauvegarde des documents...");
+
+    const uploads = [];
+
+    const parsedUserId = Number(userId);
+    if (isNaN(parsedUserId)) {
+      throw new BadRequestException('userId invalide');
+    }
+
+    const keyToDocumentType: Record<string, DocumentType> = {
+      cni: DocumentType.CNI,
+      carteVitale: DocumentType.VITAL_CARD,
+      carteMutuelle: DocumentType.MUTUAL_CARD,
+      rib: DocumentType.RIB,
+      justificatifDomicile: DocumentType.ADDRESS_PROOF,
+      casierJudiciaire: DocumentType.CRIMINAL_RECORD,
+      titreSejour: DocumentType.RESIDENCE_PERMIT,
+    };
+
+    console.log("🧾 Traitement des fichiers dans saveDocuments() :", Object.keys(files));
+
+    for (const [key, fileArray] of Object.entries(files)) {
+      if (!fileArray || fileArray.length === 0) {
+        console.warn(`⚠️ Aucun fichier reçu pour la clé "${key}"`);
+        continue;
+      }
+
+      const documentType = keyToDocumentType[key];
+      if (!documentType) {
+        console.warn(`❌ Clé de document non reconnue : "${key}"`);
+        continue;
+      }
+
+      const file = fileArray[0];
+
+      try {
+        const saved = await this.prisma.document.create({
+          data: {
+            type: documentType,
+            filePath: `uploads/${file.filename}`,
+            fileName: file.originalname,
+            mimeType: file.mimetype,
+            userId: parsedUserId,
+          },
+        });
+
+        console.log(`✅ Document enregistré : [${documentType}] ${file.originalname}`);
+        uploads.push(saved);
+      } catch (error) {
+        console.error(`❌ Erreur lors de l’enregistrement du document [${documentType}]:`, error);
+      }
+    }
+
+    console.log("📦 Documents sauvegardés :", uploads.length);
+    return uploads;
+  }
+
+
+  async getEmployeeDocumentStatus(userId: number) {
+    const requiredDocs: DocumentType[] = [
+      DocumentType.CNI,
+      DocumentType.VITAL_CARD,
+      DocumentType.MUTUAL_CARD,
+      DocumentType.RIB,
+      DocumentType.ADDRESS_PROOF,
+      DocumentType.CRIMINAL_RECORD,
+    ];
+
+    const documents = await this.prisma.document.findMany({
+      where: { userId },
+      select: { type: true },
+    });
+
+    const existingTypes = documents.map(d => d.type);
+    const missingDocuments = requiredDocs.filter(type => !existingTypes.includes(type));
+
+    return {
+      hasAllDocuments: missingDocuments.length === 0,
+      missingDocuments,
+    };
+  }
+
+
 
   async activateEmployee(
     id: number,
@@ -319,6 +452,8 @@ export class EmployeesService {
     });
   }
 
+  // ...
+
   async startIntegration(id: number, currentUser: CurrentUserType) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -340,7 +475,7 @@ export class EmployeesService {
       userId: number;
     }[] = [];
     integration!.jobOnboardingSteps.map((step) => {
-      if(step.type === 'TRAINING' && step.trainingModel) {
+      if (step.type === 'TRAINING' && step.trainingModel) {
         for (let i = 1; i <= step.trainingModel!.numberOAppointmentsRequired; i++) {
           data.push({
             date: addDays(new Date(), step.day + i * 2),
@@ -350,9 +485,9 @@ export class EmployeesService {
             userId: user.id,
           });
         }
-      } else if (step.type === 'RESULT_REVIEW' ) {
+      } else if (step.type === 'RESULT_REVIEW') {
         data.push({
-          date: add(new Date(),{days: step.day,months: step.month}),
+          date: add(new Date(), { days: step.day, months: step.month }),
           appointmentNumber: 0,
           jobOnboardingStepId: step.id,
           status: Status.PENDING,
@@ -360,16 +495,24 @@ export class EmployeesService {
         });
       } else if (step.type === 'DOCUMENT') {
         data.push({
-          date: add(new Date(),{days: step.day,months: step.month}),
+          date: add(new Date(), { days: step.day, months: step.month }),
+          appointmentNumber: 0,
+          jobOnboardingStepId: step.id,
+          status: Status.PENDING,
+          userId: user.id,
+        });
+      } else if (step.type === 'QUIZZ' && step.jobOnboardingQuizzId) {
+        data.push({
+          date: add(new Date(), { days: step.day, months: step.month }),
           appointmentNumber: 0,
           jobOnboardingStepId: step.id,
           status: Status.PENDING,
           userId: user.id,
         });
       }
-      
+
     });
-    await this.prisma.userJobOnboarding.createMany({
+    const userJobOnboardings = await this.prisma.userJobOnboarding.createMany({
       data: data,
     });
     await this.prisma.user.update({
@@ -387,65 +530,112 @@ export class EmployeesService {
         },
       },
     });
+    return userJobOnboardings;
   }
 
+
+
+
+
+  // Dans ton fichier employees.service.ts
   async createTrainingWithEmployeeOnboardingId(
     dto: CreateTrainingWithOnboardingDto,
+    trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
+    name: string,
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[] // ✅ Ajout du paramètre subjects
   ) {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: dto.userId,
-      },
-      include: {
-        jobOnboardings: {
-          include: {
-            jobOnboardingStep: {
-              include: {
-                trainingModel: {
-                  include: {
-                    subjects: true,
-                  }
+    try {
+      // Vérifier si l'utilisateur existe
+      const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${dto.userId} not found`);
+      }
+      // Récupérer l'utilisateur avec les relations nécessaires
+      const userWithRelations = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          id: dto.userId,
+        },
+        include: {
+          jobOnboardings: {
+            include: {
+              jobOnboardingStep: {
+                include: {
+                  trainingModel: {
+                    include: {
+                      subjects: true,
+                    }
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
-    const integration = user.jobOnboardings.find(
-      (w) => w.id === dto.employeeJobOnboardId,
-    );
-    if (integration === undefined || !integration.jobOnboardingStep.trainingModel) throw new NotFoundException();
+      });
+      // Vérifier si l'intégration existe
+      const integration = userWithRelations.jobOnboardings.find(
+        (w) => w.id === dto.employeeJobOnboardId,
+      );
+      if (integration === undefined) {
+        throw new NotFoundException(`Integration with ID ${dto.employeeJobOnboardId} not found`);
+      }
 
-    const training = await this.prisma.training.create({
-      data: {
-        name: integration.jobOnboardingStep.trainingModel?.name,
-        subjects: {
-          create: integration.jobOnboardingStep.trainingModel?.subjects.map((subject) => ({
-            name: subject.name,
-          })),
+      let trainingModel;
+      if (trainingModelId) {
+        trainingModel = await this.prisma.trainingModel.findUnique({
+          where: {
+            id: trainingModelId,
+          },
+          include: {
+            subjects: true,
+          },
+        });
+        if (!trainingModel) {
+          throw new NotFoundException(`TrainingModel with ID ${trainingModelId} not found`);
+        }
+      }
+
+      // Créer la formation
+      const training = await this.prisma.training.create({
+        data: {
+          name: name,
+          subjects: {
+            create: trainingModel ? trainingModel.subjects?.map((subject) => ({
+              name: subject.name,
+            })) || [] : subjects?.map((subject) => ({ // ✅ Création des sujets si trainingModel est undefined
+              name: subject.name,
+            })) || [],
+          },
+          comment: '',
+          tool: trainingModel?.tool || '', // ✅ Utilisation de l'opérateur d'optional chaining
+          exercise: '',
+          realizedById: dto.currentUserId,
+          userId: dto.userId,
+          userJobOnboardingId: dto.employeeJobOnboardId,
         },
-        comment: '',
-        tool: integration.jobOnboardingStep.trainingModel.tool,
-        exercise: '',
-        realizedById: dto.currentUserId,
-        userId: dto.userId,
-        userJobOnboardingId: dto.employeeJobOnboardId,
-      },
-    });
+      });
 
-    await this.prisma.userJobOnboarding.update({
-      where: {
-        id: dto.employeeJobOnboardId,
-      },
-      data: {
-        status: Status.IN_PROGRESS,
-      },
-    });
-    return training;
+      // Mettre à jour le statut de l'intégration
+      await this.prisma.userJobOnboarding.update({
+        where: {
+          id: dto.employeeJobOnboardId,
+        },
+        data: {
+          status: Status.IN_PROGRESS,
+        },
+      });
+      return training;
+    } catch (error) {
+      console.error("Error in createTrainingWithEmployeeOnboardingId:", error);
+      if (error instanceof NotFoundException) {
+        throw error; // Relancer l'erreur NotFoundException
+      }
+      throw new HttpException(error.message || 'Error creating training', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
-  
+
+
+
 
   async checkCredentials(userId: number, dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -464,25 +654,26 @@ export class EmployeesService {
         id: userId,
       },
     });
-      if (!user) throw new UserNotFoundException();
+    if (!user) throw new UserNotFoundException();
     const absence = await this.prisma.userAbsence.create({
       data: {
-        startAt: new Date(), 
+        startAt: new Date(),
         type: UserAbsenceType.UNJUSTIFIED_ABSENCE,
         userId: userId,
         createdById: currentUser.sub,
-        createdAt: new Date(),        
+        createdAt: new Date(),
         endAt: null,
         status: Status.DRAFT,
       },
-    });    
+    });
     return absence;
-  }     
+  }
+
 
   async updateAbsence(absenceId: number, dto: UpdateAbsenceDto, currentUser: CurrentUserType) {
     const absence = await this.prisma.userAbsence.findUnique({
       where: {
-        id: absenceId,        
+        id: absenceId,
       },
     });
 
@@ -536,19 +727,19 @@ export class EmployeesService {
   }
 
   async createAppointment(dto: CreateAppointmentDto, currentUser: CurrentUserType) {
-    
+
 
 
     const company = await this.companiesService.getCompanyById(dto.companyId);
     if (!company) throw new CompanyNotFoundException();
 
-    const objective = await this.onedocService.getObjective(format(startOfMonth(dto.date), 'yyyy-MM-dd') , company.number)
-    if(objective.length === 0) throw new NotFoundException("Objective not found");
+    const objective = await this.onedocService.getObjective(format(startOfMonth(dto.date), 'yyyy-MM-dd'), company.number)
+    if (objective.length === 0) throw new NotFoundException("Objective not found");
     console.log(objective[0].objective)
     let realizedRevenue = 0
     const realizedRevenueResult = await this.onerpService.readRealizedRevenue(format(startOfMonth(dto.date), 'yyyy-MM-dd'), format(dto.date, 'yyyy-MM-dd'), company.number);
-    if(realizedRevenueResult.length > 0) realizedRevenue = parseFloat(realizedRevenueResult[0].revenue.toString()) 
-    
+    if (realizedRevenueResult.length > 0) realizedRevenue = parseFloat(realizedRevenueResult[0].revenue.toString())
+
 
     const remainingDays = this.calculateRemainingDays(new Date());
 
@@ -567,13 +758,13 @@ export class EmployeesService {
     realizedRevenueOr += (realizedRevenueFourniture + realizedRevenueService) / 2
     realizedRevenueMode += (realizedRevenueFourniture + realizedRevenueService) / 2
     const primeDetails = await this.onedocService.getPrimeDetails(objective[0].id)
-    const appointmentDetails = await Promise.all(primeDetails.map(async (pd,index) => {
+    const appointmentDetails = await Promise.all(primeDetails.map(async (pd, index) => {
       const user = await this.getUserByOnerpId(pd.onerpId)
       let realizedRevenue = 0
-      if(revenueDetail.find(rd => rd.onerpId === pd.onerpId)) {
+      if (revenueDetail.find(rd => rd.onerpId === pd.onerpId)) {
         realizedRevenue = revenueDetail.find(rd => rd.onerpId === pd.onerpId)!.revenue
       }
-      
+
       return {
         index,
         onerpId: pd.onerpId,
@@ -586,7 +777,7 @@ export class EmployeesService {
     }))
     const appointment = await this.prisma.mondayAppointment.create({
       data: {
-        date: dto.date,          
+        date: dto.date,
         companyId: dto.companyId,
         objective: objective[0].objective,
         objectiveOr: objective[0].objectiveOr,
@@ -600,15 +791,15 @@ export class EmployeesService {
         remainingDays,
         details: {
           createMany: {
-            data: appointmentDetails.sort((a,b) => a.index - b.index).map(ad => {
+            data: appointmentDetails.sort((a, b) => a.index - b.index).map(ad => {
               return {
                 onerpId: ad.onerpId,
                 fullname: ad.fullname,
                 zone: ad.zone,
                 objective: ad.objective,
-                realizedRevenue:ad.realizedRevenue,
+                realizedRevenue: ad.realizedRevenue,
                 remainingRevenue: ad.objective - ad.realizedRevenue,
-                remainingDays: remainingDays,              
+                remainingDays: remainingDays,
                 userId: ad.userId
               }
             })
@@ -617,7 +808,9 @@ export class EmployeesService {
       },
     });
 
-    
+
+
+
     await this.prisma.userHistory.create({
       data: {
         title: 'Rendez-vous du lundi',
@@ -639,7 +832,7 @@ export class EmployeesService {
         details: {
           include: {
             omar: {
-              select:{
+              select: {
                 id: true,
                 status: true,
               }
@@ -679,36 +872,69 @@ export class EmployeesService {
     return remainingDays;
   }
 
-  async createOmar(data: {    
+  async updateMondayAppointmentDetail(id: number, remainingDays: number) {
+    console.log("🚀 updateMondayAppointmentDetail appelé avec id :", id, "et remainingDays :", remainingDays);
+    const appointmentDetail = await this.prisma.mondayAppointmentDetail.findUnique({
+      where: { id },
+    });
+
+    if (!appointmentDetail) {
+      throw new NotFoundException('Monday Appointment Detail not found');
+    }
+
+    const updatedAppointmentDetail = await this.prisma.mondayAppointmentDetail.update({
+      where: { id },
+      data: {
+        remainingDays: remainingDays,
+      },
+    });
+    console.log("🚀 updateMondayAppointmentDetail terminé avec updatedAppointmentDetail :", updatedAppointmentDetail);
+
+    return updatedAppointmentDetail;
+  }
+
+
+  async createOmar(data: {
     createdById: number;
     userId: number;
     appointmentDetailId?: number;
   }) {
-    const omar = await this.prisma.omar.create({
-      data: {
-        objective: '',
-        tool: '',
-        action: '',
-        result: '',
-        observation: '',
-        status: 'DRAFT',            
-        dueDate: addDays(startOfDay(new Date()) ,5),
-        createdBy: { connect: { id: data.createdById } },
-        user: { connect: { id: data.userId } },        
-      },
-    });
+    try {
+      console.log("🔧 Création OMAR - Données reçues :", data);
 
-    if(data.appointmentDetailId) {
-      await this.prisma.mondayAppointmentDetail.update({
-        where: { id: data.appointmentDetailId },
+      const omar = await this.prisma.omar.create({
         data: {
-          omarId: omar.id
-        }
-      })
-    }
+          objective: '',
+          tool: '',
+          action: '',
+          result: '',
+          observation: '',
+          status: 'DRAFT',
+          dueDate: addDays(startOfDay(new Date()), 5),
+          createdBy: { connect: { id: data.createdById } },
+          user: { connect: { id: data.userId } },
+        },
+      });
 
-    return omar
+      console.log("✅ OMAR créé avec ID :", omar.id);
+
+      if (data.appointmentDetailId) {
+        await this.prisma.mondayAppointmentDetail.update({
+          where: { id: data.appointmentDetailId },
+          data: {
+            omarId: omar.id,
+          },
+        });
+        console.log("🔗 OMAR lié à l’appointmentDetail :", data.appointmentDetailId);
+      }
+
+      return omar;
+    } catch (error) {
+      console.error("❌ Erreur dans createOmar :", error);
+      throw new Error("Erreur lors de la création de l'OMAR.");
+    }
   }
+
 
   async getOmar(id: number) {
     return this.prisma.omar.findUnique({
@@ -739,32 +965,86 @@ export class EmployeesService {
   }
 
   async validateOmar(id: number, dto: ValidateOmarDto, currentUser: CurrentUserType) {
-    const omar =  await this.prisma.omar.update({
+
+    console.log('Dans validateOmar TEST')
+    const status = dto.result ? 'COMPLETED' : 'IN_PROGRESS';
+
+    // 🔍 Récupérer les infos nécessaires pour envoyer le mail
+    const existingOmar = await this.prisma.omar.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!existingOmar) throw new NotFoundException('OMAR non trouvé');
+
+    // ✅ Mise à jour du OMAR
+    const omar = await this.prisma.omar.update({
       where: { id },
       data: {
-        status: 'IN_PROGRESS',
+        status,
         createdById: currentUser.sub,
         observation: dto.observation,
         objective: dto.objective,
         tool: dto.tool,
-        action: dto.action,        
-        dueDate: dto.dueDate,   
+        action: dto.action,
+        dueDate: dto.dueDate,
         nextAppointment: dto.nextAppointment,
+        result: dto.result,
       },
     });
 
+    // ✅ Ajout dans l'historique
     await this.prisma.userHistory.create({
       data: {
         title: 'OMAR',
-        text: 'a validé l\'OMAR',
+        text: `a validé l'OMAR`,
         type: 'OMAR',
         idUrl: omar.id.toString(),
         userId: currentUser.sub,
         createdById: currentUser.sub,
       },
     });
+
+    // ✅ Génération et envoi du PDF si COMPLETED et si email + name sont présents
+    const userEmail = "gabriel.beduneau@diamantor.fr"
+    const userName = existingOmar.user?.name;
+
+    console.log("🔍 dto.result =", dto.result);
+    console.log("🔍 status =", status);
+    console.log("🔍 userEmail =", userEmail);
+    console.log("🔍 userName =", userName);
+
+
+    if (status === 'COMPLETED' && userEmail && userName) {
+      console.log("📨 Envoi du mail à", userEmail, "pour", userName);
+
+      console.log("📄 Génération PDF...");
+      const pdfBuffer = await this.pdfService.generateOmarPdf(id);
+      console.log("📨 Envoi du mail à", userEmail, "pour", userName);
+      try {
+        await this.mailService.sendOmarResult(userEmail, userName, pdfBuffer);
+
+      }
+      catch (err) {
+        console.log("❌ Erreur lors de l'envoi du mail OMAR :", err);
+
+      }
+
+    }
+
+
+
     return omar;
   }
+
+
 
   async getUserByOnerpId(onerpId: number) {
     const user = await this.prisma.user.findFirst({
@@ -796,20 +1076,20 @@ export class EmployeesService {
 
   async getAbsence(absenceId: number) {
     const absence = await this.prisma.userAbsence.findUnique({
-        where: {
-            id: absenceId,            
-        },
-        include: {
-            user: {
-                select: {
-                    name: true
-                }
-            }
+      where: {
+        id: absenceId,
+      },
+      include: {
+        user: {
+          select: {
+            name: true
+          }
         }
+      }
     });
 
     if (!absence) {
-        throw new NotFoundException('Absence not found');
+      throw new NotFoundException('Absence not found');
     }
 
     return absence;
@@ -836,4 +1116,302 @@ export class EmployeesService {
       },
     });
   }
+
+  async updateEmployee(id: number, updateData: Partial<User>) {
+    console.log("🔍 Données reçues avant transformation :", updateData);
+
+    const dataToUpdate: any = {
+      firstName: updateData.firstName,
+      lastName: updateData.lastName,
+      entryDate: updateData.entryDate ? new Date(updateData.entryDate) : undefined,
+      badgeNumber: updateData.badgeNumber,
+      zone: updateData.zone,
+    };
+
+    // 🔍 Trouver l'ID du job en base
+    if ((updateData as any).job && typeof (updateData as any).job === "string") {
+      const job = await this.prisma.job.findFirst({ where: { name: (updateData as any).job } });
+      if (job) {
+        dataToUpdate.jobId = job.id;
+      } else {
+        console.warn(`⚠️ Job "${(updateData as any).job}" non trouvé.`);
+      }
+    }
+
+    // 🔍 Trouver l'ID du contrat en base
+    if ((updateData as any).contract && typeof (updateData as any).contract === "string") {
+      const contract = await this.prisma.jobContract.findFirst({ where: { type: (updateData as any).contract } });
+      if (contract) {
+        dataToUpdate.contractId = contract.id;
+      } else {
+        console.warn(`⚠️ Contrat "${(updateData as any).contract}" non trouvé.`);
+      }
+    }
+
+    console.log("🛠️ Données transformées envoyées à Prisma :", dataToUpdate);
+
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+    } catch (error) {
+      console.error("❌ Erreur lors de la mise à jour de l'employé :", error);
+      throw new Error("Échec de la mise à jour de l'utilisateur.");
+    }
+  }
+
+
+
+  async createVacation(userId: number, vacationData: { startAt: string; endAt: string }, currentUser: CurrentUserType) {
+    const vacation = await this.prisma.userAbsence.create({
+      data: {
+        userId,
+        startAt: new Date(vacationData.startAt),
+        endAt: new Date(vacationData.endAt),
+        type: UserAbsenceType.VACATION,
+        status: Status.IN_PROGRESS,
+        createdById: currentUser.sub,
+        createdAt: new Date(),
+        vacationUserId: userId,
+      },
+    });
+
+    await this.prisma.userHistory.create({
+      data: {
+        title: 'Vacances',
+        text: `a déclaré des vacances du ${new Date(vacationData.startAt).toLocaleDateString()} au ${new Date(vacationData.endAt).toLocaleDateString()}`,
+        type: 'ACTION',
+        userId: userId,
+        createdById: currentUser.sub,
+      },
+    });
+
+    return vacation;
+  }
+
+  async updateVacation(
+    employeeId: number,
+    vacationId: number,
+    vacationData: { startAt: Date; endAt: Date },
+    currentUser: CurrentUserType
+  ) {
+
+    const employee = await this.prisma.user.findUnique({
+      where: { id: employeeId },
+    });
+
+    if (!employee) throw new NotFoundException(`Employé avec l'ID ${employeeId} introuvable`);
+
+    const vacation = await this.prisma.userAbsence.findUnique({
+      where: { id: vacationId, userId: employeeId, type: UserAbsenceType.VACATION },
+    });
+
+    if (!vacation) throw new NotFoundException(`Vacances avec l'ID ${vacationId} introuvables`);
+
+    return await this.prisma.userAbsence.update({
+      where: { id: vacationId },
+      data: {
+        startAt: new Date(vacationData.startAt),
+        endAt: new Date(vacationData.endAt),
+      },
+    });
+  }
+
+
+  async markDocumentCompleted(employeeId: number, stepId: number, responseId: string, currentUserId: number) {
+    try {
+      const step = await this.prisma.userJobOnboarding.findUnique({
+        where: { id: stepId, userId: employeeId },
+        include: {
+          jobOnboardingStep: {
+            include: {
+              jobOnboardingDocuments: true,
+            },
+          },
+        },
+      });
+
+      if (!step) throw new NotFoundException("Étape non trouvée.");
+
+      await this.prisma.userJobOnboarding.update({
+        where: { id: stepId },
+        data: { status: "COMPLETED", responseId },
+      });
+
+      if (step.jobOnboardingStep?.jobOnboardingDocuments?.length > 0) {
+        await this.prisma.userHistory.create({
+          data: {
+            title: 'Document',
+            text: `a rempli le document ${step.jobOnboardingStep.jobOnboardingDocuments[0].name}`,
+            type: 'ACTION',
+            userId: employeeId,
+            createdById: currentUserId,
+          },
+        });
+      }
+
+      return { message: "Document marked as completed", responseId };
+    } catch (error) {
+      console.error("❌ Erreur dans markDocumentCompleted:", error);
+      throw new HttpException('Error marking document as completed', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+
+
+  async getEmployeeVacations(employeeId: number) {
+    return this.prisma.userAbsence.findMany({
+      where: { userId: employeeId, type: UserAbsenceType.VACATION },
+      include: { createdBy: { select: { name: true } } },
+    });
+  }
+
+  async getEmployeeOnboarding(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        jobOnboardings: {
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            appointmentNumber: true,
+            jobOnboardingStep: {
+              include: {
+                trainingModel: true,
+                jobOnboardingResultReview: true,
+                jobOnboardingDocuments: true,
+              }
+            },
+            training: {
+              select: {
+                id: true,
+                status: true,
+                subjects: {
+                  select: {
+                    id: true,
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException();
+    return user.jobOnboardings;
+  }
+
+  async getOnboardingSteps(employeeId: number) { // This is the implementation that should be kept
+    const employee = await this.prisma.user.findUnique({
+      where: { id: employeeId },
+      include: {
+        jobOnboardings: {
+          include: {
+            jobOnboardingStep: {
+              include: {
+                trainingModel: {
+                  include: {
+                    subjects: true,
+                  },
+                },
+                jobOnboardingResultReview: true,
+                jobOnboardingDocuments: true,
+                jobOnboardingQuizz: true,
+              },
+            },
+            training: {
+              include: {
+                subjects: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!employee) {
+      throw new Error('Employee not found');
+    }
+    console.log("🚀 ~ getOnboardingSteps ~ employee:", employee);
+
+    const stepsWithQuizzDetails = await Promise.all(
+      employee.jobOnboardings.map(async (jobOnboarding) => {
+        const onboarding = jobOnboarding as UserJobOnboarding & {
+          jobOnboardingStep: {
+            jobOnboardingQuizz?: { id: number };
+          };
+        };
+        console.log("🚀 ~ getOnboardingSteps ~ onboarding:", onboarding);
+
+        if (onboarding.jobOnboardingStep?.jobOnboardingQuizz) {
+          const quizzDetails = await this.quizzService.getQuizzForOnboarding(
+            onboarding.jobOnboardingStep.jobOnboardingQuizz.id,
+          );
+          console.log("🚀 ~ getOnboardingSteps ~ quizzDetails:", quizzDetails);
+
+          return {
+            ...onboarding,
+            jobOnboardingStep: {
+              ...onboarding.jobOnboardingStep,
+              jobOnboardingQuizz: quizzDetails,
+            },
+          };
+        }
+
+        return onboarding;
+      }),
+    );
+
+    return stepsWithQuizzDetails;
+  }
+
+  async getAllOmars() {
+    return this.prisma.omar.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+
+
+
+
+  async sendMondayAppointmentSummary(appointmentId: number, email: string) {
+    const appointment = await this.prisma.mondayAppointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        company: true,
+        details: {
+          include: {
+            omar: true,
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      throw new Error('Rendez-vous du lundi non trouvé');
+    }
+
+    const buffer = await this.pdfService.generateMondayAppointmentPdf(appointment.id);
+    await this.mailService.sendMondayAppointmentMail(email, buffer, appointment.date);
+
+    return { message: 'Résumé envoyé avec succès' };
+  }
+
 }

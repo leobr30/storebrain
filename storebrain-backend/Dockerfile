@@ -4,23 +4,28 @@ FROM node:18
 # Create app directory
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# Copy package files
 COPY package*.json ./
 
 # Install app dependencies
 RUN npm install
 
-# Bundle app source
+# Copy app source
 COPY . .
 
-# Copy the .env and .env.development files
-COPY .env .env.development ./
+# Génère le client Prisma avant de build le projet
+RUN npx prisma generate
 
-# Creates a "dist" folder with the production build
-RUN npm run build
+# Supprime les anciens builds si jamais
+RUN rm -rf dist tsconfig.build.tsbuildinfo
 
-# Expose the port on which the app will run
+# Build le projet NestJS (src -> dist)
+RUN npm run build && \
+    cp -r ./src/templates ./dist/templates && \
+    ls -la ./dist/templates
+
+# Expose the port
 EXPOSE 3001
 
-# Start the server using the production build
+# Start the server
 CMD ["npm", "run", "start:prod"]

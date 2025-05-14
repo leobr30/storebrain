@@ -12,7 +12,7 @@ export const getAnalyze1 = async(supplierId: string | null) => {
     const body =  JSON.stringify({
         storeIds:[],
         supplierIds:supplierId ? [supplierId] : [],
-        departments:['ARGENT'],
+        departments:['OR'],
         startDate:addYears(new Date(), -1) ,
         endDate:new Date(),
     })

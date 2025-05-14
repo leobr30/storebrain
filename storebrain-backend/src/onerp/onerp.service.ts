@@ -11,7 +11,7 @@ import { onerpDb } from 'src/providers/database/onerp.database';
 @Injectable()
 export class OnerpService {
    
-	getProducts = async ({ rayon }: { rayon: string }) => {
+	getProducts = async ({ rayon }: { rayon: string[] }) => {
 		return await onerpDb<Product[]>`select
 	p.id,
 	p.image,
@@ -42,7 +42,7 @@ left join produitcomposant pcs on
 left join composant cs on
 	cs.id = pcs.composant_id
 where
-	rayon = ${rayon};
+	rayon = ANY(${rayon});
 	`;
 	};
 

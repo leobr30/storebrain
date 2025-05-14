@@ -181,7 +181,7 @@ export class AnalyseService {
     );
     const productsData: ProductData[] = [];
     this.logger.debug(`Load products`);
-    const products = await this.oneRPService.getProducts({ rayon: 'ARGENT' });
+    const products = await this.oneRPService.getProducts({ rayon: dto.departments });
     this.logger.debug(`${products.length} products founds....`);
     await Promise.all(
       products.map(async (product) => {
@@ -678,7 +678,7 @@ export class AnalyseService {
     const debug = true;
     this.logger.log(`Start analyse....`);
     this.logger.log(`get products....`);
-    const products = await this.oneRPService.getProducts({ rayon: 'OR' });
+    const products = await this.oneRPService.getProducts({ rayon: ['OR'] });
     this.logger.log(`${products.length} products founds....`);
     const startDate = startOfDay(addYears(new Date(), -1));
     const endDate = endOfDay(new Date());

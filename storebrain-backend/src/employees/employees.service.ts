@@ -835,6 +835,7 @@ export class EmployeesService {
               select: {
                 id: true,
                 status: true,
+                dateSignature: true,
               }
             }
           }

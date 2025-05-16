@@ -16,7 +16,8 @@ model Omar {
   userId Int
   user   User @relation("UserOmars", fields: [userId], references: [id])
 
-  dateSignature DateTime?
+  dateSignature      DateTime?
+  signatureRequestId String?   @unique
 
   mondayAppointmentDetail MondayAppointmentDetail?
 }

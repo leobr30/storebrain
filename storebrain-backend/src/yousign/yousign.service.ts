@@ -1,101 +1,222 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
-import FormData = require('form-data');
-
+import { PrismaService } from 'src/prisma/prisma.service';
+import FormData from 'form-data';
 
 @Injectable()
 export class YousignService {
-    private readonly baseUrl = 'https://api.yousign.app/v3';
+    private readonly baseUrl = 'https://api-sandbox.yousign.app/v3';
     private readonly apiKey = process.env.YOUSIGN_API_KEY;
 
-    private getHeaders() {
+    constructor(private prisma: PrismaService) { }
+
+    private getHeaders(extraHeaders: Record<string, string> = {}) {
         return {
             Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
+            ...extraHeaders,
         };
     }
 
-    async createProcedure(name: string) {
+    async sendToSignature(
+        userId: string,
+        buffer: Buffer,
+        type: 'form' | 'training' | 'omar' | 'quizz',
+        documentId: string | number,
+    ) {
         try {
-            const response = await axios.post(
-                `${this.baseUrl}/procedures`,
-                {
-                    name,
-                    start: false, // on peut la démarrer plus tard avec un appel séparé
-                },
-                { headers: this.getHeaders() }
-            );
-            return response.data;
-        } catch (error) {
-            console.error("❌ Erreur Yousign :", error?.response?.data || error);
-            throw new HttpException('Erreur avec l’API Yousign', HttpStatus.BAD_REQUEST);
-        }
-    }
-    async sendToSignature(userId: string, buffer: Buffer) {
-        try {
-            // 🔍 Récupérer l’utilisateur pour obtenir son nom/email
-            // 👉 À adapter selon ton projet si tu as accès à Prisma ici ou injecte-le
-            const email = 'signataire@example.com'; // Remplace par un vrai email si dispo
-            const userName = 'Nom Utilisateur';     // À récupérer dynamiquement
-
-            // 1️⃣ Créer une procédure
-            const procedure = await this.createProcedure(`Documents à signer pour ${userName}`);
-            const procedureId = procedure.id;
-
-            // 2️⃣ Envoyer le document PDF
-            const fileForm = new FormData();
-            fileForm.append('file', buffer, {
-                filename: 'documents-a-signer.pdf',
-                contentType: 'application/pdf',
-            });
-            fileForm.append('procedure', procedureId);
-
-            const fileUpload = await axios.post(
-                `${this.baseUrl}/files`,
-                fileForm,
-                {
-                    headers: {
-                        Authorization: `Bearer ${this.apiKey}`,
-                        ...fileForm.getHeaders(),
+            const user = await this.prisma.user.findUnique({
+                where: { id: parseInt(userId) },
+                select: {
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    information: {
+                        select: { cellPhone: true },
                     },
+                },
+            });
+
+            if (!user || !user.email || !user.information?.cellPhone) {
+                throw new Error(`Utilisateur, email ou téléphone manquant pour l'ID ${userId}`);
+            }
+
+            const phone = user.information.cellPhone.replace(/^0/, '+33');
+            const fullName = `${user.firstName} ${user.lastName}`;
+
+            // 1️⃣ Création de la signature request
+            const signatureRequestRes = await axios.post(
+                `${this.baseUrl}/signature_requests`,
+                {
+                    name: `Signature pour ${fullName}`,
+                    delivery_mode: 'email',
+                    timezone: 'Europe/Paris',
+                    signers_allowed_to_decline: false,
+                },
+                {
+                    headers: this.getHeaders({ 'Content-Type': 'application/json' }),
                 }
             );
-            const fileId = fileUpload.data.id;
 
-            // 3️⃣ Ajouter un signataire (membre)
-            const member = await axios.post(
-                `${this.baseUrl}/procedures/${procedureId}/members`,
+            const signatureRequestId = signatureRequestRes.data.id;
+
+            // 2️⃣ Upload du document
+            const form = new FormData();
+            form.append('file', buffer, {
+                filename: 'document-a-signer.pdf',
+                contentType: 'application/pdf',
+            });
+            form.append('nature', 'signable_document');
+
+            const docRes = await axios.post(
+                `${this.baseUrl}/signature_requests/${signatureRequestId}/documents`,
+                form,
                 {
-                    firstname: 'Prénom',
-                    lastname: 'Nom',
-                    email: email,
-                    phone: '+33600000000', // facultatif
-                    fileObjects: [
-                        {
-                            file: fileId,
-                            page: 1,
-                            position: '230,500,200,40', // x,y,width,height (à ajuster)
-                            mention: 'Lu et approuvé',
-                            mention2: '',
-                            reason: 'Signature',
-                        },
-                    ],
+                    headers: this.getHeaders(form.getHeaders()),
+                }
+            );
+
+            const documentIdYousign = docRes.data.id;
+
+            // 3️⃣ Ajout du signataire
+            const signerRes = await axios.post(
+                `${this.baseUrl}/signature_requests/${signatureRequestId}/signers`,
+                {
+                    info: {
+                        first_name: user.firstName,
+                        last_name: user.lastName,
+                        email: user.email,
+                        phone_number: phone,
+                        locale: 'fr',
+                    },
+                    signature_level: 'electronic_signature',
+                    signature_authentication_mode: 'otp_sms',
+                    delivery_mode: 'email',
                 },
-                { headers: this.getHeaders() }
+                {
+                    headers: this.getHeaders({ 'Content-Type': 'application/json' }),
+                }
             );
 
-            // 4️⃣ Lancer la procédure
+            const signerId = signerRes.data.id;
+
+            // 4️⃣ Ajout du champ de signature
             await axios.post(
-                `${this.baseUrl}/procedures/${procedureId}/start`,
-                {},
-                { headers: this.getHeaders() }
+                `${this.baseUrl}/signature_requests/${signatureRequestId}/documents/${documentIdYousign}/fields`,
+                {
+                    type: 'signature',
+                    signer_id: signerId,
+                    page: 1,
+                    x: 230,
+                    y: 500,
+                    width: 200,
+                    height: 40,
+                    reason: 'Signature',
+                },
+                {
+                    headers: this.getHeaders({ 'Content-Type': 'application/json' }),
+                }
             );
 
-            console.log(`✅ Documents envoyés à Yousign pour l'utilisateur ${userId}`);
-            return { success: true };
+            // 5️⃣ Activation de la signature
+            await axios.post(
+                `${this.baseUrl}/signature_requests/${signatureRequestId}/activate`,
+                {},
+                {
+                    headers: this.getHeaders({ 'Content-Type': 'application/json' }),
+                }
+            );
+
+            if (documentId === 'merged') {
+                await this.prisma.signatureRequestLog.create({
+                    data: {
+                        signatureRequestId,
+                        userId: parseInt(userId),
+                        type: 'merged',
+                        documentId: 'merged',
+                    },
+                });
+
+                console.log(`📄 Signature multiple envoyée (PDF fusionné), requête enregistrée.`);
+                return { success: true, signatureRequestId };
+            }
+
+
+            // 6️⃣ Enregistrement dans SignatureRequestLog
+            await this.prisma.signatureRequestLog.create({
+                data: {
+                    userId: parseInt(userId),
+                    type,
+                    documentId: String(documentId),
+                    signatureRequestId,
+                },
+            });
+
+
+
+
+            // 6️⃣ Mise à jour en base du document concerné
+            switch (type) {
+                case 'form':
+                    await this.prisma.form.update({
+                        where: { id: documentId as string },
+                        data: { signatureRequestId },
+                    });
+                    break;
+                case 'training':
+                    await this.prisma.training.update({
+                        where: { id: Number(documentId) },
+                        data: { signatureRequestId },
+                    });
+                    break;
+                case 'omar':
+                    await this.prisma.omar.update({
+                        where: { id: Number(documentId) },
+                        data: { signatureRequestId },
+                    });
+                    break;
+                case 'quizz':
+                    await this.prisma.quizz.update({
+                        where: { id: Number(documentId) },
+                        data: { signatureRequestId },
+                    });
+                    break;
+                default:
+                    throw new Error(`Type de document non pris en charge : ${type}`);
+            }
+
+            console.log(`✅ Signature request créée pour ${fullName} et enregistrée dans ${type} ${documentId}`);
+
+            return { success: true, signatureRequestId };
         } catch (error) {
-            console.error("❌ Erreur dans sendToSignature :", error?.response?.data || error);
+            console.error('❌ Erreur dans sendToSignature :', error?.response?.data || error);
             throw new HttpException('Échec de l’envoi à Yousign', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    async checkSignatureStatus(signatureRequestId: string) {
+        try {
+            console.log("📤 Vérification du statut Yousign pour :", signatureRequestId);
+            const res = await axios.get(
+                `${this.baseUrl}/signature_requests/${signatureRequestId}`,
+                {
+                    headers: this.getHeaders(),
+                }
+            );
+
+            const status = res.data.status;
+            const signers = res.data.signers;
+
+            return {
+                status,
+                signers: signers.map((s: any) => ({ id: s.id, status: s.status })),
+            };
+        } catch (error) {
+            console.error('❌ Erreur dans checkSignatureStatus :', error?.response?.data || error);
+            throw new HttpException('Erreur lors de la vérification de signature Yousign', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
 }

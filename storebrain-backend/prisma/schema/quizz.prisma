@@ -1,8 +1,9 @@
 model Quizz {
-  id        Int      @id @default(autoincrement())
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  title              String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  signatureRequestId String?  @unique
 
   // Relations
   sections          QuizzSection[]      @relation("QuizzSections")
@@ -10,7 +11,7 @@ model Quizz {
   createdBy         User                @relation("CreatedQuizz", fields: [createdById], references: [id], onDelete: Cascade)
   assignedToId      Int
   assignedTo        User                @relation("AssignedQuizz", fields: [assignedToId], references: [id], onDelete: Cascade)
-  dateSignature DateTime?
+  dateSignature     DateTime?
   JobOnboardingStep JobOnboardingStep[]
 }
 

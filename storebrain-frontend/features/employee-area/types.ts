@@ -192,6 +192,7 @@ export type Omar = {
     action: string;
     result: string;
     status: Status
+    dateSignature?: string | Date;
     user: {
         name: string;
     }

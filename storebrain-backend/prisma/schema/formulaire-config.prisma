@@ -4,7 +4,8 @@ model Form {
   comment            String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  dateSignature DateTime?
+  dateSignature      DateTime?
+  signatureRequestId String?             @unique
   sections           Section[]
   responses          EmployeeResponse[]
   histories          FormHistory[]

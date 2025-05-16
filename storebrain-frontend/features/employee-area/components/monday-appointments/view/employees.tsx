@@ -231,24 +231,18 @@ export const Employees = ({
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {!detail.signedAt && detail.omar ? (
+                                        {detail.omar?.dateSignature ? (
+                                            `Signée à ${format(new Date(detail.omar.dateSignature), "HH:mm")}`
+                                        ) : detail.omar && !detail.signedAt ? (
                                             <LoginDialog
                                                 title={"Signature requise pour " + detail.fullname}
                                                 userId={detail.userId!}
                                                 onSuccess={() => handleSuccesLogin(detail.id, detail.userId!)}
-                                                withTrigger={
-                                                    <Button variant={"ghost"}>
-                                                        Signature Requise
-                                                    </Button>
-                                                }
+                                                withTrigger={<Button variant={"ghost"}>Signature Requise</Button>}
                                             />
-                                        ) : null}
-                                        {detail.signedAt
-                                            ? `Signée à ${format(
-                                                new Date(detail.signedAt),
-                                                "HH:mm"
-                                            )}`
-                                            : null}
+                                        ) : (
+                                            "Signature en cours"
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );

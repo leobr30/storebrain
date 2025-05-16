@@ -16,7 +16,8 @@ model Training {
   subjects            TrainingSubject[]
   userJobOnboardingId Int
   userJobOnboarding   UserJobOnboarding @relation(fields: [userJobOnboardingId], references: [id])
-  dateSignature DateTime?
+  dateSignature       DateTime?
+  signatureRequestId  String?           @unique
 }
 
 model TrainingSubject {

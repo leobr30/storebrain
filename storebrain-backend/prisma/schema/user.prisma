@@ -39,6 +39,7 @@ model User {
   employeeResponses EmployeeResponse[]
   formHistories     FormHistory[]
   Document          Document[]
+  signatureRequests SignatureRequestLog[]
 }
 
 model UserInformation {
@@ -108,8 +109,6 @@ model UserJobOnboarding {
 
   formId String? // ✅ nouvelle clé étrangère
   form   Form?   @relation(fields: [formId], references: [id]) // ✅ lien relationnel
-
-
 }
 
 model UserAbsence {

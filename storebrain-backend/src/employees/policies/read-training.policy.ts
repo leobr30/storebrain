@@ -6,6 +6,11 @@ import { IPolicyHandler } from 'src/casl/policy.interface';
 
 export class ReadTrainingPolicyHandler implements IPolicyHandler {
   handle(ability: AppAbility): boolean {
-    return ability.can(Action.Read, 'trainings');
+    console.log("📌 Policy Check: Action.Read, Subject: employees →", ability.can(Action.Read, 'employees'));
+    return (
+      ability.can(Action.Read, 'trainings') ||
+      ability.can(Action.Manage, 'all')
+    );
   }
 }
+

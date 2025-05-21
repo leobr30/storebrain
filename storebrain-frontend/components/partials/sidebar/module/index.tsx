@@ -16,9 +16,14 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import MenuOverlayPortal from "./MenuOverlayPortal";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+import { filterSidebarNav } from "@/lib/filterSidebarNav";
+
 
 const ModuleSidebar = ({ trans }: { trans: any }) => {
-  const menus = menusConfig?.sidebarNav?.modern || [];
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions ?? [];
+  const menus = filterSidebarNav(menusConfig?.sidebarNav?.modern || [], permissions);
   const { subMenu, setSubmenu, collapsed, setCollapsed, sidebarBg } =
     useSidebar();
   const { isRtl } = useThemeStore();

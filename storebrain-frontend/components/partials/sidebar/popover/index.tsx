@@ -12,12 +12,17 @@ import { useSidebar, useThemeStore } from "@/store";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { filterSidebarNav } from "@/lib/filterSidebarNav";
+import { Button } from "@/components/ui/button";
 
 
 const PopoverSidebar = ({ trans }: { trans: string }) => {
   const { collapsed, sidebarBg } = useSidebar();
   const { layout, isRtl } = useThemeStore();
-  const menus = menusConfig?.sidebarNav?.classic || [];
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions ?? [];
+  const menus = filterSidebarNav(menusConfig?.sidebarNav?.classic || [], permissions);
   const [activeSubmenu, setActiveSubmenu] = useState<number | null>(null);
   const [activeMultiMenu, setMultiMenu] = useState<number | null>(null);
 
@@ -84,63 +89,71 @@ const PopoverSidebar = ({ trans }: { trans: string }) => {
       <SidebarLogo />
       <Separator />
       <ScrollArea
-        className={cn("sidebar-menu  h-[calc(100%-80px)] ", {
+        className={cn("sidebar-menu  h-[calc(100%-80px)] flex flex-col justify-between", {
           "px-4": !collapsed,
         })}
       >
-        <ul
-          dir={isRtl ? "rtl" : "ltr"}
-          className={cn(" space-y-1", {
-            " space-y-2 text-center": collapsed,
-          })}
-        >
-          {menus.map((item, i) => (
-            <li key={`menu_key_${i}`}>
-              {/* single menu  */}
-
-              {!item.child && !item.isHeader && (
-                <SingleMenuItem
-                  item={item}
-                  collapsed={collapsed}
-                  trans={trans}
-                />
-              )}
-
-              {/* menu label */}
-              {item.isHeader && !item.child && !collapsed && (
-                <MenuLabel item={item} trans={trans} />
-              )}
-
-              {/* sub menu */}
-              {item.child && (
-                <>
-                  <SubMenuHandler
+        <div>
+          <ul
+            dir={isRtl ? "rtl" : "ltr"}
+            className={cn("space-y-1", {
+              "space-y-2 text-center": collapsed,
+            })}
+          >
+            {menus.map((item, i) => (
+              <li key={`menu_key_${i}`}>
+                {!item.child && !item.isHeader && (
+                  <SingleMenuItem
                     item={item}
-                    toggleSubmenu={toggleSubmenu}
-                    index={i}
-                    activeSubmenu={activeSubmenu}
                     collapsed={collapsed}
-                    menuTitle={item.title}
                     trans={trans}
                   />
-                  {!collapsed && (
-                    <NestedSubMenu
-                      toggleMultiMenu={toggleMultiMenu}
-                      activeMultiMenu={activeMultiMenu}
-                      activeSubmenu={activeSubmenu}
+                )}
+                {item.isHeader && !item.child && !collapsed && (
+                  <MenuLabel item={item} trans={trans} />
+                )}
+                {item.child && (
+                  <>
+                    <SubMenuHandler
                       item={item}
+                      toggleSubmenu={toggleSubmenu}
                       index={i}
-
+                      activeSubmenu={activeSubmenu}
+                      collapsed={collapsed}
+                      menuTitle={item.title}
                       trans={trans}
                     />
-                  )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-        
+                    {!collapsed && (
+                      <NestedSubMenu
+                        toggleMultiMenu={toggleMultiMenu}
+                        activeMultiMenu={activeMultiMenu}
+                        activeSubmenu={activeSubmenu}
+                        item={item}
+                        index={i}
+                        trans={trans}
+                      />
+                    )}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className={cn("pt-4", { "text-center": collapsed })}>
+          <Separator className="my-4" />
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => signOut()}
+          >
+            Se déconnecter
+          </Button>
+        </div>
       </ScrollArea>
+
+
+
     </div>
   );
 };

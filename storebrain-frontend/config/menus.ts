@@ -53,11 +53,11 @@ export interface MenuItemProps {
   href?: string;
   child?: MenuItemProps[];
   megaMenu?: MenuItemProps[];
-  multi_menu? : MenuItemProps[]
+  multi_menu?: MenuItemProps[]
   nested?: MenuItemProps[]
   onClick: () => void;
 
-  
+
 }
 
 export const menusConfig = {
@@ -991,7 +991,7 @@ export const menusConfig = {
   ],
   sidebarNav: {
     modern: [
-      
+
     ],
     classic: [
       {
@@ -1002,12 +1002,13 @@ export const menusConfig = {
         title: "Analyse",
         icon: DashBoard,
         href: "/analyze",
+        requiredPermission: { action: 'manage', subject: 'all' },
         child: [
           {
             title: "Analyse 1",
             href: "/analyze1",
             icon: Graph,
-          },          
+          },
         ],
       },
       {
@@ -1034,39 +1035,37 @@ export const menusConfig = {
       },
       {
         title: "Outils",
-        icon: DashBoard,        
+        icon: DashBoard,
+        requiredPermission: { action: 'manage', subject: 'all' },
         child: [
           {
-            title:'Changement prix',
+            title: 'Changement prix',
             href: "/tools/price-change",
           },
           {
-            title:'Equilibrage',
+            title: 'Equilibrage',
             href: "/tools/balance",
-          },      
+          },
           {
-            title:'OneRP',
+            title: 'OneRP',
             href: "/tools/onerp",
-          },      
-        ]        
+          },
+        ]
       },
       {
         title: "Configuration",
-        icon: DashBoard,        
+        icon: DashBoard,
+        requiredPermission: { action: 'manage', subject: 'all' },
         child: [
           {
-            title:'Documents',
+            title: 'Documents',
             href: "/configuration/documents/formulaire",
           },
           {
-            title:'Quizz',
+            title: 'Quizz',
             href: "/configuration/documents/quizz",
-          },      
-          {
-            title:'Emploies',
-            href: "/tools/onerp",
-          },      
-        ]        
+          },
+        ]
       },
       // {
       //   title: "Site Internet",

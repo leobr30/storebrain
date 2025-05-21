@@ -4,6 +4,9 @@ import { menus, type Menu } from "./../data";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { filterSidebarNav } from "@/lib/filterSidebarNav";
+import { useSession } from "next-auth/react";
+
 export default function NavMenu() {
   const [offset, setOffset] = React.useState<number | null>(null);
   const [list, setList] = React.useState<HTMLUListElement | null | undefined>();
@@ -20,6 +23,10 @@ export default function NavMenu() {
     }
     return trigger;
   };
+
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions ?? [];
+  const filteredMenus = filterSidebarNav(menus, permissions);
 
   return (
     <div>
@@ -38,7 +45,7 @@ export default function NavMenu() {
 
           className="group flex list-none gap-8"
         >
-          {menus?.map((item: any, index: number) =>
+          {filteredMenus?.map((item: any, index: number) =>
             item.child ? (
               <NavigationMenu.Item key={`item-${index}`} value={item}>
                 <NavigationMenu.Trigger
@@ -99,6 +106,7 @@ export default function NavMenu() {
               top: "100%",
               transition: "all 0.5s ease",
             }}
+            
           />
         </div>
       </NavigationMenu.Root>

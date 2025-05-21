@@ -18,7 +18,7 @@ const ErrorPage = () => {
           <div className="mt-3 text-default-600 text-sm md:text-base">
             The page you are looking for might have been removed had <br /> its name changed or is temporarily unavailable.</div>
           <Button asChild className="mt-9  md:min-w-[300px]" size="lg">
-            <Link href="/dashboard">Go to Homepage</Link>
+            <Link href="/employee-area/home">Go to Homepage</Link>
           </Button>
         </div>
       </div>

@@ -68,6 +68,7 @@ interface ArticleMagasinMouvement {
 
   interface StoreShipmentTracking {
     date: Date;
+    datecreation: Date;
     bon: string;
     magasin: number;
     livraison_site: boolean;
@@ -75,5 +76,6 @@ interface ArticleMagasinMouvement {
     date_reception: Date | null;
     ged: number;
     produit_quantite: number;
+    transfert_type: string | null;
   } 
   

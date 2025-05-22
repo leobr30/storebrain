@@ -24,8 +24,7 @@ export function OnerpForm() {
         { type: "additif-coque", name: "Additif Coque" },
         { type: "creation-fairbelle", name: "Creation Fairbelle" },
         { type: "fairbelle-pictures", name: "Fairbelle Pictures" },
-
-
+        { type: "create-robbez", name: "Creation Robbez" },
     ];
 
     const form = useForm<FormValues>({

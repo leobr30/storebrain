@@ -1,3 +1,4 @@
+
 import { auth } from "./auth";
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}, withFormData?: boolean) => {
@@ -8,6 +9,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
             console.error("❌ Aucun token trouvé, impossible d'effectuer la requête.");
             throw new Error("Utilisateur non authentifié.");
         }
+
 
         console.log("🔍 Token utilisé :", session.tokens.accessToken);
 
@@ -61,6 +63,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
     }
 
 };
+
 
 
 // 📌 Fonction spécifique pour le téléchargement de fichiers (ex: PDF)

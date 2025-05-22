@@ -85,7 +85,8 @@ export const Analyze1Dialog = ({
                         <Analyze1DialogTableProduct
                         data={data.products as []}
                         columns={getAnalyze1ProductColumns(setProductDialogData)}
-                        defaultSorting={{ id: 'totalSalesRevenue', desc: true }}/>
+                        defaultSorting={{ id: 'totalSalesRevenue', desc: true }}
+                        showExport={true}/>
                 
                         // <CardTableWithButtons
                         //     columns={productColumns}

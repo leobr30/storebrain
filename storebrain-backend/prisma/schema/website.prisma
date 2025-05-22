@@ -1,0 +1,10 @@
+model WebsiteProductTracking {
+  id Int @id @default(autoincrement())
+  produitId Int @unique
+  fournisseurId Int
+  reference String
+  hasPhotos Boolean @default(false)
+  hasProductSheet Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 

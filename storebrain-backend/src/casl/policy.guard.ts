@@ -12,7 +12,7 @@ export class PoliciesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private caslAbilityFactory: CaslAbilityFactory,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const policyHandlers =
@@ -24,6 +24,9 @@ export class PoliciesGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest();
 
     const ability = this.caslAbilityFactory.createForUser(user.permissions);
+
+    console.log("📌 Policy Check: trying to access:", policyHandlers.map(p => p.constructor.name));
+    console.log("🛡️ Current Permissions:", user.permissions);
 
     return policyHandlers.every((handler) =>
       this.execPolicyHandler(handler, ability),

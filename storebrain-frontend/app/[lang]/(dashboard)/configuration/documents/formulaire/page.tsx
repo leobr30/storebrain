@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -10,11 +10,30 @@ import { PencilLine } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
 import { Eraser } from 'lucide-react';
 import { ArrowDown } from 'lucide-react';
-import { ArrowUp} from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import toast from "react-hot-toast";
+import { useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
 
 
 export default function DocumentForm() {
+
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status !== "loading") {
+      const hasPermission = session?.user?.permissions?.some(
+        (p) => p.action === "manage" && p.subject === "all"
+      );
+
+      if (!hasPermission) {
+        router.replace("/error-page/403");
+      }
+    }
+  }, [session, status, router]);
+
+  if (status === "loading") return null;
   const [sections, setSections] = useState([
     {
       id: 1,
@@ -152,21 +171,21 @@ export default function DocumentForm() {
   const moveSection = (index: number, direction: "up" | "down") => {
     setSections((prev) => {
       const newSections = [...prev];
-  
+
       if (
-        (direction === "up" && index === 0) || 
+        (direction === "up" && index === 0) ||
         (direction === "down" && index === newSections.length - 1)
       ) {
         return prev;
       }
       const newIndex = direction === "up" ? index - 1 : index + 1;
-  
+
       [newSections[index], newSections[newIndex]] = [newSections[newIndex], newSections[index]];
-  
+
       return newSections;
     });
   };
-  
+
 
 
 

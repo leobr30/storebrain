@@ -1,0 +1,19 @@
+enum SignatureDocumentType {
+  form
+  training
+  omar
+  quizz
+  merged
+}
+
+
+model SignatureRequestLog {
+  id                 Int                  @id @default(autoincrement())
+  signatureRequestId String              @unique
+  userId             Int
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               SignatureDocumentType
+  documentId         String
+  createdAt          DateTime            @default(now())
+  dateSignature      DateTime?
+}

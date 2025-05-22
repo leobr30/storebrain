@@ -8,6 +8,7 @@ import { AssignUserDialog } from '@/features/configuring/documents/components/As
 import { createQuizz, fetchAllEmployees } from '../action';
 import { useSession } from 'next-auth/react';
 import { v4 as uuidv4 } from 'uuid';
+import { useRouter } from 'next/navigation';
 
 interface Employee {
     id: string;
@@ -52,6 +53,23 @@ export default function QuizzPage({ }: QuizzPageProps) {
             ],
         },
     ]);
+
+    
+    const router = useRouter();
+
+    useEffect(() => {
+        if (status !== "loading") {
+            const hasPermission = session?.user?.permissions?.some(
+                (p) => p.action === "manage" && p.subject === "all"
+            );
+
+            if (!hasPermission) {
+                router.replace("/error-page/403");
+            }
+        }
+    }, [session, status, router]);
+
+    if (status === "loading") return null;
 
     const handleSaveQuizz = async () => {
         const payload = {

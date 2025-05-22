@@ -983,26 +983,11 @@ export class PdfService {
       });
 
       // ✅ Envoi à Yousign
-      await this.yousignService.sendToSignature(userId, mergedPdf);
+      await this.yousignService.sendToSignature(userId, mergedPdf, 'form', 'merged');
 
       // ✅ Mise à jour des champs de signature
       const now = new Date();
       const parsedUserId = parseInt(userId);
-
-      await Promise.all([
-        this.prismaService.training.updateMany({
-          where: { userId: parsedUserId, dateSignature: null },
-          data: { dateSignature: now },
-        }),
-        this.prismaService.quizz.updateMany({
-          where: { assignedToId: parsedUserId, dateSignature: null },
-          data: { dateSignature: now },
-        }),
-        this.prismaService.omar.updateMany({
-          where: { userId: parsedUserId, dateSignature: null },
-          data: { dateSignature: now },
-        }),
-      ]);
 
       // ✅ Mise à jour des Form liés aux EmployeeResponses
       const responses = await this.prismaService.employeeResponse.findMany({

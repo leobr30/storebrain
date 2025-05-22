@@ -28,10 +28,14 @@ import { FormsModule } from './forms/forms.module';
 import { DocumentsModule } from './documents/documents.module';
 import { QuizzModule } from './quizz/quizz.module';
 import { YousignService } from './yousign/yousign.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { YousignModule } from './yousign/yousign.module';
 
 
 @Module({
   imports: [
+    YousignModule,
+    ScheduleModule.forRoot(),
     QuizzModule,
     DocumentsModule,
     FormsModule,
@@ -62,7 +66,7 @@ import { YousignService } from './yousign/yousign.service';
       },
     }),
     ToolsModule,
-    ClosingDayModule,    
+    ClosingDayModule,
   ],
   controllers: [FormsController, EmployeeResponsesController],
   providers: [SavService, PrismaService, YousignService],
@@ -70,6 +74,6 @@ import { YousignService } from './yousign/yousign.service';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    
+
   }
 }

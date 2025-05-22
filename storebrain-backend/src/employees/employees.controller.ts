@@ -199,7 +199,6 @@ export class EmployeesController {
     return { message: "Integration started successfully" }; // ✅ Return a JSON response
   }
 
-  // Dans ton fichier employees.controller.ts
   @Post(':id/start-training/:employeeJobIntegrationId')
   @UseGuards(PoliciesGuard)
   @CheckPolicies(new StartTrainingPolicyHandler())

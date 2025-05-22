@@ -1,9 +1,13 @@
+if (!globalThis.crypto) {
+  globalThis.crypto = require('crypto');
+}
+
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { json } from 'body-parser';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
-
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,7 +20,7 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('api/v1');
-
+  
   // Configuration CORS complète
   app.enableCors({
     origin: '*',
@@ -25,7 +29,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  await app.listen(3010, '0.0.0.0');
+  await app.listen(3010);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

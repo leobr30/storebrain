@@ -8,11 +8,11 @@ import { addYears } from "date-fns"
 //     return await fetchWithAuth('analyze',{method:'POST'})
 // }
 
-export const getAnalyze1 = async(supplierId: string | null) => {
+export const getAnalyze1 = async(supplierId: string | null, departments: string[]) => {
     const body =  JSON.stringify({
         storeIds:[],
         supplierIds:supplierId ? [supplierId] : [],
-        departments:['OR'],
+        departments:departments,
         startDate:addYears(new Date(), -1) ,
         endDate:new Date(),
     })

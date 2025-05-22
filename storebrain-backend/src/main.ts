@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { json } from 'body-parser';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
-import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,8 +15,16 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('api/v1');
-  app.enableCors();
-  await app.listen(3010, '0.0.0.0');
+  
+  // Configuration CORS complète
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
+  await app.listen(3010);
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

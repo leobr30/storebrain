@@ -17,6 +17,7 @@ export interface ProductInformation {
   supplier: string;
   type: string;
   reference: string;
+  productId?: number;
   size: number | null;
   stock: number;
   stockPurchasePrice: number;

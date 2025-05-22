@@ -191,7 +191,7 @@ export interface Grouping {
   department: string | null;
   group: string | null;
   family: string | null;
-  familyKeyword?: string;
+  familyKeyword?: string | string[];
   stone: string | null;
   withStone: boolean | null;
   label: string | null;

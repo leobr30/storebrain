@@ -2600,4 +2600,26 @@ order by
 	' ',
 	u.nom)`;
 	}
+
+	async getProductForTracking() {
+		return await onerpDb`select p.id,
+pf.fournisseur_id ,
+pf.reference,
+cf.groupe,
+cf.libelle as famille,
+sum(amm.stock) stock_total,
+sum(case when amm.magasin_id = 1 then amm.stock else 0 end) stock_sas
+from produit p 
+join article a on a.produit_id = p.id
+join articlemagasinmouvement amm on amm.article_id = a.id
+join produitfournisseur pf on pf.produit_id = p.id and a.fournisseur_id = pf.fournisseur_id and pf.actif = true 
+join produitcomposant pcf on pcf.id  = p.famille_id
+join composant cf on cf.id = pcf.composant_id
+where p.actif = true
+group by p.id,
+pf.fournisseur_id,
+pf.reference,
+cf.groupe,
+cf.libelle;`;
+	}
 }

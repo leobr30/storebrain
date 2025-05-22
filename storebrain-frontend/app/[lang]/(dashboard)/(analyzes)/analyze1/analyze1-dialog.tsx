@@ -57,7 +57,7 @@ export const Analyze1Dialog = ({
                         defaultSorting={{ id: 'totalSalesRevenue', desc: true }}                        
                     />
                     :
-                    data.ranges ?
+                    data.ranges && false ?
                         <>
                             {/* <Alert color="secondary">
                                 <Icon

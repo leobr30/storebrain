@@ -5,7 +5,8 @@ export const onerpDb = postgres(
   {
     idle_timeout: 20,
     max_lifetime: 60 * 30,
-    max: 20,
+    max: 30,
+    prepare: true,
   },
 );
 

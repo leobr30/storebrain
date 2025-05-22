@@ -1,5 +1,18 @@
 import { Grouping } from 'src/common/interfaces/analyse.interface';
 
+export const defaultGroupings: Grouping[] = [
+  {
+    department: 'OR',
+    group: null,
+    family: null,
+    stone: null,
+    label: 'Autres',
+    withStone: null,
+    other: false,
+    default: true,
+  },  
+];
+
 const doigtGroupings: Grouping[] = [
   {
     department: 'OR',
@@ -401,6 +414,320 @@ const couGroupings: Grouping[] = [
       },
     ],
   }
+];
+
+//ARGENT
+const poignetArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Poignet',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: [
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Identité',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Jonc',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Bracelet',
+        stone: 'Ambre',
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Bracelet',
+        stone: 'Perle',
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Bracelet',
+        stone: null,
+        withStone: true,
+        label: 'Empierré',
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Bracelet',
+        stone: null,
+        withStone: false,
+        label: 'Tout Argent',
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Poignet',
+        family: 'Bracelet Souple',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      }
+    ]
+  }
+]
+
+const doigtArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Doigt',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: []
+  }
+]
+
+const couArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Cou',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: [
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Collier',
+        stone: 'Oxyde de zirconium',
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Collier',
+        stone: 'Ambre',
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Collier',
+        stone: 'Perle',
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Collier',
+        stone: null,
+        withStone: true,
+        label: 'Empierré',
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Collier',
+        stone: null,
+        withStone: false,
+        label: 'Tout Argent',
+        other: false,
+        default: false,
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+        familyKeyword: 'Forçat',
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+        familyKeyword: 'Grain de café',
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+        familyKeyword: 'Gourmette',
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+        familyKeyword: 'Marine barrée',
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: 'Alterné',
+        other: false,
+        default: false,
+        familyKeyword:['Alt 1+3','Alt 1+1']
+      },
+      {
+        department: 'ARGENT',
+        group: 'Cou',
+        family: 'Chaine',
+        stone: null,
+        withStone: null,
+        label: null,
+        other: false,
+        default: false,
+
+      },
+    ]
+  }
+]
+
+const oreillesArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Oreilles',
+    family: 'Créoles',
+    stone: null,
+    withStone: true,
+    label: 'Empierré',
+    other: false,
+    default: false,
+    subGroupings: []
+  },
+  {
+    department: 'ARGENT',
+    group: 'Oreilles',
+    family: 'Créoles',
+    stone: null,
+    withStone: false,
+    label: 'Tout Argent',
+    other: false,
+    default: false,
+    subGroupings: []
+  },
+  {
+    department: 'ARGENT',
+    group: 'Oreilles',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: []
+  }
+]
+
+const suspenduArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Suspendu',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: []
+  }
+]
+
+const piercingArgentGroupings: Grouping[] = [
+  {
+    department: 'ARGENT',
+    group: 'Piercing',
+    family: null,
+    stone: null,
+    withStone: null,
+    label: null,
+    other: false,
+    default: false,
+    subGroupings: []
+  }
+]
+
+const argentGroupings: Grouping[] = [
+  ...poignetArgentGroupings,
+  ...doigtArgentGroupings,
+  ...couArgentGroupings,
+  ...oreillesArgentGroupings,
+  ...suspenduArgentGroupings,
+  ...piercingArgentGroupings,
+  {
+    department: 'ARGENT',
+    group: null,
+    family: null,
+    stone: null,
+    withStone: null,
+    label: 'Autres',
+    other: false,
+    default: true,
+  },
 ];
 
 export const groupings: Grouping[] = [
@@ -806,17 +1133,8 @@ export const groupings: Grouping[] = [
     ],
   },
   // NE PAS TOUCHER
-  //Default OR
-  {
-    department: 'OR',
-    group: null,
-    family: null,
-    stone: null,
-    label: 'Autres',
-    withStone: null,
-    other: false,
-    default: true,
-  },
+  ...defaultGroupings,
+  ...argentGroupings,
 ];
 
 export const detailGroupings: Grouping[] = [
@@ -1360,3 +1678,5 @@ export const detailGroupings: Grouping[] = [
     default: true,
   },
 ];
+
+

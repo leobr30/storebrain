@@ -1,12 +1,16 @@
-
 import { BlobOptions } from "buffer";
 import { auth } from "./auth";
 
 
-export const fetchWithAuth = async (url: string, options: RequestInit = {}, withFormData?: boolean) => {
+export const fetchWithAuth = async (
+    url: string, 
+    options: RequestInit & { onProgress?: (progress: { current: number, total: number }) => void } = {}, 
+    withFormData?: boolean
+) => {
     const session = await auth()
+    const { onProgress, ...fetchOptions } = options;
 
-    let  headers:{Authorization: string, "Content-Type"?:string} = {
+    let headers:{Authorization: string, "Content-Type"?:string} = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session?.tokens?.accessToken}`,
     }
@@ -15,9 +19,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
         delete headers["Content-Type"]
     }
 
-
     const res = await fetch(`${process.env.API_URL}/${url}`, {
-        ...options,
+        ...fetchOptions,
         headers: headers 
     })
     if (!res.ok) {
@@ -29,7 +32,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}, with
         return await JSON.parse(text)
     }
     return null
-
 }
 
 export const fetchFile = async (url: string, options: RequestInit = {}) => {

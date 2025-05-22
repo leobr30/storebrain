@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Subject } from 'rxjs';
 import {
   Product,
   ProductInformation,
@@ -34,6 +35,7 @@ import {
 import { groupings } from './analyze-grouping';
 import * as csv from 'fast-csv';
 import { Analyze1Dto } from './dto/analyze1.dto';
+import { AnalyseGateway } from './analyse.gateway';
 
 enum Type {
   Quarterly,
@@ -52,6 +54,7 @@ export enum AnalyseIcon {
 @Injectable()
 export class AnalyseService {
   private readonly logger = new Logger(AnalyseService.name);
+  private progressSubject = new Subject<{ current: number; total: number }>();
 
   gammes = [
     {
@@ -173,7 +176,10 @@ export class AnalyseService {
     },
   ];
 
-  constructor(private oneRPService: OnerpService) { }
+  constructor(
+    private oneRPService: OnerpService,
+    private analyseGateway: AnalyseGateway,
+  ) {}
 
   async getAnalyze1(dto: Analyze1Dto) {
     this.logger.log(
@@ -183,6 +189,8 @@ export class AnalyseService {
     this.logger.debug(`Load products`);
     const products = await this.oneRPService.getProducts({ rayon: dto.departments });
     this.logger.debug(`${products.length} products founds....`);
+    
+    let processedProducts = 0;
     await Promise.all(
       products.map(async (product) => {
         const details = await this.oneRPService.getProductDetails(
@@ -198,12 +206,15 @@ export class AnalyseService {
             endOfDay(dto.endDate),
           ),
         );
+        processedProducts++;
+        this.analyseGateway.emitProgress({ current: processedProducts, total: products.length });
       }),
     );
     const result = this.loadProductGroupings(productsData, groupings);
     this.logger.log(`End Analyze1`);
     return result;
   }
+
 
   loadProductGroupings(products: ProductData[], groupings: Grouping[]) {
     const wihExport = true;
@@ -237,6 +248,7 @@ export class AnalyseService {
           );
           subGroupingResults.push(subGroupingResult);
         });
+        if(remainingSubGroupingProducts.length > 0){
         const defaultSubGroupingResult = this.loadProductGrouping(
           remainingSubGroupingProducts,
           {
@@ -249,18 +261,9 @@ export class AnalyseService {
             other: false,
             default: false,
           },
-        );
-        subGroupingResults.push(defaultSubGroupingResult);
-        if (wihExport) {
-          subGroupingResults.map((subGroupingResult) =>
-            productExport.push(
-              ...subGroupingResult.products.map((product) => ({
-                ...product,
-                grouping: `${grouping.department}-${grouping.group}-${subGroupingResult.label}`,
-              })),
-            ),
           );
-        }
+          subGroupingResults.push(defaultSubGroupingResult);
+        }        
         let sumTotalSalesRevenue = 0;
         subGroupingResults
           .sort((a, b) => b.totalSalesRevenue - a.totalSalesRevenue)
@@ -337,7 +340,7 @@ export class AnalyseService {
     //Shared
     const groupingSalesPrice: number[] = [];
     const groupingProducts: GroupingProduct[] = [];
-    const label = `${!subGrouping ? grouping.department : ''}${!subGrouping && grouping.group ? '-' + grouping.group : ''}${grouping.family ? grouping.family : ''}${grouping.stone ? '-' + grouping.stone : ''}${grouping.label ? '-' + grouping.label : ''}${grouping.familyKeyword ? '-' + grouping.familyKeyword : ''}`;
+    const label = `${!subGrouping ? grouping.department : ''}${!subGrouping && grouping.group ? '-' + grouping.group : ''}${grouping.family ? grouping.family : ''}${grouping.stone ? '-' + grouping.stone : ''}${grouping.label ? '-' + grouping.label : ''}${ grouping.familyKeyword && !Array.isArray(grouping.familyKeyword) ? '-' + grouping.familyKeyword : ''}`;
     //N
     let totalSales = 0;
     let totalSalesRevenue = 0;
@@ -674,381 +677,10 @@ export class AnalyseService {
     };
   }
 
-  async getAnalyseV3() {
-    const debug = true;
-    this.logger.log(`Start analyse....`);
-    this.logger.log(`get products....`);
-    const products = await this.oneRPService.getProducts({ rayon: ['OR'] });
-    this.logger.log(`${products.length} products founds....`);
-    const startDate = startOfDay(addYears(new Date(), -1));
-    const endDate = endOfDay(new Date());
-    // const startDate = startOfDay(new Date('2019-10-31'));
-    // const endDate = endOfDay(new Date('2019-12-28'));
-    const productsDetails: ProductAnalyse[] = [];
+  
 
-    //Loads all product movements data from onerp then regroup by reference
-    // const quarterlyDates = this.loadMonthDateRanges(
-    //   Type.Quarterly,
-    //   startDate,
-    //   endDate,
-    // );
-    const yearlyDate = this.loadMonthDateRanges(
-      Type.Yearly,
-      startDate,
-      endDate,
-    );
-    await Promise.all(
-      products.map(async (product) => {
-        const details = await this.oneRPService.getProductDetailsStore(
-          3,
-          product.id,
-          '',
-          product.image,
-          [1],
-        );
-        productsDetails.push(
-          ...this.formatProductDetails(details, product, yearlyDate),
-        );
-      }),
-    );
-    this.logger.log(`End get product data....`);
-    if (debug) {
-      this.logger.log(`start debug product data....`);
-
-      csv
-        .writeToPath(
-          'upload/tmp/out.csv',
-          productsDetails.filter(
-            (w) => w.family === 'Pendentif Initiale' && w.totalSale > 0,
-          ),
-          { headers: true, delimiter: ';' },
-        )
-        .on('end', () => this.logger.debug('Debug csv saved'));
-    }
-    const quarterlyTable: AnalyseTableResult = {
-      rows: [],
-      headerColumns: yearlyDate,
-      totalSale: 0,
-      totalSalePrice: 0,
-      totalMargin: 0,
-      totalRotationRate: 0,
-    };
-    this.getTableResult(quarterlyTable, groupings, productsDetails);
-    this.logger.log(`End analyse....`);
-    return { quarterlyTable };
-  }
-
-  getTableResult = (
-    table: AnalyseTableResult,
-    groupings: Grouping[],
-    details: ProductAnalyse[],
-  ) => {
-    this.logger.log(`Start regroupment ...`);
-    let remainingDetails: ProductAnalyse[] = details;
-    let totalSalePrice = 0;
-    let totalSalePriceN1 = 0;
-    groupings.map((grouping) => {
-      const groupingSalesPrice: number[] = [];
-      let groupingDetails = remainingDetails;
-      remainingDetails = [];
-      // const tempCsv: {
-      //   store: number;
-      //   supplier: string;
-      //   reference: string;
-      //   size: number | null;
-      //   sale: number;
-      // }[] = [];
-
-      const groupingRanges: Range[] = this.gammes[0].gammes.map((range) => ({
-        index: range.index,
-        minPrice: range.minPrice,
-        stock: 0,
-        stockPurchasePrice: 0,
-        totalSale: 0,
-        sale: 0,
-        unitOrder: 0,
-        salePrice: 0,
-        purchaseSalePrice: 0,
-        marginRate: 0,
-        products: [],
-        isMedian: false,
-        //N1
-        totalSaleN1: 0,
-        saleN1: 0,
-        differenceN1: 0,
-        stockN1: 0,
-        stockPurchasePriceN1: 0,
-        differenceStockN1: 0,
-        differenceStockPurchasePriceN1: 0,
-      }));
-
-      const groupingDataColumns = table.headerColumns.map((column) => ({
-        index: column.index,
-        salePrice: 0,
-        sale: 0,
-        margin: 0,
-        rotationRate: 0,
-      }));
-
-      let groupingTotalSale = 0;
-      let groupingTotalSalePrice = 0;
-      let groupingTotalMargin = 0;
-      let groupingTotalStock = 0;
-      let groupingTotalStockPurchasePrice = 0;
-      //N1
-      let groupingTotalSaleN1 = 0;
-      let groupingTotalStockN1 = 0;
-      let groupingTotalStockPurchasePriceN1 = 0;
-      let groupingTotalSalePriceN1 = 0;
-      let groupingTotalMarginN1 = 0;
-      const groupingTotalRotationRate = 0;
-      const groupingProducts: ProductAnalyse[] = [];
-      const groupingRangeProductInfos: RangeProductInfo[] = [];
-      //Filter details
-      groupingDetails = groupingDetails.filter((w) => {
-        //Default
-        if (grouping.default && grouping.department === null) return true;
-        //Default with department
-        else if (
-          grouping.default &&
-          grouping.department !== null &&
-          w.department === grouping.department
-        )
-          return true;
-        else if (
-          grouping.department === w.department &&
-          w.group === grouping.group
-        )
-          return true;
-        else remainingDetails.push(w);
-      });
-      const subGroupingRows: AnalyseRow[] = [];
-      let remainingGroupingDetails = groupingDetails;
-      if (grouping.subGroupings) {
-        let subGroupingSalePrice = 0;
-        let subGroupingSalePriceN1 = 0;
-        grouping.subGroupings.map((subGroup) => {
-          const label = `${subGroup.family ? subGroup.family : ''} ${subGroup.stone ? ' - ' + subGroup.stone : ''} ${subGroup.label ? subGroup.label : ''}`;
-          let currentSubGroupingDetails = remainingGroupingDetails;
-          remainingGroupingDetails = [];
-          currentSubGroupingDetails = currentSubGroupingDetails.filter((w) => {
-            //Keyword with stone
-            if (
-              subGroup.familyKeyword &&
-              subGroup.stone != null &&
-              w.stone === subGroup.stone &&
-              w.familyKeyword.includes(subGroup.familyKeyword) &&
-              w.family === subGroup.family
-            ) {
-              return true;
-            }
-
-            //Keyword
-            else if (
-              subGroup.familyKeyword &&
-              w.familyKeyword.includes(subGroup.familyKeyword) &&
-              subGroup.family === w.family
-            )
-              return true;
-            //Stone
-            else if (
-              !subGroup.familyKeyword &&
-              subGroup.stone !== null &&
-              subGroup.stone === w.stone &&
-              subGroup.family === w.family
-            )
-              return true;
-            //With Stone
-            else if (
-              !subGroup.familyKeyword &&
-              subGroup.withStone !== null &&
-              subGroup.withStone &&
-              w.stone !== null &&
-              subGroup.family === w.family
-            )
-              return true;
-            //Without stone
-            else if (
-              !subGroup.familyKeyword &&
-              subGroup.withStone !== null &&
-              !subGroup.withStone &&
-              w.stone === null &&
-              subGroup.family === w.family
-            )
-              return true;
-            //Family
-            else if (
-              !subGroup.familyKeyword &&
-              subGroup.stone === null &&
-              subGroup.withStone === null &&
-              subGroup.family === w.family
-            )
-              return true;
-            else {
-              remainingGroupingDetails.push(w);
-              return false;
-            }
-          });
-          const subRow = this.loadTableRow(
-            label,
-            currentSubGroupingDetails,
-            groupingDataColumns,
-            table.headerColumns,
-            groupingSalesPrice,
-            groupingRanges,
-            groupingProducts,
-          );
-          groupingTotalSale += subRow.totalSale;
-          groupingTotalSalePrice += subRow.totalSalePrice;
-          groupingTotalMargin += subRow.totalMargin;
-          groupingTotalStock += subRow.stock;
-          groupingTotalStockPurchasePrice += subRow.stockPurchasePrice;
-          subGroupingSalePrice += subRow.totalSalePrice;
-
-          //N1
-          groupingTotalSaleN1 += subRow.totalSaleN1;
-          groupingTotalSalePriceN1 += subRow.totalSalePriceN1;
-          groupingTotalStockN1 += subRow.stockN1;
-          groupingTotalStockPurchasePriceN1 += subRow.stockPurchasePriceN1;
-          groupingTotalMarginN1 += subRow.totalMarginN1;
-          subGroupingSalePriceN1 += subRow.totalSalePriceN1;
-          subGroupingRows.push(subRow);
-        });
-
-        //Auto default
-        const defaultRow = this.loadTableRow(
-          `Autres`,
-          remainingGroupingDetails,
-          groupingDataColumns,
-          table.headerColumns,
-          groupingSalesPrice,
-          groupingRanges,
-          groupingProducts,
-        );
-        groupingTotalSale += defaultRow.totalSale;
-        groupingTotalSalePrice += defaultRow.totalSalePrice;
-        groupingTotalMargin += defaultRow.totalMargin;
-        groupingTotalStock += defaultRow.stock;
-        groupingTotalStockPurchasePrice += defaultRow.stockPurchasePrice;
-        subGroupingSalePrice += defaultRow.totalSalePrice;
-        //N1
-        groupingTotalSaleN1 += defaultRow.totalSaleN1;
-        groupingTotalSalePriceN1 += defaultRow.totalSalePriceN1;
-        groupingTotalStockN1 += defaultRow.stockN1;
-        groupingTotalStockPurchasePriceN1 += defaultRow.stockPurchasePriceN1;
-        groupingTotalMarginN1 += defaultRow.totalMarginN1;
-        subGroupingRows.push(defaultRow);
-        //Global Pareto
-        // let sumSalePrice = 0;
-        subGroupingRows
-          .sort((a, b) => b.totalSalePrice - a.totalSalePrice)
-          .map((row) => {
-            // sumSalePrice += row.totalSalePrice;
-            // const sumRate = (sumSalePrice * 100) / subGroupingSalePrice;
-            // row.cumulativePercentage = sumRate;
-            row.salePricePercentage =
-              (row.totalSalePrice * 100) / subGroupingSalePrice;
-            row.salePricePercentageN1 =
-              (row.totalSalePriceN1 * 100) / subGroupingSalePriceN1;
-            row.differenceSalePricePercentageN1 =
-              row.salePricePercentage - row.salePricePercentageN1;
-          });
-      }
-      let sumProductSalePrice = 0;
-      groupingProducts
-        .sort((a, b) => b.totalSalePrice - a.totalSalePrice)
-        .map((product) => {
-          sumProductSalePrice += product.totalSalePrice;
-          const sumRate = (sumProductSalePrice * 100) / groupingTotalSalePrice;
-          product.isPareto = sumRate <= 80;
-        });
-
-      //Ranges Pareto
-      groupingRanges
-        .sort((a, b) => b.salePrice - a.salePrice)
-        .map((range) => {
-          let sumProductSalePrice = 0;
-          range.products
-            .sort((a, b) => b.totalSalePrice - a.totalSalePrice)
-            .map((product) => {
-              sumProductSalePrice += product.totalSalePrice;
-              const productSumRate =
-                (sumProductSalePrice * 100) / range.salePrice;
-              product.isPareto = productSumRate <= 80;
-            });
-        });
-      totalSalePrice += groupingTotalSalePrice;
-      totalSalePriceN1 += groupingTotalSalePriceN1;
-      if (
-        !grouping.other ||
-        groupingTotalSale !== 0 ||
-        groupingTotalStock !== 0 ||
-        groupingTotalSaleN1 !== 0 ||
-        groupingTotalStockN1 !== 0
-      ) {
-        const label = `${grouping.department ? grouping.department : ''} ${grouping.group ? ' - ' + grouping.group : ''} ${grouping.label ? grouping.label : ''}`;
-        const salePriceMedian = this.median(groupingSalesPrice);
-        const rangeMedianIndex = groupingRanges
-          .sort((a, b) => a.minPrice - b.minPrice)
-          .findIndex((w) => salePriceMedian < w.minPrice);
-        table.rows.push({
-          label,
-          dataColumns: groupingDataColumns,
-          totalSale: groupingTotalSale,
-          totalSalePrice: groupingTotalSalePrice,
-          totalMargin: groupingTotalMargin,
-          totalRotationRate: groupingTotalRotationRate,
-          salePriceMedian,
-          stock: groupingTotalStock,
-          stockPurchasePrice: groupingTotalStockPurchasePrice,
-          ranges: groupingRanges.map((range, index) => ({
-            ...range,
-            isMedian: index === rangeMedianIndex,
-            marginRate:
-              ((range.salePrice - range.purchaseSalePrice) / range.salePrice) *
-              100,
-          })),
-          details: groupingProducts,
-          subRows: subGroupingRows.length ? subGroupingRows : null,
-          // cumulativePercentage: 0,
-          salePricePercentage: 0,
-          salePricePercentageN1: 0,
-          //N1
-          totalSaleN1: groupingTotalSaleN1,
-          totalSalePriceN1: groupingTotalSalePriceN1,
-          stockN1: groupingTotalStockN1,
-          stockPurchasePriceN1: groupingTotalStockPurchasePriceN1,
-          totalMarginN1: groupingTotalMarginN1,
-          //Difference
-          differenceN1: groupingTotalSale - groupingTotalSaleN1,
-          differenceSalePriceN1:
-            groupingTotalSalePrice - groupingTotalSalePriceN1,
-          differenceSalePricePercentageN1: 0,
-          differenceMarginN1: groupingTotalMargin - groupingTotalMarginN1,
-          differenceStockN1: groupingTotalStock - groupingTotalStockN1,
-          differenceStockPurchasePriceN1:
-            groupingTotalStockPurchasePrice - groupingTotalStockPurchasePriceN1,
-        });
-        this.logger.debug(
-          `Regroupment:${label}  stock: ${groupingTotalStock} ventes:${groupingTotalSale}  sale median: ${salePriceMedian}`,
-        );
-      }
-    });
-    //Global percent
-    // let sumSalePrice = 0;
-    table.rows.map((row) => {
-      // sumSalePrice += row.totalSalePrice;
-      // const sumRate = (sumSalePrice * 100) / totalSalePrice;
-      // row.cumulativePercentage = sumRate;
-
-      row.salePricePercentageN1 =
-        (row.totalSalePriceN1 * 100) / totalSalePriceN1;
-      row.salePricePercentage = (row.totalSalePrice * 100) / totalSalePrice;
-      row.differenceSalePricePercentageN1 =
-        row.salePricePercentage - row.salePricePercentageN1;
-    });
-  };
-
+  
+ 
   loadTableRow = (
     label: string,
     details: ProductAnalyse[],
@@ -2165,6 +1797,12 @@ export class AnalyseService {
     return productsData;
   };
 }
+
+const hasMatchingKeyword = (searchKeyword: string | string[], productKeywords: string[]) => {
+  const searchKeywords = Array.isArray(searchKeyword) ? searchKeyword : [searchKeyword];
+  return searchKeywords.some(keyword => productKeywords.includes(keyword));
+};
+///TODO FIX THIS SHIT
 function filterProducts(products: ProductData[], grouping: Grouping) {
   let okProduct: ProductData[] = [];
   const badProduct: ProductData[] = [];
@@ -2173,7 +1811,7 @@ function filterProducts(products: ProductData[], grouping: Grouping) {
       grouping.familyKeyword &&
       grouping.stone != null &&
       w.stone === grouping.stone &&
-      w.familyKeyword.includes(grouping.familyKeyword) &&
+      hasMatchingKeyword(grouping.familyKeyword, w.familyKeyword) &&
       w.family === grouping.family &&
       grouping.group === w.group &&
       grouping.department === w.department
@@ -2183,7 +1821,7 @@ function filterProducts(products: ProductData[], grouping: Grouping) {
     //Keyword
     else if (
       grouping.familyKeyword &&
-      w.familyKeyword.includes(grouping.familyKeyword) &&
+      hasMatchingKeyword(grouping.familyKeyword, w.familyKeyword) &&
       grouping.family === w.family &&
       grouping.group === w.group &&
       grouping.department === w.department
@@ -2199,6 +1837,28 @@ function filterProducts(products: ProductData[], grouping: Grouping) {
       grouping.department === w.department
     )
       return true;
+      //With Stone and without family
+    else if (
+      !grouping.familyKeyword &&
+      grouping.withStone !== null &&
+      grouping.withStone &&
+      w.stone !== null &&
+      grouping.family === null &&      
+      grouping.group === w.group &&
+      grouping.department === w.department
+    )
+      return true;
+    //Without stone and without family
+    else if (
+      !grouping.familyKeyword &&
+      grouping.withStone !== null &&
+      !grouping.withStone &&
+      w.stone === null &&
+      grouping.family === null &&
+      grouping.group === w.group &&
+      grouping.department === w.department
+    )
+      return true;    
     //With Stone
     else if (
       !grouping.familyKeyword &&
@@ -2220,7 +1880,7 @@ function filterProducts(products: ProductData[], grouping: Grouping) {
       grouping.group === w.group &&
       grouping.department === w.department
     )
-      return true;
+      return true;              
     //Family
     else if (
       !grouping.familyKeyword &&
@@ -2258,3 +1918,4 @@ function filterProducts(products: ProductData[], grouping: Grouping) {
   });
   return { okProduct, badProduct };
 }
+

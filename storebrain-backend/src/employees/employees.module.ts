@@ -16,9 +16,10 @@ import { MailModule } from 'src/mail/mail.module';
 import { TrainingsController } from './trainings.controller';
 import { TrainingsService } from './trainings.service';
 import { EmployeesTrainingClosedListener } from './listeners/employees-training-closed.listener';
+import { QuizzModule } from 'src/quizz/quizz.module';
 
 @Module({
-  imports: [PdfModule, PrismaModule,JobsModule, CompaniesModule, OnerpModule, IntegrationsModule, CaslModule, MailModule],
+  imports: [QuizzModule, PdfModule, PrismaModule,JobsModule, CompaniesModule, OnerpModule, IntegrationsModule, CaslModule, MailModule],
   controllers: [EmployeesController, TrainingsController],
   providers: [
     EmployeesService,

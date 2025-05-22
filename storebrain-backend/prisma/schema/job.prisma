@@ -1,20 +1,22 @@
 model Job {
-  id Int @id @default(autoincrement())
-  name String
+  id            Int             @id @default(autoincrement())
+  name          String
   qualification String
-  jobContracts JobContract[]
-  users User[]
-  onboardings JobOnboarding[]
-  @@unique([name,qualification])
+  jobContracts  JobContract[]
+  users         User[]
+  onboardings   JobOnboarding[]
+
+  @@unique([name, qualification])
 }
 
 model JobContract {
-  id Int @id @default(autoincrement())
-  type String
+  id                  Int    @id @default(autoincrement())
+  type                String
   workingHoursPerWeek Float
   lengthOfTrialPeriod Int
-  jobId Int @unique
-  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  users User[]
-  @@unique([type,workingHoursPerWeek,lengthOfTrialPeriod,jobId])
+  jobId               Int    @unique
+  job                 Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  users               User[]
+
+  @@unique([type, workingHoursPerWeek, lengthOfTrialPeriod, jobId])
 }

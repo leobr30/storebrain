@@ -33,7 +33,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.jwtSecretKey,
+        secret: process.env.jwtSecretKey
       });
 
       request['user'] = payload;
@@ -63,7 +63,7 @@ export class RefreshAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.jwtRefreshTokenKey,
+        secret: process.env.jwtRefreshTokenKey
       });      
       payload.refreshToken = token;
       request['user'] = payload;

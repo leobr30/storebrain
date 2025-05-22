@@ -6,21 +6,22 @@ import { useState } from "react";
 import AddDrawerFormStepOne from "./add-drawer-form-step-one";
 import { Company } from "@/types/company-types";
 import AddDrawerFormStepTwo from "./add-drawer-form-step-two";
-import { AddDrawerFormStepThree } from "./add-drawer-form-step-three";
+import { AddDrawerFormStepFour } from "./add-drawer-form-step-four";
+import AddDrawerFormStepThree from "./add-drawer-form-step-three";
 import { Job } from "@/types/employee-area-types";
 import { useEmployeeAreaAddFormStore } from "@/store/emloyeeAreaDrawerAddStore";
 import { addEmployee } from "@/features/employee-area/actions";
 
 type Props = {
     companies: Company[]
-    jobs:Job[]
+    jobs: Job[]
 }
 
-export default function AddDrawer({companies,jobs}:Props) {
-    const [open,setOpen] = useState<boolean>(false);
+export default function AddDrawer({ companies, jobs }: Props) {
+    const [open, setOpen] = useState<boolean>(false);
     const [activeStep, setActiveStep] = useState<number>(0);
     const drawerState = useEmployeeAreaAddFormStore();
-    const steps = ["Informations personnelles", "Adresse", "Emploi & Contrat"];
+    const steps = ["Informations personnelles", "Adresse", "Documents", "Emploi & Contrat"];
 
     const handleNext = () => {
         setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
@@ -31,13 +32,15 @@ export default function AddDrawer({companies,jobs}:Props) {
     };
 
     const handleFormSubmit = async (formData: FormData) => {
-        await addEmployee(formData)
-        setActiveStep(0)
-        drawerState.resetState()
-        setOpen(false)
-    }
+        const response = await addEmployee(formData);
+        setActiveStep(0);
+        drawerState.resetState();
+        setOpen(false);
+        return response; // <-- ✅ ici
+    };
 
-   
+
+
     return (
         <Sheet open={open} onOpenChange={setOpen} >
             <SheetTrigger asChild>
@@ -55,8 +58,8 @@ export default function AddDrawer({companies,jobs}:Props) {
                     <SheetTitle> Déclaration d'un nouveau salarié</SheetTitle>
                 </div>
                 <Stepper current={activeStep}
-                className="m-5" 
-                direction="horizontal"
+                    className="m-5"
+                    direction="horizontal"
                 // direction={isTablet ? "vertical" : "horizontal"}
                 >
                     {steps.map((label, index) => {
@@ -69,9 +72,10 @@ export default function AddDrawer({companies,jobs}:Props) {
                 </Stepper>
                 {activeStep === 0 && <AddDrawerFormStepOne companies={companies} handleNext={handleNext} />}
                 {activeStep === 1 && <AddDrawerFormStepTwo handleNext={handleNext} handleBack={handleBack} />}
-                {activeStep === 2 && <AddDrawerFormStepThree handleBack={handleBack} jobs={jobs} handleFormSubmit={handleFormSubmit} />}
+                {activeStep === 2 && <AddDrawerFormStepThree handleNext={handleNext} handleBack={handleBack} />}
+                {activeStep === 3 && <AddDrawerFormStepFour handleBack={handleBack} jobs={jobs} handleFormSubmit={handleFormSubmit} />}
             </SheetContent>
-            
+
         </Sheet>
     )
 }

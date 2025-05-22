@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Résumé du rendez-vous du lundi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .logo {
+            max-width: 120px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- Tu peux ajouter un logo ici si tu le souhaites -->
+            <!-- <img src="https://www.ton-site.com/logo.png" alt="Diamantor" class="logo" /> -->
+            <h1>Résumé du rendez-vous du lundi</h1>
+        </div>
+
+        <div class="content">
+            <p>Bonjour,</p>
+            <p>Vous trouverez ci-joint le résumé du rendez-vous du lundi <strong>{{date}}</strong>.</p>
+            <p>Nous restons à votre disposition si besoin.</p>
+            <p>Cordialement,</p>
+            <p><strong>L'équipe Diamantor</strong></p>
+        </div>
+
+        <div class="footer">
+            &copy; {{year}} Diamantor. Tous droits réservés.
+        </div>
+    </div>
+</body>
+
+</html>

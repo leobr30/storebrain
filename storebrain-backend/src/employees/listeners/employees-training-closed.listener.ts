@@ -25,10 +25,5 @@ export class EmployeesTrainingClosedListener {
     const pdfFileName = `Formation Rdv N°${training.userJobOnboarding.appointmentNumber} ${training.name} - ${training.user.name}.pdf`;
     await this.pdfService.createTrainingPdf(event.trainingId, join(dir, pdfFileName));
     await this.employeesService.createDocument(pdfFileName, join(dir, pdfFileName), training.userId, event.historyId, 'application/pdf');  
-    await this.mailService.sendTrainingMail(training.realizedBy.name!, `${training.user.name} - Nouvelle formation Rdv N°${training.userJobOnboarding.appointmentNumber} ${training.name}`, {
-      fileName: pdfFileName,
-      mimeType: 'application/pdf',
-      filePath: join(dir, pdfFileName),
-    });
 }
 }

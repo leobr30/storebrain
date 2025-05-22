@@ -38,7 +38,7 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
 
     const [date, setDate] = React.useState<Date | undefined>(selected ?? undefined)
     //TEMP FIX
-    React.useEffect(() => setDate(selected),[selected])
+    React.useEffect(() => setDate(selected), [selected])
     const [month, setMonth] = React.useState<number>(new Date().getMonth())
     const [year, setYear] = React.useState<number>(new Date().getFullYear())
     const [yearRange, setYearRange] = React.useState<number>(year)
@@ -49,13 +49,13 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
     ]
 
-    const getYears = (baseYear: number) => {
-        const years = Array.from({ length: 101 }, (_, i) => baseYear - 50 + i)
-        return years.filter(year =>
-            (!minDate || year >= minDate.getFullYear()) &&
-            (!maxDate || year <= maxDate.getFullYear())
-        )
-    }
+    const getYears = (base: number, delta: number = 25) => {
+        const start = base - delta;
+        const end = base + delta;
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+            .filter(y => (!minDate || y >= minDate.getFullYear()) && (!maxDate || y <= maxDate.getFullYear()));
+    };
+
 
 
     const handleMonthChange = (value: string) => {
@@ -81,16 +81,8 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
         }
     }
 
-    const scrollYears = (direction: 'up' | 'down') => {
-        if (scrollRef.current) {
-            const scrollAmount = direction === 'up' ? -100 : 100
-            scrollRef.current.scrollTop += scrollAmount
-            setYearRange(prev => {
-                const newYear = prev + (direction === 'up' ? -1 : 1)
-                return isYearInRange(newYear) ? newYear : prev
-            })
-        }
-    }
+    const [yearOptions, setYearOptions] = React.useState(() => getYears(yearRange));
+
 
     const isDateInRange = (date: Date) => {
         return (!minDate || isAfter(date, minDate) || date.getTime() === minDate.getTime()) &&
@@ -129,79 +121,97 @@ export function CustomDatePicker({ minDate, maxDate, placeholder, selected, onSe
                     {date ? format(date, "PPP", { locale: fr }) : <span >{placeholder}</span>}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <div className="flex justify-between p-3">
-                    <Select value={month.toString()} onValueChange={handleMonthChange}>
-                        <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder="Mois" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {months.map((month, index) => (
-                                <SelectItem
-                                    key={index}
-                                    value={index.toString()}
-                                    disabled={isMonthDisabled(index)}
-                                >
-                                    {month}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+            <PopoverContent
+                side="bottom"
+                sideOffset={4}
+                className="z-[9999] w-[340px] p-4 rounded-xl shadow-xl bg-white border border-gray-200 absolute left-0"
+                align="start"
+            >
+                <div className="flex items-center justify-between mb-4 px-2 gap-2">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-gray-100"
+                            onClick={() => {
+                                const prev = new Date(year, month - 1);
+                                setMonth(prev.getMonth());
+                                setYear(prev.getFullYear());
+                            }}
+                        >
+                            <span className="text-xl">&lt;</span>
+                        </Button>
+
+                        <div className="text-sm font-medium w-[100px] text-center">
+                            {months[month]} {year}
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-gray-100"
+                            onClick={() => {
+                                const next = new Date(year, month + 1);
+                                setMonth(next.getMonth());
+                                setYear(next.getFullYear());
+                            }}
+                        >
+                            <span className="text-xl">&gt;</span>
+                        </Button>
+                    </div>
+
                     <Select value={year.toString()} onValueChange={handleYearChange}>
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="h-8 w-[90px] text-xs rounded-md border border-gray-300 bg-gray-50 px-2 shadow-sm hover:bg-gray-100">
                             <SelectValue placeholder="Année" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <div className="flex flex-col items-center">
-                                {/* <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        scrollYears('up')
-                                    }}
-                                >
-                                    <ChevronUp className="h-4 w-4" />
-                                </Button> */}
-                                <ScrollArea className="h-[200px] w-full" ref={scrollRef}>
-                                    {getYears(yearRange).map((year) => (
-                                        <SelectItem key={year} value={year.toString()}>
-                                            {year}
-                                        </SelectItem>
-                                    ))}
-                                </ScrollArea>
-                                {/* <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        scrollYears('down')
-                                    }}
-                                >
-                                    <ChevronDown className="h-4 w-4" />
-                                </Button> */}
-                            </div>
+                        <SelectContent className="max-h-[200px]">
+                            <ScrollArea
+                                className="h-[200px] w-full"
+                                ref={scrollRef}
+                                onScrollCapture={(e) => {
+                                    const target = e.currentTarget;
+                                    if (target.scrollTop < 50) {
+                                        const newYears = getYears(yearRange - 25);
+                                        setYearOptions(prev => [...new Set([...newYears, ...prev])].sort((a, b) => a - b));
+                                    } else if (target.scrollHeight - target.scrollTop - target.clientHeight < 50) {
+                                        const newYears = getYears(yearRange + 25);
+                                        setYearOptions(prev => [...new Set([...prev, ...newYears])].sort((a, b) => a - b));
+                                    }
+                                }}
+                            >
+                                {yearOptions.map((year) => (
+                                    <SelectItem key={year} value={year.toString()}>
+                                        {year}
+                                    </SelectItem>
+                                ))}
+                            </ScrollArea>
                         </SelectContent>
                     </Select>
                 </div>
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={handleOnSelect}
-                    month={new Date(year, month)}
-                    onMonthChange={(newMonth) => {
-                        setMonth(newMonth.getMonth())
-                        setYear(newMonth.getFullYear())
-                    }}
-                    initialFocus
-                    locale={fr}
-                    disabled={(date) => !isDateInRange(date)}
-                    fromDate={minDate}
-                    toDate={maxDate}
-                />
+
+
+                <div className="rounded-lg border border-gray-200 bg-white p-2">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={handleOnSelect}
+                        month={new Date(year, month)}
+                        onMonthChange={(newMonth) => {
+                            setMonth(newMonth.getMonth());
+                            setYear(newMonth.getFullYear());
+                        }}
+                        initialFocus
+                        locale={fr}
+                        disabled={(date) => !isDateInRange(date)}
+                        fromDate={minDate}
+                        toDate={maxDate}
+                        className="w-full min-h-[320px] text-sm [&_table]:w-full [&_table]:table-fixed"
+                    />
+
+
+                </div>
             </PopoverContent>
+
         </Popover>
     )
 }

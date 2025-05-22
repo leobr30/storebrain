@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { OnerpModule } from './onerp/onerp.module';
 import { AnalyseModule } from './analyse/analyse.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
@@ -21,12 +21,23 @@ import { ToolsModule } from './tools/tools.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { ClosingDayModule } from './closing-day/closing-day.module';
 import { SavService } from './sav/sav.service';
-;
+import { PrismaService } from './prisma/prisma.service';
+import { FormsController } from './forms/forms.controller';
+import { EmployeeResponsesController } from './forms/forms.controller';
+import { FormsModule } from './forms/forms.module';
+import { DocumentsModule } from './documents/documents.module';
+import { QuizzModule } from './quizz/quizz.module';
+import { YousignService } from './yousign/yousign.service';
+
+
 @Module({
   imports: [
+    QuizzModule,
+    DocumentsModule,
+    FormsModule,
     OnerpModule,
     AnalyseModule,
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,
@@ -53,9 +64,9 @@ import { SavService } from './sav/sav.service';
     ToolsModule,
     ClosingDayModule,    
   ],
-  controllers: [],
-  providers: [SavService],
-  exports: []
+  controllers: [FormsController, EmployeeResponsesController],
+  providers: [SavService, PrismaService, YousignService],
+  exports: [PrismaService, YousignService]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

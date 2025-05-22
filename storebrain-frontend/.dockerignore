@@ -1,0 +1,16 @@
+# Ignorer les fichiers inutiles au build
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+README.md
+.vscode
+*.log
+
+# Ignorer les builds locaux
+.next
+node_modules
+
+# Facultatif : ignorer les tests
+__tests__/
+*.test.*

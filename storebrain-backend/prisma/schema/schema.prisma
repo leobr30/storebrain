@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["prismaSchemaFolder"]
 }
 
@@ -24,10 +24,3 @@ enum Status {
   IN_PROGRESS
   COMPLETED
 }
-
-
-
-
-
-
-

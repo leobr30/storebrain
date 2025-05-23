@@ -1,5 +1,7 @@
 import { fetchFile, fetchWithAuth } from "@/lib/fetch";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     const response =await fetchFile(`trainings/17/download-attachment/22`)
     const header = response.headers.get('Content-Disposition');

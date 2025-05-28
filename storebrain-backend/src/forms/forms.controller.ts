@@ -98,14 +98,16 @@ export class FormsController {
 
   @Post('history')
   async saveFormToHistory(
-    @Body() { userId, formId, responses, comment }: { userId: number; formId: string; responses: any; comment?: string },
+    @Body() { userId, formId, responses, comment }: { userId: string; formId: string; responses: any; comment?: string },
   ) {
-    try {
-      return this.formsService.saveFormToHistory(userId, formId, responses, comment);
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    const numericUserId = Number(userId);
+    if (isNaN(numericUserId)) {
+      throw new BadRequestException('userId doit être un nombre valide.');
     }
+
+    return this.formsService.saveFormToHistory(numericUserId, formId, responses, comment);
   }
+
 
   @Get(':responseId')
   async getResponseById(@Param('responseId') responseId: string) {
@@ -175,7 +177,7 @@ export class FormsController {
         response.userId.toString(),
         response.user.lastName.toString(),
         response.user.firstName,
-        username 
+        username
       );
 
       console.log("📩 Email envoyé avec succès !");

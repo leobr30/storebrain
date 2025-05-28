@@ -13,7 +13,7 @@ RUN npm install
 # Copy app source
 COPY . .
 
-ENV DATABASE_URL="postgresql://postgres:Diamantor-G@localhost:5432/store-brain?schema=public"
+ENV DATABASE_URL="postgresql://postgres:Diamantor-G@db:5432/store-brain?schema=public"
 
 # Génère le client Prisma avant de build le projet
 RUN npx prisma generate

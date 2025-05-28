@@ -36,6 +36,7 @@ import { User } from '@prisma/client';
 import { MailService } from 'src/mail/mail.service';
 import { UserJobOnboarding } from '@prisma/client';
 import { DocumentType } from '@prisma/client';
+import { UpdateJobOnboardingStepDto } from './dto/update-job-onboarding-step.dto';
 
 
 
@@ -1414,5 +1415,36 @@ export class EmployeesService {
 
     return { message: 'Résumé envoyé avec succès' };
   }
+
+  async getAllJobOnboardingSteps() {
+    return this.prisma.jobOnboardingStep.findMany({
+      include: {
+        trainingModel: true,
+      },
+    });
+  }
+
+  async updateJobOnboardingStep(id: number, data: Partial<UpdateJobOnboardingStepDto>) {
+    const { day, month, type, trainingModelId } = data;
+
+    return this.prisma.jobOnboardingStep.update({
+      where: { id },
+      data: {
+        day,
+        month,
+        type,
+        trainingModelId,
+      },
+    });
+  }
+
+  async getTrainingModels() {
+    return this.prisma.trainingModel.findMany({
+      orderBy: { id: 'asc' },
+    });
+  }
+
+
+
 
 }

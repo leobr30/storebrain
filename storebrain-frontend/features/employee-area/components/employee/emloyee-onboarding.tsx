@@ -114,7 +114,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                 .filter((step) => step?.jobOnboardingStep)
                                 .map((step, stepIndex) => {
                                     console.log("🚀 ~ .map ~ step:", step);
-                                    // Add this line to inspect jobOnboardingStep
                                     console.log("🚀 ~ .map ~ step.jobOnboardingStep:", step.jobOnboardingStep);
                                     return (
                                         <TableRow key={step.id}>

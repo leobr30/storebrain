@@ -1,7 +1,6 @@
 "use server";
 
 import { fetchWithAuth } from "@/lib/fetch";
-import { json } from "stream/consumers";
 import { revalidatePath } from "next/cache"
 
 // FORMULAIRE
@@ -64,6 +63,31 @@ export const createQuizz = async (data: {
     revalidatePath('/en/employee-area/home');
     return response;
 };
+
+// 🆕 Récupère toutes les étapes d'onboarding
+export const fetchJobOnboardingSteps = async () => {
+    return await fetchWithAuth("employees/onboarding/steps");
+};
+
+// 🆕 Met à jour une étape d'onboarding
+export const updateJobOnboardingStep = async (id: number, data: {
+    day?: number;
+    month?: number;
+    type?: "TRAINING" | "DOCUMENT" | "RESULT_REVIEW" | "QUIZZ";
+    trainingModelId?: number | null;
+}) => {
+    return await fetchWithAuth(`employees/onboarding/steps/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+    });
+};
+
+// 🆕 Récupère tous les modèles de formation
+export const fetchTrainingModels = async () => {
+    return await fetchWithAuth("employees/training-models");
+};
+
+
 
 
 

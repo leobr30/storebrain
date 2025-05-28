@@ -46,6 +46,7 @@ import { ValidateOmarDto } from './dto/validate-omar.dto';
 import { User } from '@prisma/client';
 import { PdfService } from 'src/pdf/pdf.service';
 import { MailService } from 'src/mail/mail.service';
+import { UpdateJobOnboardingStepDto } from './dto/update-job-onboarding-step.dto';
 
 
 @Controller('employees')
@@ -447,5 +448,24 @@ export class EmployeesController {
   async sendUnsignedDocuments(@Param('userId') userId: string) {
     return await this.pdfService.sendUnsignedDocumentsByEmail(userId, "gabriel.beduneau@diamantor.fr");
   }
+
+  @Get('onboarding/steps')
+  async getAllOnboardingSteps() {
+    return this.employeesService.getAllJobOnboardingSteps();
+  }
+
+  @Patch('onboarding/steps/:id')
+  async updateOnboardingStep(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateJobOnboardingStepDto,
+  ) {
+    return this.employeesService.updateJobOnboardingStep(id, dto);
+  }
+
+  @Get('training-models')
+  async getTrainingModels() {
+    return this.employeesService.getTrainingModels();
+  }
+
 
 }

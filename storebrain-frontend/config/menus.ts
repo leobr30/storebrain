@@ -1065,6 +1065,10 @@ export const menusConfig = {
             title: 'Quizz',
             href: "/configuration/documents/quizz",
           },
+          {
+            title: 'Intégration',
+            href: "/configuration/documents/integration",
+          },
         ]
       },
       // {

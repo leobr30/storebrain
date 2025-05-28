@@ -16,6 +16,8 @@ COPY . .
 # Génère le client Prisma avant de build le projet
 RUN npx prisma generate
 
+RUN npm run prisma:seed
+
 # Supprime les anciens builds si jamais
 RUN rm -rf dist tsconfig.build.tsbuildinfo
 

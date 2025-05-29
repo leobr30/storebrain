@@ -1069,6 +1069,11 @@ export const menusConfig = {
             title: 'Intégration',
             href: "/configuration/documents/integration",
           },
+
+          {
+            title: 'Formation',
+            href: "/configuration/documents/formation",
+          },
         ]
       },
       // {

@@ -28,3 +28,60 @@ export const updateJobOnboardingStep = async (id: number, data: {
 export const fetchTrainingModels = async () => {
     return await fetchWithAuth("employees/training-models");
 };
+
+export const updateTrainingModel = async (
+    id: number,
+    data: {
+        tool?: string;
+        exercise?: string;
+        aide?: string;
+    }
+) => {
+    const result = await fetchWithAuth(`trainings/training-model/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+    revalidatePath('/configuration/trainings');
+    return result;
+};
+
+export const updateTrainingModelSubject = async (
+    id: number,
+    data: { name: string }
+) => {
+    const result = await fetchWithAuth(`trainings/training-model-subject/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    return result;
+};
+
+export const createTrainingModelSubject = async (
+    trainingModelId: number,
+    name: string
+) => {
+    const result = await fetchWithAuth(`trainings/training-models/${trainingModelId}/subjects`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+    });
+    revalidatePath('/configuration/trainings');
+    return result;
+};
+
+export const deleteTrainingModelSubject = async (subjectId: number) => {
+    const result = await fetchWithAuth(`trainings/training-models/subjects/${subjectId}`, {
+        method: 'DELETE',
+    });
+    revalidatePath('/configuration/trainings');
+    return result;
+};
+
+
+
+

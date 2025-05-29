@@ -1,5 +1,5 @@
 // c:\Users\Gabriel\Desktop\storebrain\storebrain-backend\src\employees\trainings.controller.ts
-import { Controller, UseGuards, Get, Param, HttpStatus, Put, Body, UploadedFile, UseInterceptors, Post, Delete, StreamableFile } from "@nestjs/common";
+import { Controller, UseGuards, Get, Param, HttpStatus, Put, Body, UploadedFile, UseInterceptors, Post, Delete, StreamableFile, Patch } from "@nestjs/common";
 import { TrainingsService } from "./trainings.service";
 import { CheckPolicies } from "src/casl/policy.decorator";
 import { PoliciesGuard } from "src/casl/policy.guard";
@@ -10,6 +10,8 @@ import { SaveTrainingDto } from "./dto/save-training.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { TrainingAddAttachmentDto } from "./dto/training-add-attachement";
+import { UpdateTrainingModelDto } from "./dto/update-training-model.dto";
+import { UpdateTrainingModelSubjectDto } from "./dto/update-training-model-subject.dto";
 
 @Controller('trainings')
 export class TrainingsController {
@@ -117,6 +119,41 @@ export class TrainingsController {
       disposition: `attachment; filename="${file.filename}"`,
     });
   }
+
+  @Patch('/training-model/:id')
+  async updateTrainingModel(
+    @Param('id') id: number,
+    @Body() dto: UpdateTrainingModelDto
+  ) {
+    return this.trainingsService.updateTrainingModel(id, dto);
+  }
+
+  @Patch('/training-model-subject/:id')
+  async updateTrainingModelSubject(
+    @Param('id') id: number,
+    @Body() dto: UpdateTrainingModelSubjectDto
+  ) {
+    console.log("🛠 updateTrainingModelSubject", id, dto);
+    return this.trainingsService.updateTrainingModelSubject(id, dto);
+  }
+
+  @Post('training-models/:id/subjects')
+  createTrainingModelSubject(
+    @Param('id') id: string,
+    @Body('name') name: string,
+  ) {
+    const modelId = parseInt(id, 10);
+    return this.trainingsService.createTrainingModelSubject(modelId, name);
+  }
+
+  @Delete('training-models/subjects/:subjectId')
+  async deleteTrainingModelSubject(@Param('subjectId') subjectId: string) {
+    const id = parseInt(subjectId, 10);
+    return this.trainingsService.deleteTrainingModelSubject(id);
+  }
+
+
+
 
 
 

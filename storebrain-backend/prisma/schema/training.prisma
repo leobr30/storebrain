@@ -51,6 +51,7 @@ model TrainingModel {
   subjects                    TrainingModelSubject[]
   tool                        String
   exercise                    String
+  aide                        String?
   numberOAppointmentsRequired Int                    @default(2)
   jobOnboardingSteps          JobOnboardingStep[]
 }

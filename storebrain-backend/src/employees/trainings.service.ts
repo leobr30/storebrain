@@ -302,5 +302,40 @@ export class TrainingsService {
     }
   }
 
+  async updateTrainingModel(id: number, dto: { tool?: string; exercise?: string; aide?: string }) {
+    return await this.prisma.trainingModel.update({
+      where: { id },
+      data: {
+        tool: dto.tool,
+        exercise: dto.exercise,
+        aide: dto.aide,
+      },
+    });
+  }
+
+  async updateTrainingModelSubject(id: number, dto: { name: string }) {
+    return await this.prisma.trainingModelSubject.update({
+      where: { id },
+      data: {
+        name: dto.name,
+      },
+    });
+  }
+
+  async createTrainingModelSubject(trainingModelId: number, name: string) {
+    return await this.prisma.trainingModelSubject.create({
+      data: {
+        name,
+        trainingModel: { connect: { id: trainingModelId } },
+      },
+    });
+  }
+
+  async deleteTrainingModelSubject(subjectId: number) {
+    return this.prisma.trainingModelSubject.delete({
+      where: { id: subjectId },
+    });
+  }
+
 
 }

@@ -1441,6 +1441,9 @@ export class EmployeesService {
   async getTrainingModels() {
     return this.prisma.trainingModel.findMany({
       orderBy: { id: 'asc' },
+      include: {
+        subjects: true,
+      },
     });
   }
 

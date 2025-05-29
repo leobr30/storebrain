@@ -450,9 +450,16 @@ export class EmployeesController {
   }
 
   @Get('onboarding/steps')
-  async getAllOnboardingSteps() {
+  async getAllOnboardingSteps(@Query('jobOnboardingId') jobOnboardingId?: string) {
+    if (jobOnboardingId) {
+      const id = parseInt(jobOnboardingId);
+      if (isNaN(id)) throw new BadRequestException('jobOnboardingId invalide');
+      return this.employeesService.getStepsByJobOnboardingId(id);
+    }
+
     return this.employeesService.getAllJobOnboardingSteps();
   }
+
 
   @Patch('onboarding/steps/:id')
   async updateOnboardingStep(

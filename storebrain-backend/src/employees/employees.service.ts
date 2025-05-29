@@ -1444,6 +1444,15 @@ export class EmployeesService {
     });
   }
 
+  async getStepsByJobOnboardingId(jobOnboardingId: number) {
+    return this.prisma.jobOnboardingStep.findMany({
+      where: { jobOnboardingId },
+      include: { trainingModel: true },
+      orderBy: { day: 'asc' },
+    });
+  }
+
+
 
 
 

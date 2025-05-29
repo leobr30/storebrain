@@ -12,7 +12,7 @@ interface User {
 
 type AssignUserDialogProps = {
     users: User[];
-    onAssign: (userId: string) => void; // ✅ string
+    onAssign: (userId: string) => void;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 };
@@ -33,7 +33,7 @@ export const AssignUserDialog = memo(function AssignUserDialog({ users, onAssign
     const handleValueChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
         console.log("AssignUserDialog: onValueChange called with:", value);
-        setSelectedUserId(value); // ✅ PAS Number()
+        setSelectedUserId(value);
     }, []);
 
     useEffect(() => {

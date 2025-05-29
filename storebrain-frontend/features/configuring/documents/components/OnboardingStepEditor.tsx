@@ -40,10 +40,7 @@ export default function OnboardingStepEditor({ jobOnboardingId, onBack }: { jobO
         }
     }, [jobOnboardingId]);
 
-
-
-
-
+    
     const loadSteps = async () => {
         const data = await fetchJobOnboardingSteps(jobOnboardingId);
         setSteps(data);

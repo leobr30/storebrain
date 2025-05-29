@@ -14,6 +14,7 @@ import { ArrowUp } from 'lucide-react';
 import toast from "react-hot-toast";
 import { useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
+import EditItemDialog from "@/features/configuring/documents/components/EditItemDialog";
 
 
 export default function DocumentForm() {
@@ -127,20 +128,6 @@ export default function DocumentForm() {
     setSections(sections.filter((_, i) => i !== index));
   };
 
-  const addItemToSection = (sectionIndex: number) => {
-    const newItem = prompt("Entrez un nouvel élément:");
-    if (newItem) {
-      setSections((prev) => prev.map((section, i) => (i === sectionIndex ? { ...section, items: [...section.items, newItem] } : section)));
-    }
-  };
-
-  const editItem = (sectionIndex: number, itemIndex: number) => {
-    const newItem = prompt("Modifiez cet élément:", sections[sectionIndex].items[itemIndex]);
-    if (newItem) {
-      setSections((prev) => prev.map((section, i) => (i === sectionIndex ? { ...section, items: section.items.map((item, j) => (j === itemIndex ? newItem : item)) } : section)));
-    }
-  };
-
   const removeItem = (sectionIndex: number, itemIndex: number) => {
     setSections((prev) => prev.map((section, i) => (i === sectionIndex ? { ...section, items: section.items.filter((_, j) => j !== itemIndex) } : section)));
   };
@@ -186,6 +173,56 @@ export default function DocumentForm() {
     });
   };
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [addingSectionIndex, setAddingSectionIndex] = useState<number | null>(null);
+
+  const openEditDialog = (sectionIdx: number, itemIdx: number) => {
+    setEditingSectionIndex(sectionIdx);
+    setEditingItemIndex(itemIdx);
+    setEditingValue(sections[sectionIdx].items[itemIdx]);
+    setDialogOpen(true);
+  };
+
+  const saveEditedItem = (value: string) => {
+    if (editingSectionIndex !== null && editingItemIndex !== null) {
+      setSections(prev =>
+        prev.map((section, i) =>
+          i === editingSectionIndex
+            ? {
+              ...section,
+              items: section.items.map((item, j) =>
+                j === editingItemIndex ? value : item
+              ),
+            }
+            : section
+        )
+      );
+    }
+  };
+
+  const openAddItemDialog = (sectionIdx: number) => {
+    setEditingValue("");
+    setAddingSectionIndex(sectionIdx);
+    setDialogOpen(true);
+  };
+
+  const saveNewItem = (value: string) => {
+    if (addingSectionIndex !== null) {
+      setSections((prev) =>
+        prev.map((section, i) =>
+          i === addingSectionIndex
+            ? { ...section, items: [...section.items, value] }
+            : section
+        )
+      );
+      setAddingSectionIndex(null);
+    }
+  };
+
+
 
 
 
@@ -215,17 +252,19 @@ export default function DocumentForm() {
                 <Label htmlFor={item} className="flex-grow whitespace-pre-line">
                   {item}
                 </Label>
-                <Button variant="ghost" size="icon" onClick={() => editItem(sectionIndex, itemIndex)}>
+                <Button variant="ghost" size="icon" onClick={() => openEditDialog(sectionIndex, itemIndex)}>
                   <PencilLine />
                 </Button>
+
                 <Button variant="ghost" size="icon" onClick={() => removeItem(sectionIndex, itemIndex)}>
                   <Eraser />
                 </Button>
               </div>
             ))}
-            <Button variant="outline" onClick={() => addItemToSection(sectionIndex)}>
+            <Button variant="outline" onClick={() => openAddItemDialog(sectionIndex)}>
               + Ajouter un élément
             </Button>
+
           </div>
           <Separator />
         </div>
@@ -242,6 +281,21 @@ export default function DocumentForm() {
           Valider
         </Button>
       </div>
+      <EditItemDialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setAddingSectionIndex(null);
+          setEditingSectionIndex(null);
+          setEditingItemIndex(null);
+        }}
+        onSave={addingSectionIndex !== null ? saveNewItem : saveEditedItem}
+        defaultValue={editingValue}
+      />
+
+
     </div>
+
+
   );
 }

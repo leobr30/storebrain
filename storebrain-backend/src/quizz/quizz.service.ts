@@ -13,6 +13,8 @@ export class QuizzService {
     console.log("🧾 Données reçues :", data);
 
     return this.prisma.$transaction(async (prisma) => {
+
+
       // 1. Création du quizz avec sections et questions (sans les réponses)
       const quizz = await prisma.quizz.create({
         data: {
@@ -49,33 +51,68 @@ export class QuizzService {
         throw new NotFoundException(`Aucun JobOnboarding avec l'id ${data.jobOnboardingId}`);
       }
 
-      // 3. Création d'une nouvelle étape QUIZZ dans l'onboarding
-      const onboardingStep = await prisma.jobOnboardingStep.create({
-        data: {
-          type: 'QUIZZ',
-          jobOnboardingId: data.jobOnboardingId,
-          jobOnboardingQuizzId: quizz.id,
-          day: 1,
-          month: 0,
-        },
-      });
-
-      // 4. Association de cette étape à l'utilisateur dans UserJobOnboarding
-      await prisma.userJobOnboarding.create({
-        data: {
+      const existingStep = await prisma.userJobOnboarding.findFirst({
+        where: {
           userId: data.employeeId,
-          jobOnboardingStepId: onboardingStep.id,
-          date: new Date(),
-          appointmentNumber: 0,
-          status: 'PENDING',
+          jobOnboardingStep: {
+            type: 'QUIZZ',
+            jobOnboardingId: data.jobOnboardingId,
+          },
+        },
+        include: {
+          jobOnboardingStep: true,
         },
       });
 
-      console.log("✅ Quizz et étape QUIZZ créés et liés à l'utilisateur.");
 
-      return quizz;
+      let onboardingStep;
+
+      if (existingStep) {
+        // On met à jour le quizz associé à l'étape existante
+        onboardingStep = await prisma.jobOnboardingStep.update({
+          where: { id: existingStep.jobOnboardingStep.id },
+          data: {
+            jobOnboardingQuizzId: quizz.id,
+          },
+        });
+
+        // On met à jour l'étape utilisateur existante
+        await prisma.userJobOnboarding.update({
+          where: { id: existingStep.id },
+          data: {
+            date: new Date(),
+            appointmentNumber: 0,
+            status: 'PENDING',
+          },
+        });
+      } else {
+        // Sinon on crée l'étape + userJobOnboarding
+        onboardingStep = await prisma.jobOnboardingStep.create({
+          data: {
+            type: 'QUIZZ',
+            jobOnboardingId: data.jobOnboardingId,
+            jobOnboardingQuizzId: quizz.id,
+            day: 1,
+            month: 0,
+          },
+        });
+
+        await prisma.userJobOnboarding.create({
+          data: {
+            userId: data.employeeId,
+            jobOnboardingStepId: onboardingStep.id,
+            date: new Date(),
+            appointmentNumber: 0,
+            status: 'PENDING',
+          },
+        });
+      }
     });
   }
+
+
+
+
 
 
   async getQuizzForOnboarding(quizzId: number) {

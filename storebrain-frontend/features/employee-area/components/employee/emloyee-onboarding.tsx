@@ -11,12 +11,12 @@ import DocumentForm from "@/features/employee-area/components/employee/document-
 import { useState, useEffect } from "react";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { EmployeeQuizzWrapper } from "./employee-quizz-wrapper";
+import { EmployeeJobOnboarding } from "../../types";
 
 type EmployeeOnboardingsProps = {
     id: number;
     steps: EmployeeJobOnboarding[];
     onStepUpdated?: (updatedStep: EmployeeJobOnboarding) => void;
-    //jobOnboardingId: number | null;
 };
 
 export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboardingsProps) => {
@@ -38,15 +38,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
 
 
     const [localSteps, setLocalSteps] = useState<EmployeeJobOnboarding[]>(steps);
-    const [isDocumentOpen, setIsDocumentOpen] = useState(false); // ✅ Nouvelle variable pour le document
-    const [isQuizzOpen, setIsQuizzOpen] = useState(false); // ✅ Nouvelle variable pour le quizz
-
-
-    const handleCreateTraining = async (jobOnboardingStepId: number) => {
-        console.log("🚀 ~ handleCreateTraining ~ jobOnboardingStepId:", jobOnboardingStepId);
-        const training = await createTrainingWithOnboarding(id, jobOnboardingStepId);
-        handleViewTraining(training.id);
-    };
+    const [isDocumentOpen, setIsDocumentOpen] = useState(false);
+    const [isQuizzOpen, setIsQuizzOpen] = useState(false);
 
     const handleRefreshSteps = async (stepId: number) => {
         console.log("🚀 ~ handleRefreshSteps ~ stepId:", stepId);
@@ -57,7 +50,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                 const updatedStep = updatedSteps.find(step => step.id === stepId);
                 console.log("🚀 ~ handleRefreshSteps ~ updatedStep:", updatedStep);
                 if (updatedStep) {
-                    updateStep(updatedStep); // ✅ Call updateStep with the updated step
+                    updateStep(updatedStep);
 
                 } else {
                     console.log("❌ Aucun updatedStep trouvé pour stepId:", stepId);
@@ -73,14 +66,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     };
 
 
-
-
-
-    const handleTrainingUpdated = () => {
-        handleRefreshSteps();
-    };
-
-
     const updateStep = (updatedStep: EmployeeJobOnboarding) => {
         console.log("🚀 ~ updateStep ~ updatedStep:", updatedStep);
         setLocalSteps((prevSteps) =>
@@ -90,6 +75,25 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
             onStepUpdated(updatedStep);
         }
     };
+
+    const seenQuizzIds = new Set<number>();
+
+    const uniqueSteps = localSteps.filter((step) => {
+        if (step.jobOnboardingStep?.type !== "QUIZZ") return true;
+
+        const quizzId = step.jobOnboardingStep?.jobOnboardingQuizz?.id;
+        if (!quizzId) return true;
+
+        if (seenQuizzIds.has(quizzId)) {
+            return false;
+        } else {
+            seenQuizzIds.add(quizzId);
+            return true;
+        }
+    });
+
+
+
 
     return (
         <Card>
@@ -109,12 +113,12 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {localSteps
+                            {uniqueSteps
                                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                                 .filter((step) => step?.jobOnboardingStep)
                                 .map((step, stepIndex) => {
-                                    console.log("🚀 ~ .map ~ step:", step);
-                                    console.log("🚀 ~ .map ~ step.jobOnboardingStep:", step.jobOnboardingStep);
+
+
                                     return (
                                         <TableRow key={step.id}>
                                             <TableCell>{new Date(step.date).toLocaleDateString()}</TableCell>

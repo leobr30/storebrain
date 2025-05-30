@@ -48,6 +48,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [formId, setFormId] = useState<string | null>(null);
+  const [hasDocument, setHasDocument] = useState<boolean | null>(null);
   const [initialSections, setInitialSections] = useState<any[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,6 +58,27 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
       items: []
     },
   });
+
+  useEffect(() => {
+    const checkDocAvailability = async () => {
+      if (isCompleted || responseId) return;
+
+      try {
+        const formData = await getDoc();
+        if (formData && formData.sections && formData.sections.length > 0) {
+          setHasDocument(true);
+        } else {
+          setHasDocument(false);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification du document :", error);
+        setHasDocument(false);
+      }
+    };
+
+    checkDocAvailability();
+  }, [isCompleted, responseId]);
+
 
   useEffect(() => {
     setIsCompleted(status === "COMPLETED");
@@ -176,7 +198,11 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={"ghost"} onClick={() => setOpen(true)}>
+        <Button
+          variant={"ghost"}
+          onClick={() => setOpen(true)}
+          disabled={!isCompleted && !responseId && hasDocument === false}
+        >
           {isCompleted ? "Consulter le Document" : "Démarrer le Document"}
         </Button>
       </SheetTrigger>

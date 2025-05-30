@@ -41,7 +41,7 @@ export const createQuizz = async (data: {
 }) => {
     const apiPayload = {
         title: data.title,
-        employeeId: parseInt(data.assignedToId), // ✅ OK !
+        employeeId: parseInt(data.assignedToId),
         createdById: parseInt(data.createdById),
         jobOnboardingId: 1,
         sections: data.sections.map((section) => ({

@@ -58,7 +58,6 @@ export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {
         <EmployeeHistory histories={employee.histories} />
       </TabsContent>
       <TabsContent value="onboarding" className="mt-2.5">
-        {/* Passer jobOnboardingId à EmployeeOnboardings */}
         <EmployeeOnboardings steps={employee.jobOnboardings} id={employee.id} />
       </TabsContent>
       <TabsContent value="absence" className="mt-2.5">

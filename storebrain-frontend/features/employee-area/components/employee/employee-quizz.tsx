@@ -5,41 +5,61 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSession } from 'next-auth/react';
-import { getQuizzById, submitQuizzAnswers, getQuizzAnswersByUserId, getQuizzResponse } from '../../actions'; // Import getQuizzAnswersByUserId et getQuizzResponse
+import { getQuizzById, submitQuizzAnswers, getQuizzAnswersByUserId, getQuizzResponse } from '../../actions';
 import { EmployeeJobOnboarding } from '../../types';
 
 interface EmployeeQuizzProps {
     quizzId: number;
-    onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void;
     stepId: number;
     responseId?: string;
-    onInputChange: (questionId: number, value: string) => void;
-    answers: { [questionId: number]: string[] };
     isCompleted: boolean;
+    onSubmitSuccess: (step: any) => void;
+    setAnswers: React.Dispatch<React.SetStateAction<{ [questionId: number]: string[] }>>;
+    setResponseId: (id: string) => void;
 }
 
-export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId, responseId, onInputChange, answers, isCompleted }: EmployeeQuizzProps) { // ✅ On ajoute responseId
+
+
+export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted, onSubmitSuccess, setAnswers }: EmployeeQuizzProps) {
     const { data: session } = useSession();
     const userId = session?.user?.id;
+    const [localAnswers, setLocalAnswers] = useState<{ [questionId: number]: string }>({});
+
+    useEffect(() => {
+
+        const transformed = Object.entries(localAnswers).reduce((acc, [questionId, answer]) => {
+            acc[Number(questionId)] = [answer];
+            return acc;
+        }, {} as { [questionId: number]: string[] });
+
+        setAnswers(transformed);
+    }, [localAnswers, setAnswers]);
+
+
 
     const [quizz, setQuizz] = useState<any>(null);
 
     useEffect(() => {
+        console.log("📥 Entrée dans useEffect");
+        console.log("🧾 responseId reçu :", responseId);
         const fetchQuizz = async () => {
             if (!userId) return;
             const data = await getQuizzById(quizzId);
             setQuizz(data.data);
 
-            // Fetch existing answers
+
             if (responseId) {
                 const existingAnswers = await getQuizzResponse(responseId);
+                console.log("📦 Réponses existantes récupérées :", existingAnswers);
                 if (existingAnswers && existingAnswers.length > 0) {
-                    const formattedAnswers: { [questionId: number]: string[] } = {};
-                    existingAnswers.forEach(answer => {
-                        formattedAnswers[answer.questionId] = [answer.answer];
+                    const formatted: { [questionId: number]: string } = {};
+                    existingAnswers.forEach((a:any) => {
+                        formatted[a.questionId] = a.answer;
                     });
+                    setLocalAnswers(formatted);
                 }
             }
+
         };
         fetchQuizz();
     }, [userId, quizzId, responseId]);
@@ -55,14 +75,25 @@ export default function EmployeeQuizz({ quizzId, onSubmitSuccess, stepId, respon
                     {section.questions.map((question: any) => (
                         <div key={question.id} className="space-y-2">
                             <p className="font-medium">{question.text}</p>
-                            <Input
-                                type="text"
-                                placeholder="Votre réponse"
-                                value={answers[question.id]?.[0] || ''}
-                                onChange={(e) => onInputChange(question.id, e.target.value)}
-                                disabled={isCompleted}
-                                className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+
+                            {isCompleted ? (
+                                <p className="bg-gray-100 text-gray-800 p-2 rounded">
+                                    {localAnswers[question.id] || <em className="text-gray-400">Aucune réponse</em>}
+                                </p>
+                            ) : (
+                                <Input
+                                    type="text"
+                                    placeholder="Votre réponse"
+                                    value={localAnswers[question.id] || ''}
+                                    onChange={(e) =>
+                                        setLocalAnswers((prev) => ({
+                                            ...prev,
+                                            [question.id]: e.target.value,
+                                        }))
+                                    }
+                                    className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            )}
                         </div>
                     ))}
                 </div>

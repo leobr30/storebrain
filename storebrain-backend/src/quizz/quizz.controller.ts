@@ -81,6 +81,7 @@ export class QuizzController {
     @Param('id', ParseIntPipe) quizzId: number,
     @Body() dto: SubmitQuizzAnswersDto,
   ) {
+    console.log('📦 Payload reçu dans /submit:', dto);
     const result = await this.quizzService.submitAnswers(quizzId, dto);
     const employee = await this.employeeService.getEmployee(dto.userId);
     const quizzWithAnswers = await this.quizzService.getQuizzWithAnswers(result.quizzId, String(dto.userId));

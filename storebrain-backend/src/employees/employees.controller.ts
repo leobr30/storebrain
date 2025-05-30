@@ -220,7 +220,7 @@ export class EmployeesController {
         dto,
         trainingModelId,
         name,
-        subjects
+        subjects,
       );
       return { message: "Training created successfully", data: result };
     } catch (error) {

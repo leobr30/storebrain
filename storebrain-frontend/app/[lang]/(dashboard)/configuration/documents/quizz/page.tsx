@@ -9,6 +9,8 @@ import { createQuizz, fetchAllEmployees } from '../action';
 import { useSession } from 'next-auth/react';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
+
 
 interface Employee {
     id: string;
@@ -54,7 +56,7 @@ export default function QuizzPage({ }: QuizzPageProps) {
         },
     ]);
 
-    
+
     const router = useRouter();
 
     useEffect(() => {
@@ -92,10 +94,10 @@ export default function QuizzPage({ }: QuizzPageProps) {
                 sections,
             });
 
-            alert('Le quizz a été créé avec succès !');
+            toast.success(" Le quizz a été créé avec succès !");
         } catch (error) {
             console.error(' Erreur lors de la sauvegarde du quizz :', error);
-            alert('ça fonctionne pas');
+            toast.error("Une erreur est survenue lors de la création du quizz.");
         }
     };
 
@@ -138,7 +140,7 @@ export default function QuizzPage({ }: QuizzPageProps) {
                 console.log("👥 Employés récupérés :", list);
 
                 const typedList: Employee[] = list.map((employee: any) => ({
-                    id: employee.id,
+                    id: String(employee.id),
                     name: employee.name,
                 }));
                 setEmployees(typedList);

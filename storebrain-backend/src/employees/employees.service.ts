@@ -1225,7 +1225,7 @@ export class EmployeesService {
 
   async markDocumentCompleted(employeeId: number, stepId: number, responseId: string, currentUserId: number) {
     try {
-      const step = await this.prisma.userJobOnboarding.findUnique({
+      const step = await this.prisma.userJobOnboarding.findFirst({
         where: { id: stepId, userId: employeeId },
         include: {
           jobOnboardingStep: {
@@ -1236,6 +1236,7 @@ export class EmployeesService {
         },
       });
 
+
       if (!step) throw new NotFoundException("Étape non trouvée.");
 
       await this.prisma.userJobOnboarding.update({
@@ -1244,6 +1245,8 @@ export class EmployeesService {
       });
 
       if (step.jobOnboardingStep?.jobOnboardingDocuments?.length > 0) {
+        const docName = step.jobOnboardingStep.jobOnboardingDocuments[0]?.name;
+        console.log("📄 Document à historiser :", docName);
         await this.prisma.userHistory.create({
           data: {
             title: 'Document',

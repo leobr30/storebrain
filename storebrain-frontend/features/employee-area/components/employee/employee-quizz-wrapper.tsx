@@ -7,7 +7,7 @@ import EmployeeQuizz from './employee-quizz';
 import { X } from 'lucide-react';
 import { EmployeeJobOnboarding } from '../../types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getQuizzById, submitQuizzAnswers } from '../../actions';
+import { getQuizzById, markQuizzAsCompleted, submitQuizzAnswers } from '../../actions';
 import { useSession } from 'next-auth/react';
 
 interface EmployeeQuizzWrapperProps {
@@ -18,11 +18,13 @@ interface EmployeeQuizzWrapperProps {
     onSubmitSuccess: (updatedStep: EmployeeJobOnboarding | null) => void;
     status: string;
     responseId?: string;
+    setResponseId: (id: string) => void;
 }
 
 
-export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitSuccess, status, responseId }: EmployeeQuizzWrapperProps) => {
-    const [isCompleted, setIsCompleted] = useState(status === "COMPLETED");
+
+export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitSuccess, status, responseId, setResponseId }: EmployeeQuizzWrapperProps) => {
+    const [isCompleted, setIsCompleted] = useState(() => status === "COMPLETED" || !!responseId);
     const { data: session } = useSession();
     const userId = session?.user?.id;
     const [quizzTitle, setQuizzTitle] = useState<string>('');
@@ -41,25 +43,7 @@ export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitS
         fetchQuizzTitle();
     }, [quizzId]);
 
-    useEffect(() => {
-        const checkQuizzCompletion = async () => {
-            if (!userId) return;
-            if (responseId) {
-                setIsCompleted(true);
-            } else {
-                setIsCompleted(false);
-            }
-        };
-        checkQuizzCompletion();
-    }, [quizzId, userId, responseId]);
 
-    const handleInputChange = (questionId: number, value: string) => {
-        if (isCompleted) return;
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: [value],
-        }));
-    };
 
     const handleSubmit = async () => {
         const answersToSubmit = Object.entries(answers).map(([questionId, answerArray]) => ({
@@ -67,15 +51,36 @@ export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitS
             answer: answerArray[0],
         }));
 
-        const response = await submitQuizzAnswers(quizzId, {
+        console.log("🔍 Données envoyées :", {
             userId: userId!,
             answers: answersToSubmit,
         });
 
+
+        const response = await submitQuizzAnswers(quizzId, {
+            userId: Number(userId),
+            answers: answersToSubmit,
+        });
+
+        if (response && response.quizzId) {
+            const completedResponse = await markQuizzAsCompleted(
+                Number(userId),
+                stepId,
+                response.responseId
+            );
+            console.log("✅ Quizz marqué comme complété :", completedResponse);
+        }
+
+
         setIsCompleted(true);
         if (response) {
+            setIsCompleted(true);
             onSubmitSuccess(response.updatedStep);
+            if (response.responseId) {
+                setResponseId(response.responseId);
+            }
         }
+
     };
 
     return (
@@ -90,7 +95,17 @@ export const EmployeeQuizzWrapper = ({ stepId, quizzId, setOpen, open, onSubmitS
                     </SheetTitle>
                 </SheetHeader>
                 <ScrollArea className='flex-grow p-4'>
-                    <EmployeeQuizz quizzId={quizzId} onSubmitSuccess={onSubmitSuccess} stepId={stepId} responseId={responseId} onInputChange={handleInputChange} answers={answers} isCompleted={isCompleted} />
+                    <EmployeeQuizz
+                        key={`${quizzId}-${responseId ?? 'initial'}`}
+                        quizzId={quizzId}
+                        onSubmitSuccess={onSubmitSuccess}
+                        stepId={stepId}
+                        responseId={responseId}
+                        isCompleted={isCompleted}
+                        setAnswers={setAnswers}
+                        setResponseId={setResponseId}
+                    />
+
                 </ScrollArea>
                 <SheetFooter className="p-4 flex justify-end items-center bg-white border-t border-gray-200">
                     {!isCompleted && (

@@ -47,7 +47,7 @@ export const updateTrainingModel = async (
 
 export const updateTrainingModelSubject = async (
     id: number,
-    data: { name: string }
+    data: { name: string; aide: string }
 ) => {
     const result = await fetchWithAuth(`trainings/training-model-subject/${id}`, {
         method: 'PATCH',
@@ -58,6 +58,7 @@ export const updateTrainingModelSubject = async (
     });
     return result;
 };
+
 
 export const createTrainingModelSubject = async (
     trainingModelId: number,

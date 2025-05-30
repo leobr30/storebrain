@@ -543,7 +543,7 @@ export class EmployeesService {
     dto: CreateTrainingWithOnboardingDto,
     trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
     name: string,
-    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[] // ✅ Ajout du paramètre subjects
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; aide?: string }[] // ✅ Ajout du paramètre subjects
   ) {
     try {
       // Vérifier si l'utilisateur existe
@@ -602,12 +602,14 @@ export class EmployeesService {
           subjects: {
             create: trainingModel ? trainingModel.subjects?.map((subject) => ({
               name: subject.name,
-            })) || [] : subjects?.map((subject) => ({ // ✅ Création des sujets si trainingModel est undefined
+              aide: subject.aide,
+            })) || [] : subjects?.map((subject) => ({
               name: subject.name,
+              aide: subject.aide,
             })) || [],
           },
           comment: '',
-          tool: trainingModel?.tool || '', // ✅ Utilisation de l'opérateur d'optional chaining
+          tool: trainingModel?.tool || '',
           exercise: '',
           realizedById: dto.currentUserId,
           userId: dto.userId,

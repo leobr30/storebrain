@@ -23,6 +23,7 @@ model Training {
 model TrainingSubject {
   id         Int                   @id @default(autoincrement())
   name       String
+  aide       String?
   state      State                 @default(NOT_ACQUIRED)
   trainingId Int
   training   Training              @relation(references: [id], fields: [trainingId], onDelete: Cascade)
@@ -51,7 +52,6 @@ model TrainingModel {
   subjects                    TrainingModelSubject[]
   tool                        String
   exercise                    String
-  aide                        String?
   numberOAppointmentsRequired Int                    @default(2)
   jobOnboardingSteps          JobOnboardingStep[]
 }
@@ -59,6 +59,7 @@ model TrainingModel {
 model TrainingModelSubject {
   id              Int           @id @default(autoincrement())
   name            String
+  aide            String?
   trainingModelId Int
   trainingModel   TrainingModel @relation(references: [id], fields: [trainingModelId], onDelete: Cascade)
 }

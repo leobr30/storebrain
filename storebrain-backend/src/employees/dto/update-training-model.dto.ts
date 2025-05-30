@@ -8,8 +8,4 @@ export class UpdateTrainingModelDto {
     @IsOptional()
     @IsString()
     exercise?: string;
-
-    @IsOptional()
-    @IsString()
-    aide?: string;
 }

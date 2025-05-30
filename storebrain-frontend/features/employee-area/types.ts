@@ -116,6 +116,7 @@ export type TrainingSubject = {
     state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS",
     trainingId: number;
     files: TrainingSubjectFile[];
+    aide?: string | null; 
 };
 
 

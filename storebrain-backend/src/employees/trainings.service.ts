@@ -308,16 +308,16 @@ export class TrainingsService {
       data: {
         tool: dto.tool,
         exercise: dto.exercise,
-        aide: dto.aide,
       },
     });
   }
 
-  async updateTrainingModelSubject(id: number, dto: { name: string }) {
+  async updateTrainingModelSubject(id: number, dto: { name: string; aide: string }) {
     return await this.prisma.trainingModelSubject.update({
       where: { id },
       data: {
         name: dto.name,
+        aide: dto.aide,
       },
     });
   }

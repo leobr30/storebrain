@@ -16,7 +16,6 @@ import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, 
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { X } from "lucide-react"
-import { FileButton } from "../file-button"
 import { REQUIRED } from "@/lib/utils"
 import { AttachmentsDialog } from "./attachments-dialog"
 import toast from "react-hot-toast"
@@ -24,9 +23,10 @@ import LoginDialog from "@/components/login-dialog"
 import { TextareaSkeleton } from "@/components/skeletons/textarea-skeleton"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Training, TrainingSubject, TrainingSubjectFile } from "../../types"
-import { auth } from "@/lib/auth"
 import { useSession } from "next-auth/react"
-import { Input } from "@/components/ui/input"
+import { HelpCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+
 
 
 
@@ -82,6 +82,8 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                 const data: Training = await getTraining(parseInt(trainingId!))
                 console.log(data)
                 setTraining(data)
+                console.log(training?.subjects.map(s => ({ id: s.id, name: s.name, aide: s.aide })))
+
             } catch (err) {
                 console.log(err)
             } finally {
@@ -187,6 +189,9 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
         toast.success("Nom du fichier modifié")
     }
 
+    const [helpText, setHelpText] = useState<string | null>(null);
+
+
     return (
         <Sheet open={open} onOpenChange={handleCloseTraining} >
             <SheetContent
@@ -225,7 +230,22 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                                                 <TableBody className="text-center">
                                                     {fields.map((item, index) => (
                                                         <TableRow key={item.id}>
-                                                            <TableCell>{item.subject}</TableCell>
+                                                            <TableCell className="flex items-center gap-2">
+                                                                {item.subject}
+                                                                {training?.subjects.find(s => s.id === item.subjectId)?.aide && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        className="p-1 h-auto"
+                                                                        onClick={() =>
+                                                                            setHelpText(training?.subjects.find(s => s.id === item.subjectId)?.aide ?? null)
+                                                                        }
+                                                                    >
+                                                                        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+
                                                             <TableCell>
                                                                 <FormField
                                                                     control={form.control}
@@ -358,6 +378,16 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                 </SheetFooter>
                 <LoginDialog title={`Signature requise de ${training?.user.name}`} userId={userId} open={loginDialogOpen} setOpen={setLoginDialogOpen} onSuccess={handleLoginSuccess} />
                 <AttachmentsDialog trainingId={parseInt(trainingId!)} status={training?.status} userId={userId} selectedSubject={selectedSubject} addAttachment={addAttachment} onClose={handleAttachmentsDialogClose} onDownload={handleDownloadAttachment} onDelete={handleFileDelete} onUpdateFileName={handleUpdateFileName} />
+                <Dialog open={!!helpText} onOpenChange={() => setHelpText(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Aide</DialogTitle>
+                            <DialogDescription className="whitespace-pre-wrap">
+                                {helpText}
+                            </DialogDescription>
+                        </DialogHeader>
+                    </DialogContent>
+                </Dialog>
             </SheetContent>
         </Sheet>
     )

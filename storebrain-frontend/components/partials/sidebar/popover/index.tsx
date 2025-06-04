@@ -145,7 +145,7 @@ const PopoverSidebar = ({ trans }: { trans: string }) => {
           <Button
             variant="ghost"
             className="w-full"
-            onClick={() => signOut()}
+            onClick={() => signOut({ redirectTo: '/en/auth/login' })} // Redirige vers la page de connexion spécifique
           >
             Se déconnecter
           </Button>

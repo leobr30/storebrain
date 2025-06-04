@@ -5,7 +5,7 @@ model Training {
   tool                String
   exercise            String
   date                DateTime?
-  status              Status            @default(DRAFT)
+  status              Status            @default(PENDING)
   validateAt          DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @default(now()) @updatedAt // Ajout de @default(now())

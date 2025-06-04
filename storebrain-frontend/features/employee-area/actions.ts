@@ -286,19 +286,38 @@ export const submitQuizzAnswers = async (quizzId: number, data: {
         answer: string;
     }[];
 }) => {
-    const response = await fetchWithAuth(`quizz/${quizzId}/submit`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
+    try {
+        console.log("📤 Soumission des réponses:", { quizzId, data });
+        const response = await fetchWithAuth(`quizz/${quizzId}/submit`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-    return await response;
+        console.log("✅ Réponse de soumission:", response);
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur lors de la soumission:", error);
+        throw error;
+    }
 };
 
 export const getAssignedQuizz = async (quizzId: number, userId: number) => {
     return await fetchWithAuth(`quizz/${quizzId}`);
+};
+
+export const getQuizzWithResponse = async (responseId: string) => {
+    try {
+        const response = await fetchWithAuth(`quizz/response/${responseId}`, {
+            method: "GET",
+        });
+        return response;
+    } catch (error) {
+        console.error("❌ Erreur dans getQuizzWithResponse :", error);
+        throw error;
+    }
 };
 
 export const markQuizzAsCompleted = async (
@@ -307,14 +326,15 @@ export const markQuizzAsCompleted = async (
     responseId: string
 ) => {
     try {
-        console.log(
-            `🔄 Mise à jour du statut du quizz pour Employee ID: ${employeeId}, Step ID: ${stepId}`
-        );
+        console.log(`🔄 Marquage comme complété - Employee: ${employeeId}, Step: ${stepId}, Response: ${responseId}`);
         const response = await fetchWithAuth(
             `employees/${employeeId}/onboarding/${stepId}/complete`,
             {
                 method: "PATCH",
                 body: JSON.stringify({ responseId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             }
         );
 
@@ -322,20 +342,52 @@ export const markQuizzAsCompleted = async (
         console.log("✅ Statut mis à jour :", response);
         return response;
     } catch (error) {
-        console.error(
-            "❌ Erreur lors de la mise à jour du statut du quizz :",
-            error
-        );
+        console.error("❌ Erreur lors de la mise à jour du statut :", error);
         throw error;
     }
 };
 
 export const getQuizzAnswersByUserId = async (quizzId: number, userId: string) => {
     try {
+        console.log(`🔍 getQuizzAnswersByUserId - QuizzId: ${quizzId}, UserId: ${userId}`);
         const response = await fetchWithAuth(`quizz/${quizzId}/answers/${userId}`);
-        return response;
+        console.log("📦 Réponse brute de l'API:", response);
+
+        // Vérifier si response.data existe et a la bonne structure
+        if (response && response.data) {
+            console.log("✅ Données trouvées:", response.data);
+            return response.data;
+        } else if (response && response.answers) {
+            // Au cas où la structure serait différente
+            console.log("✅ Données trouvées (structure alternative):", response);
+            return response;
+        } else {
+            console.log("⚠️ Aucune donnée trouvée dans la réponse");
+            return { answers: [] };
+        }
     } catch (error) {
-        console.error('Error fetching quizz answers:', error);
+        console.error('❌ Erreur dans getQuizzAnswersByUserId:', error);
+        return { answers: [] }; // Retourner une structure vide plutôt que null
+    }
+};
+
+export const getQuizzResponse = async (responseId: string) => {
+    try {
+        console.log(`🔍 getQuizzResponse - ResponseId: ${responseId}`);
+        const response = await fetchWithAuth(`quizz/response/${responseId}`);
+        console.log("📦 Réponse getQuizzResponse:", response);
+
+        if (response && response.data) {
+            return response.data;
+        } else if (response) {
+            return response;
+        } else {
+            console.log("⚠️ Aucune donnée trouvée pour le responseId");
+            return { answers: [] };
+        }
+    } catch (error) {
+        console.error('❌ Erreur dans getQuizzResponse:', error);
+        return { answers: [] };
     }
 };
 
@@ -357,16 +409,6 @@ export const sendUnsignedDocuments = async (userId: number) => {
     return await fetchWithAuth(`employees/${userId}/send-unsigned-documents`, {
         method: 'POST',
     });
-};
-
-export const getQuizzResponse = async (responseId: string) => {
-    try {
-        console.log("🔍 Tentative de récupération avec responseId:", responseId);
-        return null;
-    } catch (error) {
-        console.error('Erreur lors de la récupération de la réponse:', error);
-        return null;
-    }
 };
 
 

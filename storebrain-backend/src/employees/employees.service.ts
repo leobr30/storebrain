@@ -539,11 +539,13 @@ export class EmployeesService {
 
 
   // Dans ton fichier employees.service.ts
+  // Dans employees.service.ts, modifiez la méthode createTrainingWithEmployeeOnboardingId :
+
   async createTrainingWithEmployeeOnboardingId(
     dto: CreateTrainingWithOnboardingDto,
-    trainingModelId: number | undefined, // ✅ trainingModelId peut être undefined
+    trainingModelId: number | undefined,
     name: string,
-    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; aide?: string }[] // ✅ Ajout du paramètre subjects
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; aide?: string }[]
   ) {
     try {
       // Vérifier si l'utilisateur existe
@@ -551,6 +553,7 @@ export class EmployeesService {
       if (!user) {
         throw new NotFoundException(`User with ID ${dto.userId} not found`);
       }
+
       // Récupérer l'utilisateur avec les relations nécessaires
       const userWithRelations = await this.prisma.user.findUniqueOrThrow({
         where: {
@@ -572,6 +575,7 @@ export class EmployeesService {
           },
         },
       });
+
       // Vérifier si l'intégration existe
       const integration = userWithRelations.jobOnboardings.find(
         (w) => w.id === dto.employeeJobOnboardId,
@@ -595,10 +599,12 @@ export class EmployeesService {
         }
       }
 
-      // Créer la formation
+      // Créer la formation avec la date et le statut approprié
       const training = await this.prisma.training.create({
         data: {
           name: name,
+          date: new Date(), // ✅ Ajout de la date actuelle
+          status: 'PENDING', // ✅ Définir le statut à PENDING au lieu de DRAFT
           subjects: {
             create: trainingModel ? trainingModel.subjects?.map((subject) => ({
               name: subject.name,
@@ -626,11 +632,12 @@ export class EmployeesService {
           status: Status.IN_PROGRESS,
         },
       });
+
       return training;
     } catch (error) {
       console.error("Error in createTrainingWithEmployeeOnboardingId:", error);
       if (error instanceof NotFoundException) {
-        throw error; // Relancer l'erreur NotFoundException
+        throw error;
       }
       throw new HttpException(error.message || 'Error creating training', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
     }

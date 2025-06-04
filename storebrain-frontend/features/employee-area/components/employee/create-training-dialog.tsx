@@ -54,7 +54,7 @@ export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: Creat
     const [open, setOpen] = useState(false);
     const [trainingModels, setTrainingModels] = useState<TrainingModel[]>([]);
     const [creationType, setCreationType] = useState<'model' | 'blank'>('model');
-    const [subjects, setSubjects] = useState<z.infer<typeof subjectSchema>[]>([]); // État local pour les sujets
+    const [subjects, setSubjects] = useState<z.infer<typeof subjectSchema>[]>([]);
     const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({

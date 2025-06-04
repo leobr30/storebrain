@@ -31,7 +31,7 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
     const searchParams = useSearchParams();
     const isAdmin = session?.user?.name === "admin";
 
-    
+
     const employeeOnboordingId = jobOnboardings.find(jobOnboarding => jobOnboarding.jobOnboardingStep.type === "TRAINING")?.id;
 
     const handleViewTraining = (trainingId: number, mode: 'view' | 'edit') => {
@@ -49,12 +49,19 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
             header: "Date de création",
             cell: ({ row }) => {
                 const date = row.original.date;
-                if (date && isValid(new Date(date))) {
-                    return <span>{format(new Date(date), "dd/MM/yyyy", { locale: fr })}</span>;
-                } else {
+                console.log("🔍 Date de la formation:", date);
+
+                if (!date) {
+                    return <span>Date non définie</span>;
+                }
+
+                const parsedDate = new Date(date);
+                if (!isValid(parsedDate)) {
                     console.error("Date invalide:", date);
                     return <span>Date invalide</span>;
                 }
+
+                return <span>{format(parsedDate, "dd/MM/yyyy", { locale: fr })}</span>;
             },
         },
         {

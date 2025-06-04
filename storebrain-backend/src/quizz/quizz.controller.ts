@@ -36,9 +36,6 @@ export class QuizzController {
     }
   }
 
-
-
-
   @Get(':id')
   async getOne(@Param('id', ParseIntPipe) id: number) {
     const quizz = await this.quizzService.getQuizzById(id);
@@ -110,19 +107,47 @@ export class QuizzController {
     };
   }
 
+
   @Get(':quizzId/answers/:userId')
   async getQuizzAnswers(
     @Param('quizzId', ParseIntPipe) quizzId: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    const quizzWithAnswers = await this.quizzService.getQuizzWithAnswers(quizzId, String(userId));
-    return {
-      quizz: quizzWithAnswers.quizz,
-      answers: quizzWithAnswers.answers,
-    };
+    try {
+      console.log(`🔍 getQuizzAnswers - QuizzId: ${quizzId}, UserId: ${userId}`);
+
+      const quizzWithAnswers = await this.quizzService.getQuizzWithAnswers(quizzId, String(userId));
+
+      console.log("📦 Résultat du service:", quizzWithAnswers);
+
+      // Vérifier que nous avons des données
+      if (!quizzWithAnswers) {
+        console.log("⚠️ Aucune donnée retournée par le service");
+        return {
+          message: 'Aucune donnée trouvée',
+          data: {
+            quizz: null,
+            answers: [],
+          },
+        };
+      }
+
+      console.log("✅ Données trouvées:", {
+        quizz: quizzWithAnswers.quizz ? "Présent" : "Absent",
+        answersCount: quizzWithAnswers.answers?.length || 0
+      });
+
+      return {
+        message: 'Réponses récupérées avec succès',
+        data: {
+          quizz: quizzWithAnswers.quizz,
+          answers: quizzWithAnswers.answers || [],
+        },
+      };
+    } catch (error) {
+      console.error('❌ Erreur dans getQuizzAnswers:', error);
+      throw error;
+    }
   }
-
-
-
 
 }

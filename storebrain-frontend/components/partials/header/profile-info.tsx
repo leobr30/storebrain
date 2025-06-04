@@ -19,7 +19,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 
 const ProfileInfo = () => {
-  const {data: session} = useSession();
+  const { data: session } = useSession();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className=" cursor-pointer">
@@ -63,22 +63,22 @@ const ProfileInfo = () => {
             {
               name: "profile",
               icon: "heroicons:user",
-              href:"/user-profile"
+              href: "/user-profile"
             },
             {
               name: "Billing",
               icon: "heroicons:megaphone",
-              href:"/dashboard"
+              href: "/dashboard"
             },
             {
               name: "Settings",
               icon: "heroicons:paper-airplane",
-              href:"/dashboard"
+              href: "/dashboard"
             },
             {
               name: "Keyboard shortcuts",
               icon: "heroicons:language",
-              href:"/dashboard"
+              href: "/dashboard"
             },
           ].map((item, index) => (
             <Link
@@ -170,6 +170,7 @@ const ProfileInfo = () => {
         <DropdownMenuSeparator className="mb-0 dark:bg-background" />
         <DropdownMenuItem
           onSelect={() => signOut()}
+          onSelect={() => signOut({ redirectTo: '/en/auth/login' })} // Redirige vers la page de connexion spécifique
           className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize my-1 px-3 dark:hover:bg-background cursor-pointer"
         >
           <Icon icon="heroicons:power" className="w-4 h-4" />

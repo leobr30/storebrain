@@ -13,8 +13,6 @@ type EmployeeViewProps = {
 };
 
 export const EmployeeView = async ({ employee }: EmployeeViewProps) => {
-    // Récupérer jobOnboardingId depuis la base de données
-    //const jobOnboardingId = await getJobOnboardingIdForEmployee(employee.id);
 
     const requiredDocuments: DocumentType[] = [
         DocumentType.CNI,
@@ -54,9 +52,7 @@ export const EmployeeView = async ({ employee }: EmployeeViewProps) => {
                         hasAllDocuments={hasAllDocuments}
                         missingDocuments={missingDocuments}
                     />
-
-                    {/* Passer jobOnboardingId à EmployeeTabs */}
-                    <EmployeeTabs employee={employee} /* jobOnboardingId={jobOnboardingId} */ /> {/* ✅ On supprime jobOnboardingId */}
+                    <EmployeeTabs employee={employee} />
                 </div>
             </div>
         </>

@@ -253,33 +253,59 @@ export class QuizzService {
     };
   }
 
+  // Méthode corrigée pour quizz.service.ts
+
   async getQuizzWithAnswers(quizzId: number, userId: string) {
-    const quizz = await this.prisma.quizz.findUnique({
-      where: { id: quizzId },
-      include: {
-        sections: {
-          include: {
-            questions: true,
+    try {
+      console.log(`🔍 getQuizzWithAnswers - QuizzId: ${quizzId}, UserId: ${userId}`);
+
+      const quizz = await this.prisma.quizz.findUnique({
+        where: { id: quizzId },
+        include: {
+          sections: {
+            include: {
+              questions: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    const answers = await this.prisma.quizzAnswer.findMany({
-      where: {
-        question: {
-          section: {
-            quizzId,
+      console.log("📋 Quiz trouvé:", quizz ? "Oui" : "Non");
+
+      const answers = await this.prisma.quizzAnswer.findMany({
+        where: {
+          question: {
+            section: {
+              quizzId,
+            },
           },
+          userId: Number(userId),
         },
-        userId: Number(userId), // ✅ Convert userId to number
-      },
-      include: {
-        question: true,
-      },
-    });
+        include: {
+          question: true,
+        },
+      });
 
-    return { quizz, answers };
+      console.log(`📝 Réponses trouvées: ${answers.length}`);
+      console.log("📋 Détail des réponses:", answers.map(a => ({
+        questionId: a.questionId,
+        text: a.text,
+        userId: a.userId
+      })));
+
+      return {
+        quizz,
+        answers: answers.map(answer => ({
+          questionId: answer.questionId,
+          text: answer.text,
+          question: answer.question,
+          userId: answer.userId
+        }))
+      };
+    } catch (error) {
+      console.error('❌ Erreur dans getQuizzWithAnswers:', error);
+      throw error;
+    }
   }
 
 

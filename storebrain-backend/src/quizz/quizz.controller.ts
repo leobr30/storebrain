@@ -110,6 +110,18 @@ export class QuizzController {
     };
   }
 
+  @Get(':quizzId/answers/:userId')
+  async getQuizzAnswers(
+    @Param('quizzId', ParseIntPipe) quizzId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    const quizzWithAnswers = await this.quizzService.getQuizzWithAnswers(quizzId, String(userId));
+    return {
+      quizz: quizzWithAnswers.quizz,
+      answers: quizzWithAnswers.answers,
+    };
+  }
+
 
 
 

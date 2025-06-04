@@ -301,18 +301,6 @@ export const getAssignedQuizz = async (quizzId: number, userId: number) => {
     return await fetchWithAuth(`quizz/${quizzId}`);
 };
 
-export const getQuizzWithResponse = async (responseId: string) => {
-    try {
-        const response = await fetchWithAuth(`quizz/response/${responseId}`, {
-            method: "GET",
-        });
-        return response;
-    } catch (error) {
-        console.error("❌ Erreur dans getQuizzWithResponse :", error);
-        throw error;
-    }
-};
-
 export const markQuizzAsCompleted = async (
     employeeId: number,
     stepId: number,
@@ -345,20 +333,9 @@ export const markQuizzAsCompleted = async (
 export const getQuizzAnswersByUserId = async (quizzId: number, userId: string) => {
     try {
         const response = await fetchWithAuth(`quizz/${quizzId}/answers/${userId}`);
-        return response.data;
+        return response;
     } catch (error) {
         console.error('Error fetching quizz answers:', error);
-        return null;
-    }
-};
-
-export const getQuizzResponse = async (responseId: string) => {
-    try {
-        const response = await fetchWithAuth(`quizz/response/${responseId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching quizz answers:', error);
-        return null;
     }
 };
 
@@ -380,6 +357,16 @@ export const sendUnsignedDocuments = async (userId: number) => {
     return await fetchWithAuth(`employees/${userId}/send-unsigned-documents`, {
         method: 'POST',
     });
+};
+
+export const getQuizzResponse = async (responseId: string) => {
+    try {
+        console.log("🔍 Tentative de récupération avec responseId:", responseId);
+        return null;
+    } catch (error) {
+        console.error('Erreur lors de la récupération de la réponse:', error);
+        return null;
+    }
 };
 
 

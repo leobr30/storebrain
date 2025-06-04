@@ -47,7 +47,7 @@ export interface EmployeeJobOnboarding {
     date: Date;
     status: Status;
     appointmentNumber: number;
-    responseId?: string;
+    responseId?: string | null;
     jobOnboardingStep: {
         id: number;
         type: string;
@@ -116,7 +116,7 @@ export type TrainingSubject = {
     state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS",
     trainingId: number;
     files: TrainingSubjectFile[];
-    aide?: string | null; 
+    aide?: string | null;
 };
 
 

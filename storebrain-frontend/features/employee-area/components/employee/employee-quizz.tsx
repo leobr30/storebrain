@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSession } from 'next-auth/react';
-import { getQuizzById, submitQuizzAnswers, getQuizzAnswersByUserId, getQuizzResponse } from '../../actions';
+import { getQuizzById, getQuizzAnswersByUserId } from '../../actions';
 import { EmployeeJobOnboarding } from '../../types';
 
 interface EmployeeQuizzProps {
@@ -18,15 +18,13 @@ interface EmployeeQuizzProps {
     setResponseId: (id: string) => void;
 }
 
-
-
 export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted, onSubmitSuccess, setAnswers }: EmployeeQuizzProps) {
     const { data: session } = useSession();
     const userId = session?.user?.id;
     const [localAnswers, setLocalAnswers] = useState<{ [questionId: number]: string }>({});
+    const [quizz, setQuizz] = useState<any>(null);
 
     useEffect(() => {
-
         const transformed = Object.entries(localAnswers).reduce((acc, [questionId, answer]) => {
             acc[Number(questionId)] = [answer];
             return acc;
@@ -35,35 +33,50 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
         setAnswers(transformed);
     }, [localAnswers, setAnswers]);
 
-
-
-    const [quizz, setQuizz] = useState<any>(null);
-
     useEffect(() => {
         console.log("📥 Entrée dans useEffect");
         console.log("🧾 responseId reçu :", responseId);
+        console.log("🔑 isCompleted :", isCompleted);
+
         const fetchQuizz = async () => {
             if (!userId) return;
-            const data = await getQuizzById(quizzId);
-            setQuizz(data.data);
 
+            try {
+                // Récupérer le quiz
+                const data = await getQuizzById(quizzId);
+                setQuizz(data.data);
 
-            if (responseId) {
-                const existingAnswers = await getQuizzResponse(responseId);
-                console.log("📦 Réponses existantes récupérées :", existingAnswers);
-                if (existingAnswers && existingAnswers.length > 0) {
-                    const formatted: { [questionId: number]: string } = {};
-                    existingAnswers.forEach((a:any) => {
-                        formatted[a.questionId] = a.answer;
-                    });
-                    setLocalAnswers(formatted);
+                // Si le quiz est complété, récupérer les réponses
+                if (isCompleted && userId) {
+                    console.log(`📦 Récupération des réponses pour Quizz ID: ${quizzId}, User ID: ${userId}`);
+
+                    try {
+                        const existingAnswersData = await getQuizzAnswersByUserId(quizzId, String(userId));
+                        console.log("📊 Données récupérées :", existingAnswersData);
+
+                        // existingAnswersData contient déjà les données grâce au .data dans actions.ts
+                        if (existingAnswersData && existingAnswersData.answers && existingAnswersData.answers.length > 0) {
+                            const formatted: { [questionId: number]: string } = {};
+                            existingAnswersData.answers.forEach((a: any) => {
+                                console.log("💡 Réponse trouvée :", a);
+                                formatted[a.questionId] = a.text;
+                            });
+                            console.log("📝 Réponses formatées :", formatted);
+                            setLocalAnswers(formatted);
+                        } else {
+                            console.log("⚠️ Aucune réponse trouvée");
+                        }
+                    } catch (error) {
+                        console.error("❌ Erreur lors de la récupération des réponses :", error);
+                    }
                 }
+            } catch (error) {
+                console.error("❌ Erreur lors de la récupération du quiz :", error);
             }
-
         };
-        fetchQuizz();
-    }, [userId, quizzId, responseId]);
 
+        fetchQuizz();
+    }, [userId, quizzId, isCompleted]);
 
     if (!quizz) return <p>Chargement du quizz...</p>;
 

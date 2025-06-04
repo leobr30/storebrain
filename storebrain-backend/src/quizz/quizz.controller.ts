@@ -150,4 +150,38 @@ export class QuizzController {
     }
   }
 
+  // Ajouter cette méthode dans quizz.controller.ts
+
+  @Get(':id/check-availability')
+  async checkQuizzAvailability(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const quizz = await this.quizzService.getQuizzById(id);
+
+      if (!quizz) {
+        return {
+          hasQuizz: false,
+          message: 'Quizz non trouvé',
+          data: null
+        };
+      }
+
+      const hasValidSections = quizz.sections && quizz.sections.length > 0;
+      const hasValidQuestions = hasValidSections &&
+        quizz.sections.some(section => section.questions && section.questions.length > 0);
+
+      return {
+        hasQuizz: hasValidQuestions,
+        message: hasValidQuestions ? 'Quizz disponible' : 'Quizz non configuré ou sans questions',
+        data: hasValidQuestions ? quizz : null
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification du quizz:', error);
+      return {
+        hasQuizz: false,
+        message: 'Erreur lors de la vérification',
+        data: null
+      };
+    }
+  }
+
 }

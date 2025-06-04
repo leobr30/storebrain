@@ -411,6 +411,24 @@ export const sendUnsignedDocuments = async (userId: number) => {
     });
 };
 
+export const checkQuizzAvailability = async (quizzId: number) => {
+    try {
+        const result = await fetchWithAuth(`quizz/${quizzId}/check-availability`);
+        return {
+            hasQuizz: result.hasQuizz,
+            message: result.message,
+            quizz: result.data
+        };
+    } catch (error) {
+        console.error("Erreur lors de la vérification du quizz :", error);
+        return {
+            hasQuizz: false,
+            message: "Erreur de connexion",
+            quizz: null
+        };
+    }
+};
+
 
 
 

@@ -9,13 +9,11 @@ import {
   Post,
   Put,
   Query,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
   UnauthorizedException,
   HttpException,
   NotFoundException,
-  InternalServerErrorException,
   ParseIntPipe,
   UploadedFiles,
 } from '@nestjs/common';
@@ -36,8 +34,6 @@ import { diskStorage } from 'multer';
 import { StartEmployeeIntegrationPolicyHandler } from './policies/start-integration.policy';
 import { StartTrainingPolicyHandler } from './policies/start-training.policy';
 import { CreateTrainingWithOnboardingDto } from './dto/create-training-with-onboarding.dto';
-import { TrainingAddAttachmentDto } from './dto/training-add-attachement';
-import { SaveTrainingDto } from './dto/save-training.dto';
 import { LoginDto } from 'src/auth/dto/auth.dto';
 import { UpdateAbsenceDto } from './dto/create-absence.dto';
 import { CreateAppointmentDto } from './dto/create-monday-appointment.dto';

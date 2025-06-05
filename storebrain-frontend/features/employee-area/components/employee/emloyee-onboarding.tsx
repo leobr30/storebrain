@@ -1,17 +1,16 @@
-// features/employee-area/components/employee/emloyee-onboarding.tsx
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "../status-badge";
 import { Button } from "@/components/ui/button";
-import { refreshResponses, refreshSteps } from "../../actions";
-import { TrainingDrawer } from "../training-drawer/training-drawer";
+import { refreshSteps, createTraining } from "../../actions";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import DocumentForm from "@/features/employee-area/components/employee/document-form";
-import { useState, useEffect } from "react";
-import { SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 import { EmployeeQuizzWrapper } from "./employee-quizz-wrapper";
+import { EmployeeResultReviewWrapper } from "./Employee-Result-Review-Wrapper";
 import { EmployeeJobOnboarding } from "../../types";
+import { toast } from "sonner";
 
 type EmployeeOnboardingsProps = {
     id: number;
@@ -23,6 +22,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
     const router = useRouter();
     const pathName = usePathname();
     const searchParams = useSearchParams();
+
     const handleViewTraining = (trainingId: number | undefined) => {
         console.log("🚀 ~ handleViewTraining ~ trainingId:", trainingId);
         if (trainingId === undefined) {
@@ -34,12 +34,41 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         router.push(`${pathName}?${newSearchParams.toString()}`);
     };
 
+    const handleCreateTraining = async (stepId: number) => {
+        console.log("🚀 ~ handleCreateTraining ~ stepId:", stepId);
+        try {
+            const step = localSteps.find(s => s.id === stepId);
+            if (!step) {
+                console.error("❌ Étape non trouvée pour stepId:", stepId);
+                return;
+            }
 
+            const trainingModelId = step.jobOnboardingStep.trainingModel?.id;
+            const trainingName = step.jobOnboardingStep.trainingModel?.name || "Formation";
 
+            await createTraining(
+                id, // employeeId
+                stepId, // employeeOnboordingId
+                trainingModelId,
+                `RDV N°${step.appointmentNumber} - ${trainingName}`
+            );
+
+            toast.success("Formation créée", {
+                description: "La formation a été créée avec succès.",
+            });
+
+            await handleRefreshSteps(stepId);
+        } catch (error) {
+            console.error("❌ Erreur lors de la création de la formation:", error);
+            toast.error("Erreur lors de la création de la formation");
+        }
+    };
 
     const [localSteps, setLocalSteps] = useState<EmployeeJobOnboarding[]>(steps);
     const [isDocumentOpen, setIsDocumentOpen] = useState(false);
     const [isQuizzOpen, setIsQuizzOpen] = useState(false);
+    // ✅ État séparé pour chaque bilan avec son stepId
+    const [openReviewStepId, setOpenReviewStepId] = useState<number | null>(null);
 
     const handleRefreshSteps = async (stepId: number) => {
         console.log("🚀 ~ handleRefreshSteps ~ stepId:", stepId);
@@ -47,24 +76,23 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
             const updatedSteps = await refreshSteps(id);
             console.log("🚀 ~ handleRefreshSteps ~ updatedSteps:", updatedSteps);
             if (updatedSteps && Array.isArray(updatedSteps)) {
+                setLocalSteps(updatedSteps);
+
                 const updatedStep = updatedSteps.find(step => step.id === stepId);
                 console.log("🚀 ~ handleRefreshSteps ~ updatedStep:", updatedStep);
-                if (updatedStep) {
-                    updateStep(updatedStep);
-
+                if (updatedStep && onStepUpdated) {
+                    onStepUpdated(updatedStep);
                 } else {
                     console.log("❌ Aucun updatedStep trouvé pour stepId:", stepId);
                 }
             } else {
                 console.error("❌ Données reçues invalides :", updatedSteps);
-
             }
         } catch (error) {
             console.error("❌ Error fetching updated steps:", error);
         }
         console.log("🚀 Fin de handleRefreshSteps");
     };
-
 
     const updateStep = (updatedStep: EmployeeJobOnboarding) => {
         console.log("🚀 ~ updateStep ~ updatedStep:", updatedStep);
@@ -74,6 +102,23 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
         if (onStepUpdated) {
             onStepUpdated(updatedStep);
         }
+    };
+
+    // ✅ Fonction pour déterminer le numéro de RDV basé sur la date
+    const getMonthNumber = (stepDate: string, allSteps: EmployeeJobOnboarding[], reviewName: string) => {
+        // Filtrer les étapes du même type de bilan
+        const sameReviewSteps = allSteps
+            .filter(s =>
+                s.jobOnboardingStep?.type === "RESULT_REVIEW" &&
+                s.jobOnboardingStep?.jobOnboardingResultReview?.name === reviewName
+            )
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Trouver l'index de l'étape courante
+        const currentIndex = sameReviewSteps.findIndex(s => s.date === stepDate);
+
+        // Retourner le numéro du RDV (1-based)
+        return currentIndex + 1;
     };
 
     const seenQuizzIds = new Set<number>();
@@ -91,9 +136,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
             return true;
         }
     });
-
-
-
 
     return (
         <Card>
@@ -117,17 +159,20 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                                 .filter((step) => step?.jobOnboardingStep)
                                 .map((step, stepIndex) => {
-
-
                                     return (
                                         <TableRow key={step.id}>
                                             <TableCell>{new Date(step.date).toLocaleDateString()}</TableCell>
-                                            <TableCell>{step.jobOnboardingStep.type === "TRAINING" ? "Formation" : step.jobOnboardingStep.type === "QUIZZ" ? "Quizz" : "Document"}</TableCell>
+                                            <TableCell>
+                                                {step.jobOnboardingStep.type === "TRAINING" ? "Formation" :
+                                                    step.jobOnboardingStep.type === "QUIZZ" ? "Quizz" :
+                                                        step.jobOnboardingStep.type === "RESULT_REVIEW" ? "Bilan" : "Document"}
+                                            </TableCell>
+
                                             {step.jobOnboardingStep.type === "TRAINING" ? (
                                                 <>
                                                     <TableCell>{`RDV N°${step.appointmentNumber} - ${step.jobOnboardingStep.trainingModel?.name}`}</TableCell>
                                                     <TableCell>
-                                                        {!step.training ? (
+                                                        {!step.training || step.training.length === 0 ? (
                                                             <Button
                                                                 onClick={() => handleCreateTraining(step.id)}
                                                                 disabled={
@@ -135,7 +180,7 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                                         (w) =>
                                                                             w.appointmentNumber < step.appointmentNumber &&
                                                                             w.jobOnboardingStep.id === step.jobOnboardingStep.id &&
-                                                                            !w.status === "COMPLETED"
+                                                                            w.status !== "COMPLETED"
                                                                     )
                                                                 }
                                                                 variant={"ghost"}
@@ -155,36 +200,58 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                             >
                                                                 {step.training && step.training.length > 0 && step.training[0].status === "PENDING" ? "Continuer" : "Voir"} la formation
                                                             </Button>
-
-
-
-
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
                                                         <StatusBadge
                                                             status={step.status}
                                                             text={
-                                                                step.status === "COMPLETED" && step.training && step.training.subjects
-                                                                    ? `${step.training.subjects.filter((w) => w.state === "ACQUIRED").length} / ${step.training.subjects.length}`
+                                                                step.status === "COMPLETED" && step.training && step.training[0]?.subjects
+                                                                    ? `${step.training[0].subjects.filter((w) => w.state === "ACQUIRED").length} / ${step.training[0].subjects.length}`
                                                                     : ""
                                                             }
-
                                                         />
                                                     </TableCell>
                                                 </>
                                             ) : null}
+
                                             {step.jobOnboardingStep.type === "RESULT_REVIEW" ? (
                                                 <>
-                                                    <TableCell>RDV - {step.jobOnboardingStep.jobOnboardingResultReview?.name}</TableCell>
                                                     <TableCell>
-                                                        <Button variant={"ghost"}>Faire le point</Button>
+                                                        {/* ✅ Affichage simplifié avec numéro de RDV */}
+                                                        {(() => {
+                                                            const reviewName = step.jobOnboardingStep.jobOnboardingResultReview?.name || "Bilan";
+                                                            const rdvNumber = getMonthNumber(step.date, localSteps, reviewName);
+                                                            return `RDV ${rdvNumber} - ${reviewName}`;
+                                                        })()}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <EmployeeResultReviewWrapper
+                                                            stepId={step.id}
+                                                            setOpen={(open) => setOpenReviewStepId(open ? step.id : null)}
+                                                            open={openReviewStepId === step.id}
+                                                            status={step.status}
+                                                            onSubmitSuccess={async (updatedStep) => {
+                                                                if (updatedStep) {
+                                                                    await handleRefreshSteps(step.id);
+                                                                    updateStep(updatedStep);
+                                                                } else {
+                                                                    await handleRefreshSteps(step.id);
+                                                                }
+                                                                // ✅ Fermer le modal après succès
+                                                                setOpenReviewStepId(null);
+                                                            }}
+                                                            responseId={step.responseId}
+                                                            reviewName={step.jobOnboardingStep.jobOnboardingResultReview?.name || "Bilan"}
+                                                            appointmentNumber={getMonthNumber(step.date, localSteps, step.jobOnboardingStep.jobOnboardingResultReview?.name || "Bilan")}
+                                                        />
                                                     </TableCell>
                                                     <TableCell>
                                                         <StatusBadge status={step.status} />
                                                     </TableCell>
                                                 </>
                                             ) : null}
+
                                             {step.jobOnboardingStep.type === "DOCUMENT" ? (
                                                 <>
                                                     <TableCell>{step.jobOnboardingStep.jobOnboardingDocuments[0].name}</TableCell>
@@ -202,7 +269,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                             }}
                                                             employeeId={id}
                                                             responseId={step.responseId}
-
                                                         />
                                                     </TableCell>
                                                     <TableCell>
@@ -231,8 +297,16 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                                     }
                                                                 }}
                                                                 responseId={step.responseId}
+                                                                setResponseId={(responseId: string) => {
+                                                                    setLocalSteps(prevSteps =>
+                                                                        prevSteps.map(s =>
+                                                                            s.id === step.id
+                                                                                ? { ...s, responseId }
+                                                                                : s
+                                                                        )
+                                                                    );
+                                                                }}
                                                             />
-
                                                         </TableCell>
                                                         <TableCell>
                                                             <StatusBadge status={step.status} />
@@ -252,9 +326,8 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                     </>
                                                 )
                                             ) : null}
-
                                         </TableRow>
-                                    )
+                                    );
                                 })}
                         </TableBody>
                     </Table>

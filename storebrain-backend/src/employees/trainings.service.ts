@@ -19,30 +19,71 @@ export class TrainingsService {
     private readonly pdfService: PdfService,
   ) { }
 
-  async getTrainingModels() {
-    return await this.prisma.trainingModel.findMany({
-      include: {
-        subjects: true,
-      },
-    });
-  }
+  async getTrainingsByUser(userId: number, onboardingOnly?: boolean) {
+    console.log("🚀 getTrainingsByUser appelé avec userId :", userId, "onboardingOnly:", onboardingOnly);
 
-  async getTrainingsByUser(userId: number) {
-    console.log("🚀 getTrainingsByUser appelé avec userId :", userId);
+    const whereClause: any = { userId };
+
+    if (onboardingOnly === true) {
+      // Formations d'onboarding uniquement
+      whereClause.userJobOnboardingId = { not: null };
+    } else if (onboardingOnly === false) {
+      // Formations générales uniquement
+      whereClause.userJobOnboardingId = null;
+    }
+    // Si onboardingOnly n'est pas défini, on récupère tout
+
     const trainings = await this.prisma.training.findMany({
-      where: { userId },
+      where: whereClause,
       include: {
         subjects: true,
         realizedBy: {
           select: {
+            id: true,
             name: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        userJobOnboarding: {
+          select: {
+            appointmentNumber: true,
+            jobOnboardingStep: {
+              select: {
+                trainingModel: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc', // Trier par date de création décroissante
+      },
     });
-    console.log("🚀 Formations récupérées :", trainings);
+
+    console.log("🚀 Formations récupérées avec realizedBy :", trainings.map(t => ({
+      id: t.id,
+      name: t.name,
+      status: t.status,
+      realizedBy: t.realizedBy,
+      validateAt: t.validateAt
+    })));
+
     return trainings;
   }
+
 
 
   async getTraining(trainingId: number) {
@@ -69,6 +110,15 @@ export class TrainingsService {
         userJobOnboarding: {
           select: {
             appointmentNumber: true,
+            jobOnboardingStep: {
+              select: {
+                trainingModel: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -334,6 +384,22 @@ export class TrainingsService {
   async deleteTrainingModelSubject(subjectId: number) {
     return this.prisma.trainingModelSubject.delete({
       where: { id: subjectId },
+    });
+  }
+
+  async getOnboardingTrainingsByUser(userId: number) {
+    return this.getTrainingsByUser(userId, true);
+  }
+
+  async getGeneralTrainingsByUser(userId: number) {
+    return this.getTrainingsByUser(userId, false);
+  }
+
+  async getTrainingModels() {
+    return await this.prisma.trainingModel.findMany({
+      include: {
+        subjects: true,
+      },
     });
   }
 

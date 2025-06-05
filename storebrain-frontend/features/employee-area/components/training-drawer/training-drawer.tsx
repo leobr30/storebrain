@@ -212,7 +212,7 @@ export const TrainingDrawer = ({ userId }: TrainingDrawerProps) => {
                 ) : (
                     <>
                         <SheetHeader>
-                            <SheetTitle className="p-3 border-b border-default-200">Formation: {training?.name} - {training?.user.name}</SheetTitle>
+                            <SheetTitle className="p-3 border-b border-default-200">Formation: {training?.trainingModel?.name || training?.name} - {training?.user.name}</SheetTitle>
                         </SheetHeader>
                         <ScrollArea className="flex-grow p-4">
                             <Form {...form} >

@@ -1611,8 +1611,352 @@ export class EmployeesService {
     }
   }
 
+  async createGeneralTraining(dto: {
+    userId: number;
+    trainingModelId?: number;
+    name: string;
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS" }[];
+    currentUserId: number;
+  }) {
+    console.log('🚀 createGeneralTraining appelée avec:', dto);
 
+    try {
+      // Créer la formation sans userJobOnboardingId (formation générale)
+      const training = await this.prisma.training.create({
+        data: {
+          userId: dto.userId,
+          name: dto.name,
+          comment: '',
+          tool: '',
+          exercise: '',
+          date: new Date(),
+          status: 'PENDING',
+        },
+      });
 
+      console.log('✅ Formation créée:', training);
 
+      let subjects: any[] = [];
 
+      if (dto.trainingModelId) {
+        // Créer les sujets à partir du modèle
+        const trainingModel = await this.prisma.trainingModel.findUnique({
+          where: { id: dto.trainingModelId },
+          include: { subjects: true },
+        });
+
+        if (trainingModel) {
+          console.log('✅ Modèle de formation trouvé:', trainingModel);
+
+          subjects = await Promise.all(
+            trainingModel.subjects.map(async (subject) => {
+              return await this.prisma.trainingSubject.create({
+                data: {
+                  name: subject.name,
+                  aide: subject.aide,
+                  state: 'NOT_ACQUIRED',
+                  trainingId: training.id,
+                },
+              });
+            })
+          );
+
+          // Mettre à jour les champs tool et exercise à partir du modèle
+          await this.prisma.training.update({
+            where: { id: training.id },
+            data: {
+              tool: trainingModel.tool || '',
+              exercise: trainingModel.exercise || '',
+            },
+          });
+        }
+      } else if (dto.subjects && dto.subjects.length > 0) {
+        // Créer les sujets personnalisés
+        subjects = await Promise.all(
+          dto.subjects.map(async (subject) => {
+            return await this.prisma.trainingSubject.create({
+              data: {
+                name: subject.name,
+                state: subject.state as any,
+                trainingId: training.id,
+              },
+            });
+          })
+        );
+      }
+
+      console.log('✅ Sujets créés:', subjects);
+
+      // Ajouter à l'historique
+      await this.prisma.userHistory.create({
+        data: {
+          title: 'Formation générale',
+          text: `a créé la formation générale "${dto.name}"`,
+          type: 'TRAINING',
+          userId: dto.userId,
+          createdById: dto.currentUserId,
+        },
+      });
+
+      const result = { training, subjects };
+      console.log('✅ createGeneralTraining terminée avec succès:', result);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Erreur dans createGeneralTraining:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Sauvegarder un bilan RESULT_REVIEW
+  async saveResultReview(
+    stepId: number,
+    reviewData: {
+      objectif?: string;
+      realise?: string;
+      magasin?: string;
+      vendeuse?: string;
+      commentaire?: string;
+    },
+    currentUser: CurrentUserType,
+  ) {
+    console.log("🎯 Sauvegarde du bilan pour stepId:", stepId, "Data:", reviewData);
+
+    // Vérifier que l'étape existe et est de type RESULT_REVIEW
+    const step = await this.prisma.userJobOnboarding.findUnique({
+      where: { id: stepId },
+      include: {
+        jobOnboardingStep: {
+          include: {
+            jobOnboardingResultReview: true
+          }
+        }
+      }
+    });
+
+    if (!step) {
+      throw new NotFoundException('Étape non trouvée');
+    }
+
+    if (step.jobOnboardingStep.type !== 'RESULT_REVIEW') {
+      throw new BadRequestException('Cette étape n\'est pas un bilan');
+    }
+
+    // Créer ou mettre à jour la réponse
+    let employeeResponse;
+
+    if (step.responseId) {
+      // Mise à jour de la réponse existante
+      employeeResponse = await this.prisma.employeeResponse.update({
+        where: { id: step.responseId },
+        data: {
+          responses: reviewData,
+          comment: reviewData.commentaire || null,
+        },
+      });
+    } else {
+      // Il faut créer une Form pour pouvoir créer une EmployeeResponse
+      const reviewName = step.jobOnboardingStep.jobOnboardingResultReview?.name || 'Result Review';
+
+      // Vérifier si une form existe déjà pour ce type de bilan
+      let form = await this.prisma.form.findFirst({
+        where: {
+          title: `Bilan - ${reviewName}`,
+        }
+      });
+
+      // Créer la form si elle n'existe pas
+      if (!form) {
+        form = await this.prisma.form.create({
+          data: {
+            title: `Bilan - ${reviewName}`,
+            comment: 'Formulaire automatique pour bilan d\'intégration',
+          },
+        });
+      }
+
+      // Créer la réponse
+      employeeResponse = await this.prisma.employeeResponse.create({
+        data: {
+          responses: reviewData,
+          userId: step.userId,
+          formId: form.id,
+          comment: reviewData.commentaire || null,
+        },
+      });
+
+      // Lier la réponse à l'étape
+      await this.prisma.userJobOnboarding.update({
+        where: { id: stepId },
+        data: {
+          responseId: employeeResponse.id,
+          formId: form.id,
+        },
+      });
+    }
+
+    console.log("✅ Bilan sauvegardé avec responseId:", employeeResponse.id);
+
+    return {
+      message: 'Bilan sauvegardé avec succès',
+      responseId: employeeResponse.id,
+      data: reviewData,
+    };
+  }
+
+  // ✅ Récupérer un bilan existant (corrigé selon le schéma)
+  async getResultReview(stepId: number, currentUser: CurrentUserType) {
+    console.log("🔍 Récupération du bilan pour stepId:", stepId);
+
+    const step = await this.prisma.userJobOnboarding.findUnique({
+      where: { id: stepId },
+      include: {
+        jobOnboardingStep: {
+          include: {
+            jobOnboardingResultReview: true
+          }
+        }
+      }
+    });
+
+    if (!step) {
+      throw new NotFoundException('Étape non trouvée');
+    }
+
+    // Si pas de responseId, pas de réponse
+    if (!step.responseId) {
+      return null;
+    }
+
+    // Récupérer la réponse
+    const employeeResponse = await this.prisma.employeeResponse.findUnique({
+      where: { id: step.responseId }
+    });
+
+    if (!employeeResponse) {
+      return null;
+    }
+
+    console.log("✅ Bilan récupéré:", employeeResponse.responses);
+
+    return {
+      responseId: employeeResponse.id,
+      data: employeeResponse.responses,
+      reviewName: step.jobOnboardingStep.jobOnboardingResultReview?.name,
+      appointmentNumber: step.appointmentNumber,
+    };
+  }
+
+  // ✅ Marquer un bilan comme complété (corrigé selon le schéma)
+  async completeResultReview(stepId: number, responseId: string, currentUser: CurrentUserType) {
+    console.log("✅ Completion du bilan pour stepId:", stepId, "responseId:", responseId);
+
+    // Vérifier que l'étape existe
+    const step = await this.prisma.userJobOnboarding.findUnique({
+      where: { id: stepId },
+      include: {
+        jobOnboardingStep: {
+          include: {
+            jobOnboardingResultReview: true
+          }
+        }
+      }
+    });
+
+    if (!step) {
+      throw new NotFoundException('Étape non trouvée');
+    }
+
+    // Vérifier que la réponse existe et correspond
+    const employeeResponse = await this.prisma.employeeResponse.findUnique({
+      where: { id: responseId }
+    });
+
+    if (!employeeResponse || step.responseId !== responseId) {
+      throw new BadRequestException('Réponse du bilan non valide');
+    }
+
+    // Marquer l'étape comme complétée
+    const updatedStep = await this.prisma.userJobOnboarding.update({
+      where: { id: stepId },
+      data: {
+        status: 'COMPLETED',
+      },
+      include: {
+        jobOnboardingStep: {
+          include: {
+            jobOnboardingResultReview: true
+          }
+        }
+      }
+    });
+
+    // Ajouter à l'historique
+    await this.prisma.userHistory.create({
+      data: {
+        title: 'Bilan d\'intégration',
+        text: `a complété le bilan "${step.jobOnboardingStep.jobOnboardingResultReview?.name}"`,
+        type: 'ACTION',
+        userId: step.userId,
+        createdById: currentUser.sub,
+      },
+    });
+
+    console.log("✅ Bilan marqué comme complété");
+
+    return {
+      message: 'Bilan validé avec succès',
+      step: updatedStep,
+    };
+  }
+
+  // ✅ Méthode utilitaire pour obtenir les étapes avec bilans (corrigée)
+  async getEmployeeStepsWithReviews(employeeId: number) {
+    const steps = await this.prisma.userJobOnboarding.findMany({
+      where: {
+        userId: employeeId,
+        jobOnboardingStep: {
+          type: 'RESULT_REVIEW'
+        }
+      },
+      include: {
+        jobOnboardingStep: {
+          include: {
+            jobOnboardingResultReview: true
+          }
+        }
+      },
+      orderBy: [
+        { appointmentNumber: 'asc' },
+        { date: 'asc' }
+      ]
+    });
+
+    // Enrichir avec les données de réponse si elles existent
+    const stepsWithResponses = await Promise.all(
+      steps.map(async (step) => {
+        if (step.responseId) {
+          const employeeResponse = await this.prisma.employeeResponse.findUnique({
+            where: { id: step.responseId }
+          });
+          return {
+            ...step,
+            employeeResponse
+          };
+        }
+        return {
+          ...step,
+          employeeResponse: null
+        };
+      })
+    );
+
+    return stepsWithResponses;
+  }
 }
+
+
+
+
+
+

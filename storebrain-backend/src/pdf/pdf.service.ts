@@ -647,6 +647,8 @@ export class PdfService {
 
 
 
+  // Dans pdf.service.ts, remplacer la méthode createTrainingPdf
+
   async createTrainingPdf(trainingId: number, filePath: string) {
     const training = await this.prismaService.training.findUnique({
       where: {
@@ -688,12 +690,19 @@ export class PdfService {
           return 'Non acquis';
       }
     }
+
     const printer = new PdfPrinter(this.fonts);
+
+    // ✅ Gestion du titre selon le type de formation
+    const titleText = training?.userJobOnboarding
+      ? `Formation: Rdv N°${training.userJobOnboarding.appointmentNumber} - ${training.name}`
+      : `Formation: ${training?.name}`;
+
     let docDefinition: TDocumentDefinitions = {
-      pageSize: 'A4', // Ajout de pageSize: 'A4'
-      pageOrientation: 'landscape', // Ajout de pageOrientation: 'landscape'
+      pageSize: 'A4',
+      pageOrientation: 'landscape',
       content: [
-        { text: `Formation: Rdv N°${training?.userJobOnboarding.appointmentNumber} - ${training?.name}`, alignment: 'center', margin: 5, bold: true, fontSize: 12 },
+        { text: titleText, alignment: 'center', margin: 5, bold: true, fontSize: 12 },
         { text: `Salarié: ${training?.user.name}`, alignment: 'center', margin: 5 },
         {
           table: {
@@ -728,6 +737,7 @@ export class PdfService {
         margin: 500,
       },
     };
+
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     pdfDoc.pipe(fs.createWriteStream(filePath));
     pdfDoc.end();

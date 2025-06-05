@@ -1,4 +1,4 @@
-// features/employee-area/components/employee/create-training-dialog.tsx
+// features/employee-area/components/employee/create-general-training-dialog.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,12 +25,11 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { createTraining, getTrainingModels } from "../../actions";
+import { createGeneralTraining, getTrainingModels } from "../../actions"; // ✅ Nouvelle fonction
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from 'uuid';
-import { TrainingModel } from "../../types"; // Import du type TrainingModel
+import { TrainingModel } from "../../types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-// Import toast from sonner
 import { toast } from "sonner";
 
 const subjectSchema = z.object({
@@ -39,21 +38,16 @@ const subjectSchema = z.object({
     state: z.enum(["ACQUIRED", "NOT_ACQUIRED", "IN_PROGRESS"]).default("NOT_ACQUIRED"),
 });
 
-
 const formSchema = z.object({
     name: z.string().min(1, "Le nom de la formation est requis"),
     trainingModelId: z.number().optional(),
 });
 
-type CreateTrainingDialogProps = {
+type CreateGeneralTrainingDialogProps = {
     employeeId: number;
-    employeeOnboordingId: number;
-    buttonText?: string;
-    disabled?: boolean;
-    onTrainingCreated?: () => void;
 };
 
-export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: CreateTrainingDialogProps) => {
+export const CreateGeneralTrainingDialog = ({ employeeId }: CreateGeneralTrainingDialogProps) => {
     const [open, setOpen] = useState(false);
     const [trainingModels, setTrainingModels] = useState<TrainingModel[]>([]);
     const [creationType, setCreationType] = useState<'model' | 'blank'>('model');
@@ -99,20 +93,23 @@ export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: Creat
         try {
             console.log("🚀 ~ onSubmit ~ values:", values);
             if (creationType === 'model' && values.trainingModelId) {
-                await createTraining(employeeId, employeeOnboordingId, values.trainingModelId, values.name);
+                // ✅ Créer une formation générale avec modèle (sans employeeOnboordingId)
+                await createGeneralTraining(employeeId, values.trainingModelId, values.name);
                 toast.success("Formation créée", {
-                    description: "La formation a bien été créée.",
+                    description: "La formation générale a bien été créée.",
                 });
             } else if (creationType === 'blank') {
-                await createTraining(employeeId, employeeOnboordingId, undefined, values.name, subjects);
+                // ✅ Créer une formation générale vierge (sans employeeOnboordingId)
+                await createGeneralTraining(employeeId, undefined, values.name, subjects);
                 toast.success("Formation créée", {
-                    description: "La formation a bien été créée.",
+                    description: "La formation générale a bien été créée.",
                 });
             } else {
                 toast.error("Veuillez choisir un modèle de formation ou créer une formation vierge.", {});
             }
 
             setOpen(false);
+            router.refresh(); // Rafraîchir la page pour voir la nouvelle formation
         } catch (error) {
             console.error("Erreur lors de la création de la formation :", error);
             toast.error("Une erreur est survenue lors de la création de la formation.", {});
@@ -126,7 +123,7 @@ export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: Creat
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Créer une formation</DialogTitle>
+                    <DialogTitle>Créer une formation générale</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -144,8 +141,20 @@ export const CreateTrainingDialog = ({ employeeId, employeeOnboordingId }: Creat
                             )}
                         />
                         <div className="flex gap-4">
-                            <Button variant={creationType === 'model' ? 'default' : 'outline'} onClick={() => setCreationType('model')}>A partir d'un modèle</Button>
-                            <Button variant={creationType === 'blank' ? 'default' : 'outline'} onClick={() => setCreationType('blank')}>Vierge</Button>
+                            <Button
+                                type="button"
+                                variant={creationType === 'model' ? 'default' : 'outline'}
+                                onClick={() => setCreationType('model')}
+                            >
+                                A partir d'un modèle
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={creationType === 'blank' ? 'default' : 'outline'}
+                                onClick={() => setCreationType('blank')}
+                            >
+                                Vierge
+                            </Button>
                         </div>
                         {creationType === 'model' && (
                             <FormField

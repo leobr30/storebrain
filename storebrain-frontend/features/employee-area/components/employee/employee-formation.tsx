@@ -31,7 +31,6 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
     const searchParams = useSearchParams();
     const isAdmin = session?.user?.name === "admin";
 
-
     const employeeOnboordingId = jobOnboardings.find(jobOnboarding => jobOnboarding.jobOnboardingStep.type === "TRAINING")?.id;
 
     const handleViewTraining = (trainingId: number, mode: 'view' | 'edit') => {
@@ -40,8 +39,6 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
         newSearchParams.set("mode", mode);
         router.replace(`${pathName}?${newSearchParams.toString()}`);
     };
-
-
 
     const columns = useMemo<ColumnDef<Training>[]>(() => [
         {
@@ -76,7 +73,29 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
         {
             accessorKey: "realizedBy.name",
             header: "Réalisé par",
-            cell: ({ row }) => <span>{row.original.realizedBy?.name || "Non renseigné"}</span>,
+            cell: ({ row }) => {
+                const training = row.original;
+
+                // Si la formation n'est pas encore validée
+                if (training.status === "PENDING") {
+                    return <span className="text-gray-500 italic">En attente</span>;
+                }
+
+                // Si la formation est validée mais pas de realizedBy
+                if (training.status === "COMPLETED" && !training.realizedBy) {
+                    return <span className="text-orange-500">Formateur non renseigné</span>;
+                }
+
+                // Si on a un realizedBy
+                if (training.realizedBy) {
+                    const displayName = training.realizedBy.name ||
+                        `${training.realizedBy.firstName || ''} ${training.realizedBy.lastName || ''}`.trim() ||
+                        'Formateur';
+                    return <span>{displayName}</span>;
+                }
+
+                return <span className="text-gray-500">Non renseigné</span>;
+            },
         },
         {
             accessorKey: "actions",

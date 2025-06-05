@@ -21,7 +21,23 @@ export class TrainingsController {
 
   @Get('user/:id')
   async getTrainingsByUser(@Param('id') userId: number) {
-    return this.trainingsService.getTrainingsByUser(userId);
+    return this.trainingsService.getGeneralTrainingsByUser(userId);
+  }
+
+  @Get('user/:id/onboarding')
+  async getOnboardingTrainingsByUser(@Param('id') userId: number) {
+    return this.trainingsService.getOnboardingTrainingsByUser(userId);
+  }
+
+  @Get('user/:id/all')
+  async getAllTrainingsByUser(@Param('id') userId: number) {
+    const general = await this.trainingsService.getGeneralTrainingsByUser(userId);
+    const onboarding = await this.trainingsService.getOnboardingTrainingsByUser(userId);
+    return {
+      general,
+      onboarding,
+      all: [...general, ...onboarding]
+    };
   }
 
   @Get('training-models')

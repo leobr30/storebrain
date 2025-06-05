@@ -40,12 +40,23 @@ export const startEmployeeJobOnboarding = async (id: number) => {
 }
 
 
-export const createTraining = async (employeeId: number, employeeOnboordingId: number, trainingModelId: number | undefined, name: string, subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]) => { // ✅ Ajout du paramètre subjects
-    const response = await fetchWithAuth(`employees/${employeeId}/start-training/${employeeOnboordingId}`, {
+export const createTraining = async (
+    employeeId: number,
+    employeeOnboordingId?: number, // Rendre optionnel
+    trainingModelId?: number,
+    name: string,
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]
+) => {
+    const endpoint = employeeOnboordingId
+        ? `employees/${employeeId}/start-training/${employeeOnboordingId}` // Formation d'onboarding
+        : `employees/${employeeId}/start-general-training`; // Formation générale
+
+    const response = await fetchWithAuth(endpoint, {
         method: 'POST',
         body: JSON.stringify({ trainingModelId, name, subjects })
-    })
-    revalidatePath('/en/employee-area/home')
+    });
+
+    revalidatePath('/en/employee-area/home');
     return response;
 }
 
@@ -426,6 +437,107 @@ export const checkQuizzAvailability = async (quizzId: number) => {
             message: "Erreur de connexion",
             quizz: null
         };
+    }
+};
+
+export async function getOnboardingTrainingsForCurrentUser(userId: number) {
+    const response = await fetchWithAuth(`trainings/user/${userId}/onboarding`);
+    return response;
+};
+
+export const createGeneralTraining = async (
+    employeeId: number,
+    trainingModelId?: number,
+    name: string,
+    subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS"; }[]
+) => {
+    const response = await fetchWithAuth(`employees/${employeeId}/start-general-training`, {
+        method: 'POST',
+        body: JSON.stringify({ trainingModelId, name, subjects })
+    });
+
+    revalidatePath('/en/employee-area/home');
+    return response;
+};
+
+// ✅ Actions frontend corrigées pour les bilans (actions.ts)
+
+// ✅ Sauvegarder un bilan (corrigé)
+export const saveResultReview = async (
+    stepId: number,
+    reviewData: {
+        objectif?: string;
+        realise?: string;
+        magasin?: string;
+        vendeuse?: string;
+        commentaire?: string;
+    }
+) => {
+    try {
+        const response = await fetchWithAuth(`employees/step/${stepId}/save-result-review`, {
+            method: 'POST',
+            body: JSON.stringify(reviewData), // ✅ Pas besoin de headers ici, fetchWithAuth s'en charge
+        });
+
+        return response; // ✅ fetchWithAuth retourne déjà le JSON parsé
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde du bilan:', error);
+        throw error;
+    }
+};
+
+// ✅ Récupérer un bilan existant (corrigé)
+export const getResultReview = async (stepId: number) => {
+    try {
+        const response = await fetchWithAuth(`employees/step/${stepId}/result-review`);
+        return response; // ✅ fetchWithAuth gère déjà les erreurs 404
+    } catch (error) {
+        console.error('Erreur lors de la récupération du bilan:', error);
+        // ✅ Retourner null si pas de données au lieu de throw
+        return null;
+    }
+};
+
+// ✅ Marquer un bilan comme complété (corrigé)
+export const markResultReviewAsCompleted = async (stepId: number, responseId: string) => {
+    try {
+        const response = await fetchWithAuth(`employees/step/${stepId}/complete-result-review`, {
+            method: 'POST',
+            body: JSON.stringify({ responseId }),
+        });
+
+        return response;
+    } catch (error) {
+        console.error('Erreur lors de la validation du bilan:', error);
+        throw error;
+    }
+};
+
+// ✅ Action combinée pour sauvegarder ET compléter un bilan (corrigée)
+export const submitResultReview = async (
+    stepId: number,
+    reviewData: {
+        objectif?: string;
+        realise?: string;
+        magasin?: string;
+        vendeuse?: string;
+        commentaire?: string;
+    }
+) => {
+    try {
+        // 1. Sauvegarder le bilan
+        const saveResponse = await saveResultReview(stepId, reviewData);
+
+        // 2. Marquer comme complété
+        const completeResponse = await markResultReviewAsCompleted(stepId, saveResponse.responseId);
+
+        // ✅ Revalider la page pour rafraîchir les données
+        revalidatePath('/en/employee-area/home');
+
+        return completeResponse;
+    } catch (error) {
+        console.error('Erreur lors de la soumission du bilan:', error);
+        throw error;
     }
 };
 

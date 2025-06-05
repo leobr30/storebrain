@@ -478,5 +478,69 @@ export class EmployeesController {
     return this.employeesService.getTrainingModels();
   }
 
+  @Post(':id/start-general-training')
+  async startGeneralTraining(
+    @Param('id', ParseIntPipe) employeeId: number,
+    @Body() dto: {
+      trainingModelId?: number;
+      name: string;
+      subjects?: { id: string; name: string; state: "ACQUIRED" | "NOT_ACQUIRED" | "IN_PROGRESS" }[];
+    },
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+    console.log('🚀 startGeneralTraining appelée avec:', { employeeId, dto, currentUser });
+
+    try {
+      const result = await this.employeesService.createGeneralTraining({
+        userId: employeeId,
+        trainingModelId: dto.trainingModelId,
+        name: dto.name,
+        subjects: dto.subjects,
+        currentUserId: currentUser.sub,
+      });
+
+      console.log('✅ Formation générale créée:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Erreur lors de la création de la formation générale:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Route pour sauvegarder un bilan
+  @Post('step/:stepId/save-result-review')
+  async saveResultReview(
+    @Param('stepId', ParseIntPipe) stepId: number,
+    @Body() reviewData: {
+      objectif?: string;
+      realise?: string;
+      magasin?: string;
+      vendeuse?: string;
+      commentaire?: string;
+    },
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+    return this.employeesService.saveResultReview(stepId, reviewData, currentUser);
+  }
+
+  // ✅ Route pour récupérer un bilan existant
+  @Get('step/:stepId/result-review')
+  async getResultReview(
+    @Param('stepId', ParseIntPipe) stepId: number,
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+    return this.employeesService.getResultReview(stepId, currentUser);
+  }
+
+  // ✅ Route pour marquer un bilan comme complété
+  @Post('step/:stepId/complete-result-review')
+  async completeResultReview(
+    @Param('stepId', ParseIntPipe) stepId: number,
+    @Body() body: { responseId: string },
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+    return this.employeesService.completeResultReview(stepId, body.responseId, currentUser);
+  }
+
 
 }

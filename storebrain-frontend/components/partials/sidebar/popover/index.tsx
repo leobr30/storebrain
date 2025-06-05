@@ -15,9 +15,11 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { filterSidebarNav } from "@/lib/filterSidebarNav";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 
 const PopoverSidebar = ({ trans }: { trans: string }) => {
+  const router = useRouter();
   const { collapsed, sidebarBg } = useSidebar();
   const { layout, isRtl } = useThemeStore();
   const { data: session } = useSession();
@@ -145,7 +147,10 @@ const PopoverSidebar = ({ trans }: { trans: string }) => {
           <Button
             variant="ghost"
             className="w-full"
-            onClick={() => signOut({ redirectTo: '/en/auth/login' })} // Redirige vers la page de connexion spécifique
+            onClick={async () => {
+              await signOut({ redirect: false });
+              router.push('http://192.168.1.143:3001/en/auth/login');
+            }}
           >
             Se déconnecter
           </Button>

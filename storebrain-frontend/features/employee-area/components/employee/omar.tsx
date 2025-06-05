@@ -100,7 +100,7 @@ export default function EmployeeOmar() {
                     ) : (
                         <div className="rounded-md border overflow-x-auto custom-scrollbar">
                             <div className="min-w-[900px]">
-                                <Table>
+                                <Table wrapperClass="h-[500px] overflow-auto custom-scrollbar" >
                                     <TableHeader className="bg-default-100 sticky top-0 z-10">
                                         <TableRow>
                                             {columns.map((column) => (

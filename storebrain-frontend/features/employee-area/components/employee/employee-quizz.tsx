@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSession } from 'next-auth/react';
 import { getQuizzById, getQuizzAnswersByUserId, getQuizzResponse } from '../../actions';
 import { EmployeeJobOnboarding } from '../../types';
+import Image from 'next/image';
 
 interface EmployeeQuizzProps {
     quizzId: number;
@@ -24,6 +25,7 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
     const [localAnswers, setLocalAnswers] = useState<{ [questionId: number]: string }>({});
     const [quizz, setQuizz] = useState<any>(null);
     const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
+    const [imageErrors, setImageErrors] = useState<{ [questionId: number]: boolean }>({});
 
     useEffect(() => {
         const transformed = Object.entries(localAnswers).reduce((acc, [questionId, answer]) => {
@@ -47,13 +49,11 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
             }
 
             try {
-                // Récupérer le quiz
                 console.log("📥 Récupération du quiz ID:", quizzId);
                 const data = await getQuizzById(quizzId);
                 console.log("✅ Quiz récupéré:", data);
                 setQuizz(data.data);
 
-                // Si le quiz est complété, récupérer les réponses
                 if (isCompleted && userId) {
                     setIsLoadingAnswers(true);
                     console.log(`📦 Quiz complété, récupération des réponses...`);
@@ -61,7 +61,6 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
                     try {
                         let existingAnswersData = null;
 
-                        // Méthode 1 : Si on a un responseId, essayer de récupérer via getQuizzResponse
                         if (responseId && responseId !== 'null' && responseId !== 'undefined') {
                             console.log(`🔍 Tentative avec responseId: ${responseId}`);
                             try {
@@ -72,19 +71,17 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
                             }
                         }
 
-                        // Méthode 2 : Si pas de responseId ou échec, essayer avec userId
                         if (!existingAnswersData) {
                             console.log(`🔍 Tentative avec userId: ${userId} pour quizz: ${quizzId}`);
                             existingAnswersData = await getQuizzAnswersByUserId(quizzId, String(userId));
                             console.log("📊 Données via userId :", existingAnswersData);
                         }
 
-                        // Traitement des réponses
+
                         if (existingAnswersData && existingAnswersData.answers && existingAnswersData.answers.length > 0) {
                             const formatted: { [questionId: number]: string } = {};
                             existingAnswersData.answers.forEach((a: any) => {
                                 console.log("💡 Traitement de la réponse :", a);
-                                // Vérifier les différents formats possibles
                                 if (a.questionId && (a.text || a.answer)) {
                                     formatted[a.questionId] = a.text || a.answer;
                                 }
@@ -109,6 +106,35 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
         fetchQuizz();
     }, [userId, quizzId, isCompleted, responseId]);
 
+    const handleImageError = (questionId: number) => {
+        setImageErrors(prev => ({ ...prev, [questionId]: true }));
+    };
+
+    const renderQuestionImage = (question: any) => {
+        if (!question.imageUrl || imageErrors[question.id]) {
+            return null;
+        }
+
+        return (
+            <div className="my-3">
+                <div className="relative w-full max-w-md mx-auto">
+                    <Image
+                        src={question.imageUrl}
+                        alt={`Image pour la question: ${question.text}`}
+                        width={400}
+                        height={300}
+                        className="rounded-lg shadow-sm border border-gray-200 object-cover"
+                        onError={() => handleImageError(question.id)}
+                        style={{
+                            maxWidth: '100%',
+                            height: 'auto',
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    };
+
     if (!quizz) return <p>Chargement du quizz...</p>;
 
     return (
@@ -120,16 +146,19 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
             )}
 
             {quizz.sections.map((section: any) => (
-                <div key={section.id} className="space-y-6 border p-4 rounded">
-                    <h3 className="font-semibold">{section.title}</h3>
+                <div key={section.id} className="space-y-6 border p-4 rounded mb-6">
+                    <h3 className="font-semibold text-lg text-gray-800">{section.title}</h3>
                     {section.questions.map((question: any) => (
-                        <div key={question.id} className="space-y-2">
-                            <p className="font-medium">{question.text}</p>
+                        <div key={question.id} className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                            <p className="font-medium text-gray-900">{question.text}</p>
+
+                            {/* Affichage de l'image si elle existe */}
+                            {renderQuestionImage(question)}
 
                             {isCompleted ? (
-                                <div className="bg-gray-100 text-gray-800 p-2 rounded">
+                                <div className="bg-white text-gray-800 p-3 rounded border-l-4 border-green-400">
                                     {localAnswers[question.id] ? (
-                                        <span>{localAnswers[question.id]}</span>
+                                        <span className="font-medium">{localAnswers[question.id]}</span>
                                     ) : (
                                         <em className="text-gray-400">Aucune réponse enregistrée</em>
                                     )}
@@ -145,7 +174,7 @@ export default function EmployeeQuizz({ quizzId, stepId, responseId, isCompleted
                                             [question.id]: e.target.value,
                                         }))
                                     }
-                                    className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white"
                                 />
                             )}
                         </div>

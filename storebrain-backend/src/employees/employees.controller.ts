@@ -65,6 +65,14 @@ export class EmployeesController {
     return this.employeesService.getEmployeeDocumentStatus(id);
   }
 
+  @Get('search')
+  async searchEmployees(@Query('q') query: string, @Query('company') company?: number) {
+    if (!query || query.length < 2) {
+      return { employees: [] };
+    }
+    return await this.employeesService.searchEmployees(query, company);
+  }
+
 
   @Get('employee/:id')
   @UseGuards(PoliciesGuard)

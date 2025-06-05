@@ -13,8 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { UploadDocumentModal } from './upload-document-modal';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 
 export default function EmployeeDocuments() {
+    const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
     const [documents, setDocuments] = useState<Document[]>([]);
     const { data: session } = useSession();
     const userId = session?.user?.id;
@@ -48,17 +50,23 @@ export default function EmployeeDocuments() {
     };
 
 
-    const handleDelete = async (id: number) => {
-        const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?");
-        if (!confirmed) return;
+    const confirmDelete = (doc: Document) => {
+        setDocumentToDelete(doc);
+    };
+
+    const handleConfirmedDelete = async () => {
+        if (!documentToDelete) return;
         try {
-            await deleteDocument(id);
+            await deleteDocument(documentToDelete.id);
             toast.success("Document supprimé avec succès");
             fetchDocuments();
         } catch (error) {
             toast.error("Erreur lors de la suppression du document");
+        } finally {
+            setDocumentToDelete(null);
         }
     };
+
 
     const columns = useMemo<ColumnDef<Document>[]>(() => [
         {
@@ -82,50 +90,64 @@ export default function EmployeeDocuments() {
             header: "Actions",
             cell: ({ row }) => (
                 <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => handleDelete(row.original.id)}>
+                    <Button variant="ghost" onClick={() => confirmDelete(row.original)}>
                         <Trash className="w-4 h-4" /> Supprimer
                     </Button>
+
                 </div>
             ),
         },
     ], []);
 
     return (
-        <Card>
-            <CardHeader className="flex-row justify-between items-center">
-                <CardTitle>Mes documents</CardTitle>
-                <UploadDocumentModal onUpload={handleUpload} setOpen={setIsModalOpen} open={isModalOpen} />
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {isLoading ? (
-                    <Skeleton className="w-full h-12" />
-                ) : documents.length === 0 ? (
-                    <p className="text-gray-500">Aucun document trouvé.</p>
-                ) : (
-                    <div className="rounded-md border">
-                        <Table wrapperClass="h-[500px] overflow-auto custom-scrollbar">
-                            <TableHeader className="bg-default-100 sticky top-0">
-                                <TableRow>
-                                    {columns.map((column) => (
-                                        <TableHead key={column.accessorKey}>{column.header}</TableHead>
-                                    ))}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {documents.map((doc) => (
-                                    <TableRow key={doc.id}>
+        <>
+            <Card>
+                <CardHeader className="flex-row justify-between items-center">
+                    <CardTitle>Mes documents</CardTitle>
+                    <UploadDocumentModal onUpload={handleUpload} setOpen={setIsModalOpen} open={isModalOpen} />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {isLoading ? (
+                        <Skeleton className="w-full h-12" />
+                    ) : documents.length === 0 ? (
+                        <p className="text-gray-500">Aucun document trouvé.</p>
+                    ) : (
+                        <div className="rounded-md border">
+                            <Table wrapperClass="h-[500px] overflow-auto custom-scrollbar">
+                                <TableHeader className="bg-default-100 sticky top-0">
+                                    <TableRow>
                                         {columns.map((column) => (
-                                            <TableCell key={`${doc.id}-${column.accessorKey}`}>
-                                                {column.cell ? column.cell({ row: { original: doc } as any }) : doc[column.accessorKey]}
-                                            </TableCell>
+                                            <TableHead key={column.accessorKey}>{column.header}</TableHead>
                                         ))}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {documents.map((doc) => (
+                                        <TableRow key={doc.id}>
+                                            {columns.map((column) => (
+                                                <TableCell key={`${doc.id}-${column.accessorKey}`}>
+                                                    {column.cell
+                                                        ? column.cell({ row: { original: doc } as any })
+                                                        : doc[column.accessorKey]}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {documentToDelete && (
+                <ConfirmDeleteDialog
+                    open={!!documentToDelete}
+                    onCancel={() => setDocumentToDelete(null)}
+                    onConfirm={handleConfirmedDelete}
+                />
+            )}
+        </>
     );
+
 }

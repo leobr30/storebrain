@@ -1467,6 +1467,150 @@ export class EmployeesService {
     });
   }
 
+  // Ajout dans employees.service.ts
+
+  async searchEmployees(query: string, companyId?: number) {
+    try {
+      const employees = await this.prisma.user.findMany({
+        where: {
+          AND: [
+            // Filtre par entreprise si spécifié
+            companyId ? {
+              companies: {
+                some: {
+                  companyId: companyId,
+                },
+              },
+            } : {},
+            // Recherche textuelle
+            {
+              OR: [
+                {
+                  firstName: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  lastName: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  name: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  badgeNumber: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  username: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                // Recherche dans les informations utilisateur
+                {
+                  information: {
+                    email: {
+                      contains: query,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          name: true,
+          username: true,
+          badgeNumber: true,
+          entryDate: true,
+          status: true,
+          zone: true,
+          information: {
+            select: {
+              email: true,
+            },
+          },
+          job: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          contract: {
+            select: {
+              type: true,
+              workingHoursPerWeek: true,
+            },
+          },
+          companies: {
+            select: {
+              isDefault: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: [
+          // Prioriser les employés actifs
+          {
+            status: 'asc',
+          },
+          // Puis par ordre alphabétique
+          {
+            firstName: 'asc',
+          },
+          {
+            lastName: 'asc',
+          },
+        ],
+        take: 20, // Limiter à 20 résultats pour les performances
+      });
+
+      // Formater les résultats pour correspondre à l'interface frontend
+      const formattedEmployees = employees.map(employee => ({
+        id: employee.id,
+        firstName: employee.firstName || '',
+        lastName: employee.lastName || '',
+        name: employee.name,
+        email: employee.information?.email,
+        badgeNumber: employee.badgeNumber,
+        entryDate: employee.entryDate.toISOString(),
+        status: employee.status,
+        job: employee.job ? {
+          title: employee.job.name,
+        } : null,
+        companies: employee.companies.map(uc => ({
+          company: {
+            name: uc.company.name,
+          },
+          isDefault: uc.isDefault,
+        })),
+      }));
+
+      return { employees: formattedEmployees };
+    } catch (error) {
+      console.error('Erreur lors de la recherche d\'employés:', error);
+      throw new Error('Erreur lors de la recherche d\'employés');
+    }
+  }
+
 
 
 

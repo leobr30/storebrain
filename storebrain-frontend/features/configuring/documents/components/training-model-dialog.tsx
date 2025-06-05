@@ -90,15 +90,17 @@ export default function TrainingModelDialog({ model, open, onClose, onRefresh }:
 
                 <section className="space-y-6 mt-4">
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Sujets</h3>
+
                         <div className="space-y-4">
                             {subjects.map((subject) => (
                                 <div key={subject.id} className="bg-muted p-4 rounded-xl border shadow-sm space-y-2">
+                                    <h3 className="text-lg font-semibold mb-2">Sujets</h3>
                                     <Input
                                         value={subject.name}
                                         placeholder="Nom du sujet"
                                         onChange={(e) => handleSubjectChange(subject.id, 'name', e.target.value)}
                                     />
+                                    <h3 className="text-lg font-semibold mb-2">Aide</h3>
                                     <Textarea
                                         value={subject.aide ?? ''}
                                         onChange={(e) => handleSubjectChange(subject.id, 'aide', e.target.value)}

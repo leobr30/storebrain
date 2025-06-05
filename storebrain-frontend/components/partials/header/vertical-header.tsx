@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSidebar, useThemeStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { Icon } from "@iconify/react";
-import { Search } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { SiteLogo } from "@/components/svg";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import EmployeeSearchModal from "@/components/search/employee-search-modal";
 
 const MenuBar = ({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed: (value: boolean) => void; }) => {
   return (
@@ -55,13 +56,18 @@ const MenuBar = ({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
 };
 
 type VerticalHeaderProps = {
-  handleOpenSearch: () => void;
+  handleOpenSearch?: () => void; // Optionnel maintenant car on gère en interne
 };
+
 const VerticalHeader: React.FC<VerticalHeaderProps> = ({ handleOpenSearch }) => {
   const { collapsed, setCollapsed, subMenu, sidebarType } = useSidebar();
   const { layout } = useThemeStore();
   const isDesktop = useMediaQuery("(min-width: 1280px)");
   const isMobile = useMediaQuery("(min-width: 768px)");
+
+  // État pour la modal de recherche d'employés
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
   let LogoContent = null;
   let menuBarContent = null;
   let searchButtonContent = null;
@@ -71,20 +77,46 @@ const VerticalHeader: React.FC<VerticalHeaderProps> = ({ handleOpenSearch }) => 
       <SiteLogo className="h-7 w-7" />
     </Link>
   );
+
+  // Nouveau bouton de recherche d'employés
+  const EmployeeSearchButton = (
+    <div>
+      <button
+        type="button"
+        className="inline-flex gap-2 items-center text-default-600 text-sm hover:text-primary transition-colors"
+        onClick={() => setIsSearchModalOpen(true)}
+        title="Rechercher un employé"
+      >
+        <span>
+          <Users className="h-4 w-4" />
+        </span>
+        <span className="md:block hidden">Rechercher un employé...</span>
+      </button>
+    </div>
+  );
+
+  // Ancien bouton de recherche (fallback)
   const SearchButton = (
     <div>
       <button
         type="button"
-        className=" inline-flex  gap-2 items-center text-default-600 text-sm"
-        onClick={handleOpenSearch}
+        className="inline-flex gap-2 items-center text-default-600 text-sm hover:text-primary transition-colors"
+        onClick={() => {
+          if (handleOpenSearch) {
+            handleOpenSearch();
+          } else {
+            setIsSearchModalOpen(true);
+          }
+        }}
       >
         <span>
-          <Search className=" h-4 w-4" />
+          <Search className="h-4 w-4" />
         </span>
-        <span className=" md:block hidden"> Search...</span>
+        <span className="md:block hidden">Search...</span>
       </button>
     </div>
   );
+
   if (layout === "semibox" && !isDesktop) {
     LogoContent = MainLogo;
   }
@@ -117,12 +149,15 @@ const VerticalHeader: React.FC<VerticalHeaderProps> = ({ handleOpenSearch }) => 
   if (subMenu && isDesktop) {
     menuBarContent = null;
   }
+
+  // Configuration du bouton de recherche avec priorité à la recherche d'employés
   if (sidebarType === "module" && isMobile) {
-    searchButtonContent = SearchButton;
+    searchButtonContent = EmployeeSearchButton;
   }
   if (sidebarType === "classic" || sidebarType === "popover") {
-    searchButtonContent = SearchButton;
+    searchButtonContent = EmployeeSearchButton;
   }
+
   return (
     <>
       <div className="flex items-center md:gap-6 gap-3">
@@ -130,6 +165,12 @@ const VerticalHeader: React.FC<VerticalHeaderProps> = ({ handleOpenSearch }) => 
         {menuBarContent}
         {searchButtonContent}
       </div>
+
+      {/* Modal de recherche d'employés */}
+      <EmployeeSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+      />
     </>
   );
 };

@@ -208,7 +208,7 @@ export default function EmployeeQuizz({
                             }}
                         />
                         <div className="absolute top-2 right-2">
-                            <Badge variant="secondary" className="bg-white/80">
+                            <Badge color="secondary" className="bg-white/80">
                                 <ImageIcon className="h-3 w-3 mr-1" />
                                 Image
                             </Badge>
@@ -331,7 +331,7 @@ export default function EmployeeQuizz({
 
     if (error) {
         return (
-            <Alert variant="destructive" className="m-6">
+            <Alert color="destructive" className="m-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
             </Alert>
@@ -340,7 +340,7 @@ export default function EmployeeQuizz({
 
     if (!quizz) {
         return (
-            <Alert variant="destructive" className="m-6">
+            <Alert color="destructive" className="m-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>Quiz non trouvé</AlertDescription>
             </Alert>

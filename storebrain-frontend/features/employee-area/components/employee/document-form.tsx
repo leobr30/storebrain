@@ -14,10 +14,11 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, FileText, CheckCircle, MessageSquare, ChevronUp, ChevronDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { EmployeeJobOnboarding } from '../../types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formSchema = z.object({
   comment: z.string().optional(),
@@ -50,6 +51,7 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
   const [formId, setFormId] = useState<string | null>(null);
   const [hasDocument, setHasDocument] = useState<boolean | null>(null);
   const [initialSections, setInitialSections] = useState<any[]>([]);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,7 +80,6 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
 
     checkDocAvailability();
   }, [isCompleted, responseId]);
-
 
   useEffect(() => {
     setIsCompleted(status === "COMPLETED");
@@ -131,9 +132,9 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
       setSections(initialSections);
       form.reset({ comment: '' });
       setCurrentStep(0);
+      setExpandedItems({});
     }
   }, [open, initialSections]);
-
 
   const handleCheckboxChange = (itemLabel: string, sectionIndex: number) => {
     setSections(prevSections => {
@@ -194,6 +195,23 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
     }
   };
 
+  const toggleItemExpansion = (itemLabel: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemLabel]: !prev[itemLabel]
+    }));
+  };
+
+  const isTextLong = (text: string) => {
+    return text.length > 100 || text.includes('\n');
+  };
+
+  const getCompletionProgress = () => {
+    const totalItems = sections.slice(0, -1).reduce((acc, section) => acc + (section.items?.length || 0), 0);
+    const checkedItems = sections.slice(0, -1).reduce((acc, section) =>
+      acc + (section.items?.filter(item => item.selected).length || 0), 0);
+    return totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -206,91 +224,229 @@ export default function DocumentForm({ setOpen, open, onSubmitSuccess, employeeI
           {isCompleted ? "Consulter le Document" : "Démarrer le Document"}
         </Button>
       </SheetTrigger>
-      <SheetContent closeIcon={<X className="h-5 w-5 relative" />} className="flex flex-col h-[90vh] p-0" side="bottom">
-        <SheetHeader>
-          <SheetTitle className="p-3 border-b border-gray-200">
-            {isCompleted ? "Document Complété" : "Accueil Nouveau Vendeur"}
-          </SheetTitle>
-        </SheetHeader>
-        <ScrollArea className="flex-grow p-4">
-          {loading || sections.length === 0 || !sections[currentStep] ? (
-            <Skeleton className="h-5 w-40 mx-auto my-6" />
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-                <h2 className="font-semibold text-xl text-gray-800 mb-3">{sections[currentStep].title}</h2>
-                {sections[currentStep].textarea ? (
-                  <FormField
-                    control={form.control}
-                    name="comment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Ajoutez un commentaire..."
-                            className="w-full border border-gray-300 rounded-md"
-                            {...field}
-                            disabled={isCompleted}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+      <SheetContent
+        closeIcon={<X className="h-5 w-5 relative hover:text-gray-600 transition-colors text-white" />}
+        className="flex flex-col h-[95vh] p-0 rounded-t-2xl shadow-2xl"
+        side="bottom"
+      >
+        <SheetHeader className="relative">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+            <SheetTitle className="text-2xl font-bold flex items-center gap-3 text-white">
+              <div className="p-2 bg-white/20 rounded-lg">
+                {isCompleted ? <CheckCircle className="w-6 h-6" /> : <FileText className="w-6 h-6 text-white" />}
+              </div>
+              {isCompleted ? "Document Complété" : "Accueil Nouveau Vendeur"}
+            </SheetTitle>
+            {!isCompleted && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm text-white/80 mb-2">
+                  <span>Progression</span>
+                  <span>{getCompletionProgress()}%</span>
+                </div>
+                <div className="w-full bg-white/20 rounded-full h-2">
+                  <div
+                    className="bg-white rounded-full h-2 transition-all duration-300"
+                    style={{ width: `${getCompletionProgress()}%` }}
                   />
-                ) : (
-                  <div className="space-y-3">
-                    {sections[currentStep].items?.map((item, index) => (
-                      <div key={item.label} className="flex items-center gap-3 bg-white p-3 rounded-md shadow-sm border border-gray-300">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.selected`}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={item.selected}
-                                  onCheckedChange={() => {
-                                    handleCheckboxChange(item.label, currentStep);
-                                    form.setValue(`items.${index}.selected`, !item.selected);
-                                  }}
-                                  id={item.label}
-                                  disabled={isCompleted}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Label htmlFor={item.label} className="flex-grow text-gray-700">{item.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </form>
-            </Form>
-          )}
-        </ScrollArea>
-        <Separator className="my-4" />
-        <SheetFooter className="p-4 flex justify-between items-center bg-white border-t border-gray-200">
-          <div className="text-sm text-gray-500">
-            {currentStep + 1} / {sections.length}
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))} disabled={currentStep === 0} variant="outline">Précédent</Button>
-            {currentStep < sections.length - 1 ? (
-              <Button onClick={() => {
-                setCurrentStep((prev) => Math.min(prev + 1, sections.length - 1));
-                if (sections[currentStep].items) {
-                  form.setValue('items', sections[currentStep].items)
-                }
-              }}>Suivant</Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={isCompleted} className="bg-green-600 hover:bg-green-700 text-white">
-                {isCompleted ? "Consulter" : "Valider"}
-              </Button>
+                </div>
+              </div>
             )}
           </div>
-        </SheetFooter>
+        </SheetHeader>
+
+        <ScrollArea className="flex-grow bg-gray-50">
+          <div className="p-6">
+            {loading || sections.length === 0 || !sections[currentStep] ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Skeleton className="h-8 w-64 mb-4" />
+                <Skeleton className="h-4 w-48 mb-2" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                      <div className="bg-white rounded-xl p-6 shadow-md">
+                        <h2 className="font-bold text-2xl text-gray-800 mb-2 flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-semibold">{currentStep + 1}</span>
+                          </div>
+                          {sections[currentStep].title}
+                        </h2>
+
+                        {sections[currentStep].textarea ? (
+                          <div className="mt-6">
+                            <div className="flex items-center gap-2 mb-4 text-gray-600">
+                              <MessageSquare className="w-5 h-5" />
+                              <span className="text-sm">Partagez vos observations ou commentaires</span>
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="comment"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Ajoutez un commentaire..."
+                                      className="w-full min-h-[200px] border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                      {...field}
+                                      disabled={isCompleted}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        ) : (
+                          <div className="space-y-3 mt-6">
+                            {sections[currentStep].items?.map((item, index) => {
+                              const isLong = isTextLong(item.label);
+                              const isExpanded = expandedItems[item.label] || !isLong;
+
+                              return (
+                                <motion.div
+                                  key={item.label}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.05 }}
+                                  className={`bg-white rounded-lg border-2 transition-all duration-200 ${item.selected ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                    }`}
+                                >
+                                  <div className="p-4">
+                                    <div className="flex items-start gap-3">
+                                      <FormField
+                                        control={form.control}
+                                        name={`items.${index}.selected`}
+                                        render={({ field }) => (
+                                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                              <Checkbox
+                                                checked={item.selected}
+                                                onCheckedChange={() => {
+                                                  handleCheckboxChange(item.label, currentStep);
+                                                  form.setValue(`items.${index}.selected`, !item.selected);
+                                                }}
+                                                id={item.label}
+                                                disabled={isCompleted}
+                                                className="mt-1 h-5 w-5"
+                                              />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <div className="flex-grow">
+                                        <Label
+                                          htmlFor={item.label}
+                                          className={`text-gray-700 cursor-pointer leading-relaxed ${!isExpanded && isLong ? 'line-clamp-2' : 'whitespace-pre-line'
+                                            }`}
+                                        >
+                                          {item.label}
+                                        </Label>
+                                        {isLong && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => toggleItemExpansion(item.label)}
+                                            className="mt-2 p-0 h-auto text-blue-600 hover:text-blue-700"
+                                          >
+                                            {isExpanded ? (
+                                              <>
+                                                <ChevronUp className="w-4 h-4 mr-1" />
+                                                Voir moins
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronDown className="w-4 h-4 mr-1" />
+                                                Voir plus
+                                              </>
+                                            )}
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </form>
+                  </Form>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="bg-white border-t-2 border-gray-200 px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                Étape {currentStep + 1} sur {sections.length}
+              </div>
+              <div className="flex gap-1">
+                {sections.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`h-2 w-2 rounded-full transition-all duration-200 ${index === currentStep
+                        ? 'bg-blue-600 w-8'
+                        : index < currentStep
+                          ? 'bg-blue-400'
+                          : 'bg-gray-300'
+                      }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                disabled={currentStep === 0}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Précédent
+              </Button>
+
+              {currentStep < sections.length - 1 ? (
+                <Button
+                  onClick={() => {
+                    setCurrentStep((prev) => Math.min(prev + 1, sections.length - 1));
+                    if (sections[currentStep].items) {
+                      form.setValue('items', sections[currentStep].items)
+                    }
+                  }}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  Suivant
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isCompleted}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isCompleted ? "Document complété" : "Valider le document"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -1,4 +1,3 @@
-// c:\Users\Gabriel\Desktop\storebrain\storebrain-frontend\features\employee-area\components\employee\employee-formation.tsx
 
 "use client";
 
@@ -76,17 +75,17 @@ export default function EmployeeFormation({ employeeId, trainings, jobOnboarding
             cell: ({ row }) => {
                 const training = row.original;
 
-                // Si la formation n'est pas encore validée
+
                 if (training.status === "PENDING") {
                     return <span className="text-gray-500 italic">En attente</span>;
                 }
 
-                // Si la formation est validée mais pas de realizedBy
+
                 if (training.status === "COMPLETED" && !training.realizedBy) {
                     return <span className="text-orange-500">Formateur non renseigné</span>;
                 }
 
-                // Si on a un realizedBy
+
                 if (training.realizedBy) {
                     const displayName = training.realizedBy.name ||
                         `${training.realizedBy.firstName || ''} ${training.realizedBy.lastName || ''}`.trim() ||

@@ -1139,7 +1139,7 @@ export class EmployeesService {
       zone: updateData.zone,
     };
 
-    // 🔍 Trouver l'ID du job en base
+    
     if ((updateData as any).job && typeof (updateData as any).job === "string") {
       const job = await this.prisma.job.findFirst({ where: { name: (updateData as any).job } });
       if (job) {

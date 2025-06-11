@@ -43,7 +43,12 @@ import {
   CustomIcon,
   Mail,
   Users,
-  User
+  User,
+  Device,
+  Docs,
+  DocsCheck,
+  Stacks,
+  Settings
 } from "@/components/svg";
 
 
@@ -1000,7 +1005,7 @@ export const menusConfig = {
       },
       {
         title: "Analyse",
-        icon: DashBoard,
+        icon: Graph,
         href: "/analyze",
         requiredPermission: { action: 'manage', subject: 'all' },
         child: [
@@ -1041,7 +1046,7 @@ export const menusConfig = {
       },
       {
         title: "Outils",
-        icon: DashBoard,
+        icon: Stacks2,
         requiredPermission: { action: 'manage', subject: 'all' },
         child: [
           {
@@ -1060,7 +1065,7 @@ export const menusConfig = {
       },
       {
         title: "Configuration",
-        icon: DashBoard,
+        icon: Settings,
         requiredPermission: { action: 'manage', subject: 'all' },
         child: [
           {

@@ -15,7 +15,6 @@ import EmployeeOmar from "./omar";
 
 type EmployeeTabsProps = {
   employee: Employee;
-  // jobOnboardingId: number | null; // Accepter jobOnboardingId en tant que prop
 };
 
 export const EmployeeTabs = ({ employee }: EmployeeTabsProps) => {

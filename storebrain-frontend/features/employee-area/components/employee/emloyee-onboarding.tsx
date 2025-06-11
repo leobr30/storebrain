@@ -218,7 +218,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                             {step.jobOnboardingStep.type === "RESULT_REVIEW" ? (
                                                 <>
                                                     <TableCell>
-                                                        {/* ✅ Affichage simplifié avec numéro de RDV */}
                                                         {(() => {
                                                             const reviewName = step.jobOnboardingStep.jobOnboardingResultReview?.name || "Bilan";
                                                             const rdvNumber = getMonthNumber(step.date, localSteps, reviewName);
@@ -238,7 +237,6 @@ export const EmployeeOnboardings = ({ steps, id, onStepUpdated }: EmployeeOnboar
                                                                 } else {
                                                                     await handleRefreshSteps(step.id);
                                                                 }
-                                                                // ✅ Fermer le modal après succès
                                                                 setOpenReviewStepId(null);
                                                             }}
                                                             responseId={step.responseId}

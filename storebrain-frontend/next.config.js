@@ -17,6 +17,12 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     API_URL: process.env.API_URL,
   },
+
+  i18n: {
+    locales: ['fr'],
+    defaultLocale: 'fr',
+    localeDetection: false,
+  },
   webpack(config) {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = config.module.rules.find((rule) =>

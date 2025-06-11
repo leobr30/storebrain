@@ -71,9 +71,6 @@ const LogInForm = () => {
       <div className="2xl:mt-8 mt-6 2xl:text-3xl text-2xl font-bold text-default-900">
         Hey, Hello 👋
       </div>
-      {/* <div className="2xl:text-lg text-base text-default-600 mt-2 leading-6">
-        Enter the information you entered while registering.
-      </div> */}
       <form onSubmit={handleSubmit(onSubmit)} className="2xl:mt-7 mt-8">
         <div className="relative">
           <Input
@@ -174,8 +171,8 @@ const LogInForm = () => {
           {isPending && <Loader2 className="ltr:mr-2 rtl:ml-2 h-4 w-4 animate-spin" />}
           {isPending ? "Loading..." : "Se connecter"}
         </Button>
-        
-      </form>      
+
+      </form>
       {/* <div className="2xl:mt-8 mt-6 flex flex-wrap justify-center gap-4">
         <Button
           type="button"
@@ -229,7 +226,7 @@ const LogInForm = () => {
           Sign Up{" "}
         </Link>
       </div> */}
-      
+
     </div>
   );
 };

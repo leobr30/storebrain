@@ -57,7 +57,7 @@ const Footer = () => {
             className="inline-flex items-center gap-4 text-primary-foreground"
           >
             <SiteLogo className="w-[50px] h-[52px]" />
-            <span className="text-3xl font-semibold">DashTail</span>
+            <span className="text-3xl font-semibold">Diamantor</span>
           </Link>
           <p className="text-base leading-7 text-default-200 dark:text-default-600 text-center mt-3">
             DashTail is a developer-friendly, ready-to-use admin template designed for building attractive, scalable, and high-performing web applications, powered by the cutting-edge technologies of Next.js and Tailwind CSS.</p>
@@ -89,10 +89,10 @@ const Footer = () => {
       </div>
       <div className="relative bg-default-900 dark:bg-default-50 py-6">
         <div className="container flex flex-col text-center md:text-start md:flex-row gap-2">
-          <p className="text-primary-foreground flex-1 text-base xl:text-lg font-medium">COPYRIGHT &copy; 2024 DashTail All rights Reserved</p>
+          <p className="text-primary-foreground flex-1 text-base xl:text-lg font-medium">COPYRIGHT &copy; 2024 Diamantor All rights Reserved</p>
           <p className="text-primary-foreground flex-none text-base font-medium">
             Hand-crafted & Made by {" "}
-            <Link href="https://codeshaper.net" target="__blank" className="text-primary hover:underline">Codeshaper</Link></p>
+            <Link href="https://www.diamantor.fr/" target="__blank" className="text-primary hover:underline">Diamantor</Link></p>
         </div>
       </div>
     </footer>

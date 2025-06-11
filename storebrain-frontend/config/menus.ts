@@ -1016,12 +1016,18 @@ export const menusConfig = {
         icon: User,
         child: [
           {
-            title: "Acceuil",
+            title: "Accueil",
             href: "/employee-area/home",
           },
+          
           {
             title: "RDV du lundi",
             href: "/employee-area/monday-appointments",
+          },
+
+          {
+            title: "RDV Annuel",
+            href: "/employee-area/RDVAnnuel",
           },
           // {
           //   title: "Emplois",

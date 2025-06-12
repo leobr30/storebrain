@@ -1,5 +1,5 @@
-import { id } from "date-fns/locale"
-import { fetchEmployees, useFetchEmployee } from "../../../../../../features/employee-area/actions"
+
+import { useFetchEmployee } from "@/features/employee-area/actions";
 import { EmployeeView } from "@/features/employee-area/components/employee/employee-view";
 import { SessionProvider } from "next-auth/react";
 

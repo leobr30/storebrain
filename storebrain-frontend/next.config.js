@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-
 const nextConfig = {
   output: 'standalone',
   eslint: {
@@ -18,11 +17,8 @@ const nextConfig = {
     API_URL: process.env.API_URL,
   },
 
-  i18n: {
-    locales: ['fr'],
-    defaultLocale: 'fr',
-    localeDetection: false,
-  },
+  // SUPPRIMÉ la section i18n complètement
+
   webpack(config) {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = config.module.rules.find((rule) =>
@@ -76,6 +72,5 @@ const nextConfig = {
     ],
   },
 };
-
 
 module.exports = nextConfig;

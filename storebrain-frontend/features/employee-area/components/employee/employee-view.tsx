@@ -1,4 +1,3 @@
-// features/employee-area/components/employee/employee-view.tsx
 import { Employee } from "../../types";
 import { AbsenceDialog } from "../absence-dialog";
 import { TrainingDrawer } from "../training-drawer/training-drawer";

@@ -1,4 +1,3 @@
-// features/employee-area/components/employee/employee-tabs.tsx
 "use client";
 import { Tabs, TabsList } from "@/components/ui/tabs";
 import { TabsContent, TabsTrigger } from "@radix-ui/react-tabs";

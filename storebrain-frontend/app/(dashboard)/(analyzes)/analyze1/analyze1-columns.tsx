@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Difference } from "@/components/difference";
 import { GroupingResult } from "./analyze1-types";
-import { number } from "zod";
+
 export const analyze1Columns = ({ openNewDialog }:any) => useMemo<ColumnDef<any>[]>(() => [
     {
         header: ({ column }) => (

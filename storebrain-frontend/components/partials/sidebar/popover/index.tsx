@@ -149,7 +149,7 @@ const PopoverSidebar = ({ trans }: { trans: string }) => {
             className="w-full"
             onClick={async () => {
               await signOut({ redirect: false });
-              router.push('http://192.168.1.143:3001/en/auth/login');
+              router.push('http://192.168.1.143:3001/auth/login');
             }}
           >
             Se déconnecter

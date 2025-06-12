@@ -1,6 +1,6 @@
 "use client"
 import { ReactNode, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardTableWithButtons } from "@/components/tables/card-table-with-action";
 
 
@@ -18,12 +18,12 @@ export const CardTable = ({ jobs }: Props) => {
     const columns = useMemo(() => [
         {
             accessorKey: 'name',
-            header:({column}:{column:any}) => <DataTableColumnHeader column={column} title="Nom"/>
+            header: ({ column }: { column: any }) => <DataTableColumnHeader column={column} title="Nom" />
         },
         {
             id: 'action',
             header: 'Action',
-            cell:({row}:{row:any}) => <DialogEditJob job={row.original} />
+            cell: ({ row }: { row: any }) => <DialogEditJob job={row.original} />
         }
     ], [])
 

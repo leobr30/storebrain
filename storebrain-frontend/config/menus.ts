@@ -1074,16 +1074,16 @@ export const menusConfig = {
           },
           {
             title: 'Quizz',
-            href: "/configuration/documents/quizz",
+            href: "/configuration/quizz",
           },
           {
             title: 'Intégration',
-            href: "/configuration/documents/integration",
+            href: "/configuration/integration",
           },
 
           {
             title: 'Formation',
-            href: "/configuration/documents/formation",
+            href: "/configuration/formation",
           },
         ]
       },

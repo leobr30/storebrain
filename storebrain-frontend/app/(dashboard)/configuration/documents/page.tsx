@@ -41,7 +41,7 @@ export default function DocumentsLandingPage() {
             title: 'Accueil Nouveau Vendeur',
             description: 'Formulaire d\'intégration pour les nouveaux collaborateurs',
             longDescription: 'Créez un processus d\'accueil structuré et personnalisé pour faciliter l\'intégration de vos nouveaux vendeurs et maximiser leur efficacité dès le premier jour.',
-            href: '/configuration/documents/formulaire',
+            href: '/configuration/formulaire',
             icon: Users,
             gradient: 'from-blue-500 to-cyan-500',
             features: [
@@ -56,7 +56,7 @@ export default function DocumentsLandingPage() {
             title: 'Entretien Annuel',
             description: 'Système de gestion des entretiens annuels',
             longDescription: 'Optimisez vos entretiens annuels avec un système complet de questions personnalisables, de suivi de progression et de génération de rapports automatisés.',
-            href: '/configuration/documents/RDV_Annuel',
+            href: '/configuration/RDV_Annuel',
             icon: Calendar,
             gradient: 'from-purple-500 to-pink-500',
             features: [
@@ -102,20 +102,20 @@ export default function DocumentsLandingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <div className="min-h-screen rounded-xl bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
             {/* Header avec gradient */}
-            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+            <div className="bg-white rounded-xl  text-black">
                 <div className="max-w-7xl mx-auto px-6 py-12">
                     <div className="text-center">
                         <div className="flex items-center justify-center mb-4">
-                            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
-                                <Settings size={32} className="text-white" />
+                            <div className="w-16 h-16 bg-black bg-opacity-20 rounded-full flex items-center justify-center mr-4">
+                                <Settings size={32} className="text-black" />
                             </div>
                             <h1 className="text-4xl font-bold">
                                 Configuration des Documents
                             </h1>
                         </div>
-                        <p className="text-xl text-indigo-100 max-w-3xl mx-auto">
+                        <p className="text-xl text-indigo-100 max-w-3xl mx-auto text-black">
                             Gérez et personnalisez tous vos formulaires et processus documentaires
                             pour optimiser l'expérience de vos collaborateurs
                         </p>

@@ -200,7 +200,7 @@ export default function EntretienForm({
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             {/* Header avec informations employé */}
             <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white">
                 <div className="max-w-6xl mx-auto px-6 py-8">

@@ -115,7 +115,7 @@ export default function DocumentsLandingPage() {
                                 Configuration des Documents
                             </h1>
                         </div>
-                        <p className="text-xl text-indigo-100 max-w-3xl mx-auto text-black">
+                        <p className="text-xl max-w-3xl mx-auto text-black">
                             Gérez et personnalisez tous vos formulaires et processus documentaires
                             pour optimiser l'expérience de vos collaborateurs
                         </p>

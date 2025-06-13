@@ -1,0 +1,63 @@
+// Ajouter ces modèles dans votre schema.prisma
+
+model AnnualReview {
+  id         Int                    @id @default(autoincrement())
+  employeeId Int
+  employee   User                   @relation("EmployeeReviews", fields: [employeeId], references: [id])
+  reviewerId Int
+  reviewer   User                   @relation("ReviewerReviews", fields: [reviewerId], references: [id])
+  companyId  Int
+  company    Company                @relation(fields: [companyId], references: [id])
+  responses  AnnualReviewResponse[]
+  status     Status                 @default(DRAFT)
+  reviewDate DateTime               @default(now())
+  signedAt   DateTime?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+}
+
+model AnnualReviewSection {
+  id        Int                    @id @default(autoincrement())
+  title     String
+  order     Int
+  questions AnnualReviewQuestion[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+model AnnualReviewQuestion {
+  id        Int                    @id @default(autoincrement())
+  sectionId Int
+  section   AnnualReviewSection    @relation(fields: [sectionId], references: [id])
+  question  String
+  type      QuestionType
+  options   String[]               @default([])
+  order     Int
+  required  Boolean                @default(true)
+  responses AnnualReviewResponse[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+model AnnualReviewResponse {
+  id         Int                  @id @default(autoincrement())
+  reviewId   Int
+  review     AnnualReview         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  questionId Int
+  question   AnnualReviewQuestion @relation(fields: [questionId], references: [id])
+  answer     String
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([reviewId, questionId])
+}
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  SELECT
+  RADIO
+  CHECKBOX
+  NUMBER
+  DATE
+}

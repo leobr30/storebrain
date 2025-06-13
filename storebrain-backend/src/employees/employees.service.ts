@@ -62,6 +62,7 @@ export class EmployeesService {
         id: true,
         name: true,
         zone: true,
+        badgeNumber: true,
         job: {
           select: {
             name: true,
@@ -1139,7 +1140,7 @@ export class EmployeesService {
       zone: updateData.zone,
     };
 
-    
+
     if ((updateData as any).job && typeof (updateData as any).job === "string") {
       const job = await this.prisma.job.findFirst({ where: { name: (updateData as any).job } });
       if (job) {

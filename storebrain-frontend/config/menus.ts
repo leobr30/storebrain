@@ -1070,7 +1070,7 @@ export const menusConfig = {
         child: [
           {
             title: 'Documents',
-            href: "/configuration/documents/formulaire",
+            href: "/configuration/documents",
           },
           {
             title: 'Quizz',

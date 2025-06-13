@@ -1,38 +1,42 @@
 model User {
-  id                       Int                       @id @default(autoincrement())
-  username                 String?                   @unique
-  email                    String?
-  name                     String?
-  lastName                 String                    @default("")
-  firstName                String                    @default("")
-  entryDate                DateTime                  @default(now()) @db.Date
-  badgeNumber              String?
-  password                 String?
-  refreshToken             String?
-  roles                    Role[]
-  status                   Status                    @default(PENDING)
-  job                      Job?                      @relation(fields: [jobId], references: [id])
-  jobId                    Int?
-  contract                 JobContract?              @relation(fields: [contractId], references: [id])
-  contractId               Int?
-  information              UserInformation?
-  companies                UsersOnCompanies[]
-  zone                     String?
-  onerpId                  Int?
-  documents                UserDocument[]
-  histories                UserHistory[]             @relation("Histories")
-  createdHistories         UserHistory[]             @relation("CreatedHistories")
-  jobOnboardings           UserJobOnboarding[]
-  trainings                Training[]                @relation("Trainings") // Corrected relation name
-  realizedTrainings        Training[]                @relation("RealizedTrainings") // Corrected relation name
-  absences                 UserAbsence[]
-  createdAbsences          UserAbsence[]             @relation("CreatedAbsences")
-  vacations                UserAbsence[]             @relation("UserVacations")
-  omars                    Omar[]                    @relation("UserOmars")
-  createdOmars             Omar[]                    @relation("UserCreatedOmars")
-  assignedQuizz            Quizz[]                   @relation("AssignedQuizz")
-  createdQuizz             Quizz[]                   @relation("CreatedQuizz")
-  quizzAnswers             QuizzAnswer[]
+  id                Int                 @id @default(autoincrement())
+  username          String?             @unique
+  email             String?
+  name              String?
+  lastName          String              @default("")
+  firstName         String              @default("")
+  entryDate         DateTime            @default(now()) @db.Date
+  badgeNumber       String?
+  password          String?
+  refreshToken      String?
+  roles             Role[]
+  status            Status              @default(PENDING)
+  job               Job?                @relation(fields: [jobId], references: [id])
+  jobId             Int?
+  contract          JobContract?        @relation(fields: [contractId], references: [id])
+  contractId        Int?
+  information       UserInformation?
+  companies         UsersOnCompanies[]
+  zone              String?
+  onerpId           Int?
+  documents         UserDocument[]
+  histories         UserHistory[]       @relation("Histories")
+  createdHistories  UserHistory[]       @relation("CreatedHistories")
+  jobOnboardings    UserJobOnboarding[]
+  trainings         Training[]          @relation("Trainings") // Corrected relation name
+  realizedTrainings Training[]          @relation("RealizedTrainings") // Corrected relation name
+  absences          UserAbsence[]
+  createdAbsences   UserAbsence[]       @relation("CreatedAbsences")
+  vacations         UserAbsence[]       @relation("UserVacations")
+  omars             Omar[]              @relation("UserOmars")
+  createdOmars      Omar[]              @relation("UserCreatedOmars")
+  assignedQuizz     Quizz[]             @relation("AssignedQuizz")
+  createdQuizz      Quizz[]             @relation("CreatedQuizz")
+  quizzAnswers      QuizzAnswer[]
+
+  employeeReviews AnnualReview[] @relation("EmployeeReviews")
+  reviewerReviews AnnualReview[] @relation("ReviewerReviews")
+
   mondayAppointmentDetails MondayAppointmentDetail[]
   closingDayComments       ClosingDayComment[]
 

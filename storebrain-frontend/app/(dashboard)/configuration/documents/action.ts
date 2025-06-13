@@ -1,5 +1,5 @@
 "use server";
-
+import { NextResponse } from 'next/server';
 import { fetchWithAuth } from "@/lib/fetch";
 import { revalidatePath } from "next/cache"
 
@@ -63,6 +63,16 @@ export const createQuizz = async (data: {
     revalidatePath('/en/employee-area/home');
     return response;
 };
+
+export const updateAnnualReviewSections = async (sections: any[]) => {
+    const response = await fetchWithAuth("annual-reviews/admin/sections", {
+        method: "PUT",
+        body: JSON.stringify({ sections }),
+    });
+    return response;
+};
+
+
 
 
 

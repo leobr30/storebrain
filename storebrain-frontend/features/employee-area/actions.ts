@@ -539,6 +539,74 @@ export const submitResultReview = async (
         console.error('Erreur lors de la soumission du bilan:', error);
         throw error;
     }
+
+};
+
+// Ajouter ces actions dans votre fichier actions.ts
+
+// RDV ANNUEL
+
+export const getAnnualReviewSections = async () => {
+    return await fetchWithAuth('annual-reviews/sections');
+};
+
+export const createAnnualReview = async (data: {
+    employeeId: number;
+    companyId: number;
+}) => {
+    const response = await fetchWithAuth('annual-reviews', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+    revalidatePath('/en/employee-area/rdv-annuel');
+    return response;
+};
+
+export const updateAnnualReview = async (reviewId: number, data: {
+    responses: { questionId: number; answer: string }[];
+}) => {
+    const response = await fetchWithAuth(`annual-reviews/${reviewId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    });
+    revalidatePath('/en/employee-area/rdv-annuel');
+    return response;
+};
+
+export const getAnnualReview = async (reviewId: number) => {
+    return await fetchWithAuth(`annual-reviews/${reviewId}`);
+};
+
+export const getAnnualReviews = async (filters?: {
+    employeeId?: number;
+    reviewerId?: number;
+    companyId?: number;
+    status?: string;
+}) => {
+    const params = new URLSearchParams();
+    if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined) params.append(key, value.toString());
+        });
+    }
+    const queryString = params.toString();
+    return await fetchWithAuth(`annual-reviews${queryString ? `?${queryString}` : ''}`);
+};
+
+export const submitAnnualReview = async (reviewId: number) => {
+    const response = await fetchWithAuth(`annual-reviews/${reviewId}/submit`, {
+        method: 'POST'
+    });
+    revalidatePath('/en/employee-area/rdv-annuel');
+    return response;
+};
+
+export const saveAnnualReviewResponse = async (reviewId: number, questionId: number, answer: string) => {
+    const response = await fetchWithAuth(`annual-reviews/${reviewId}/responses`, {
+        method: 'POST',
+        body: JSON.stringify({ questionId, answer })
+    });
+    return response;
 };
 
 

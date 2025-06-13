@@ -14,4 +14,5 @@ model Company {
   MondayAppointment MondayAppointment[]
   number            Int
   conditions        Condition[]
+  annualReviews     AnnualReview[]
 }

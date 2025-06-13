@@ -30,6 +30,7 @@ import { QuizzModule } from './quizz/quizz.module';
 import { YousignService } from './yousign/yousign.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { YousignModule } from './yousign/yousign.module';
+import { AnnualReviewsModule } from './annual-review/annual-reviews.module';
 
 
 @Module({
@@ -67,6 +68,7 @@ import { YousignModule } from './yousign/yousign.module';
     }),
     ToolsModule,
     ClosingDayModule,
+    AnnualReviewsModule,
   ],
   controllers: [FormsController, EmployeeResponsesController],
   providers: [SavService, PrismaService, YousignService],

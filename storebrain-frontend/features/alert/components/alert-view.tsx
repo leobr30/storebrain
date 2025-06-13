@@ -3,7 +3,6 @@ import { CustomTable } from "@/components/custom-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableWithHeader } from "@/features/employee-area/components/table-with-header";
 import { Row } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { AlertSheet } from "./alert-sheet";

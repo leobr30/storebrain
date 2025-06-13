@@ -6,7 +6,7 @@ export type Employee = {
     job: { name: string }
     contract: { type: string, workingHoursPerWeek: string }
     entryDate: Date
-    badge: string
+    badgeNumber: string
     histories: EmployeeHistory[]
     jobOnboardings: EmployeeJobOnboarding[]
     absenses: Absence[]

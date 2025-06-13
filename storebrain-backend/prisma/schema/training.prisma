@@ -1,26 +1,25 @@
 model Training {
-  id                  Int               @id @default(autoincrement())
-  name                String
-  comment             String
-  tool                String
-  exercise            String
-  date                DateTime?
-  status              Status            @default(PENDING)
-  validateAt          DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @default(now()) @updatedAt
-  userId              Int
-  user                User              @relation(fields: [userId], references: [id], name: "Trainings")
-  realizedById        Int?
-  realizedBy          User?             @relation("RealizedTrainings", fields: [realizedById], references: [id])
-  subjects            TrainingSubject[]
-  
-  
+  id           Int               @id @default(autoincrement())
+  name         String
+  comment      String
+  tool         String
+  exercise     String
+  date         DateTime?
+  status       Status            @default(PENDING)
+  validateAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @default(now()) @updatedAt
+  userId       Int
+  user         User              @relation(fields: [userId], references: [id], name: "Trainings")
+  realizedById Int?
+  realizedBy   User?             @relation("RealizedTrainings", fields: [realizedById], references: [id])
+  subjects     TrainingSubject[]
+
   userJobOnboardingId Int?
   userJobOnboarding   UserJobOnboarding? @relation(fields: [userJobOnboardingId], references: [id])
-  
-  dateSignature       DateTime?
-  signatureRequestId  String?           @unique
+
+  dateSignature      DateTime?
+  signatureRequestId String?   @unique
 }
 
 model TrainingSubject {

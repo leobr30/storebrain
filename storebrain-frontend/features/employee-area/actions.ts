@@ -611,6 +611,21 @@ export const saveAnnualReviewResponse = async (reviewId: number, questionId: num
 
 
 
+export const checkUsernameAvailability = async (username: string, excludeUserId?: number): Promise<boolean> => {
+    try {
+        const response = await fetchWithAuth(`employees/check-username`, {
+            method: 'POST',
+            body: JSON.stringify({ username, excludeUserId })
+        });
+        return response.available;
+    } catch (error) {
+        console.error("Erreur lors de la vérification du username:", error);
+        return false;
+    }
+};
+
+
+
 
 
 

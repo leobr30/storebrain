@@ -542,5 +542,19 @@ export class EmployeesController {
     return this.employeesService.completeResultReview(stepId, body.responseId, currentUser);
   }
 
+  // Dans employees.controller.ts, ajoutez cette nouvelle route :
+
+  @Post('check-username')
+  @UseGuards(PoliciesGuard)
+  async checkUsernameAvailability(
+    @Body() dto: { username: string; excludeUserId?: number }
+  ) {
+    const available = await this.employeesService.checkUsernameAvailability(
+      dto.username,
+      dto.excludeUserId
+    );
+    return { available };
+  }
+
 
 }

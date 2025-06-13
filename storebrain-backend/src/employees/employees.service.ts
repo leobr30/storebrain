@@ -384,6 +384,8 @@ export class EmployeesService {
 
 
 
+
+
   async activateEmployee(
     id: number,
     dto: ActivateEmployeeDto,
@@ -395,6 +397,17 @@ export class EmployeesService {
       },
     });
     if (user === null) throw new UserNotFoundException();
+
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: {
+        username: dto.username,
+      },
+    });
+
+    if (existingUser && existingUser.id !== id) {
+      throw new BadRequestException(`Le code vendeur "${dto.username}" est déjà utilisé par un autre employé.`);
+    }
 
     await this.prisma.user.update({
       data: {
@@ -417,6 +430,28 @@ export class EmployeesService {
     //TODO Handle roles based on job
 
     return;
+  }
+
+  async checkUsernameAvailability(username: string, excludeUserId?: number): Promise<boolean> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: {
+        username,
+      },
+    });
+
+    // Si aucun utilisateur n'a ce username, il est disponible
+    if (!existingUser) {
+      return true;
+    }
+
+    // Si un utilisateur existe avec ce username, vérifier si c'est le même utilisateur
+    // (dans le cas d'une modification)
+    if (excludeUserId && existingUser.id === excludeUserId) {
+      return true;
+    }
+
+    // Sinon, le username n'est pas disponible
+    return false;
   }
 
   async createEmployeeCreatedDocument(
